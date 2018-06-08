@@ -4,8 +4,8 @@
     <LangVersion>7</LangVersion>
   </PropertyGroup>
   <ItemGroup Label="License">
-    <None Include="..\osu-server.licenseheader">
-      <Link>osu-server.licenseheader</Link>
+    <None Include="..\osu-elastic-indexer.licenseheader">
+      <Link>osu-elastic-indexer.licenseheader</Link>
     </None>
   </ItemGroup>
   <PropertyGroup Label="Project">
