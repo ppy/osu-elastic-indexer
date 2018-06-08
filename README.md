@@ -1,27 +1,90 @@
-# osu!server [![dev chat](https://discordapp.com/api/guilds/188630481301012481/widget.png?style=shield)](https://discord.gg/ppy)
+# ElasticIndex
 
-Server-side components for [osu!](https://osu.ppy.sh).
+TODO: Readme
 
-For more detailed information see per-component READMEs.
+Component for loading [osu!](https://osu.ppy.sh) data into Elasticsearch.
+
+Currently limited to user high scores.
 
 # Requirements
 
-- A desktop platform that can compile .NET 4.7.1. We recommend using [Visual Studio Community Edition](https://www.visualstudio.com/) (Windows), [Visual Studio for Mac](https://www.visualstudio.com/vs/visual-studio-mac/) (macOS) or [MonoDevelop](http://www.monodevelop.com/download/) (Linux), all of which are free. [Visual Studio Code](https://code.visualstudio.com/) may also be used but requires further setup steps which are not covered here.
+- .NET Core 2.0
 
-# Getting Started
-- Clone the repository including submodules (`git clone --recurse-submodules https://github.com/ppy/osu-server`)
-- Build in your IDE of choice (recommended IDEs automatically restore nuget packages; if you are using an alternative make sure to `nuget restore`)
 
-# Contributing
+# Configuration
 
-Contributions can be made via pull requests to this repository. We hope to credit and reward larger contributions via a [bounty system](https://www.bountysource.com/teams/ppy). If you're unsure of what you can help with, check out the [list of open issues](https://github.com/ppy/osu-server/issues).
+The project reads configuration in the following order:
+- `appsettings.json`
+- `appsettings.{env}.json`
+- Environment
 
-Note that while we already have certain standards in place, nothing is set in stone. If you have an issue with the way code is structured; with any libraries we are using; with any processes involved with contributing, *please* bring it up. I welcome all feedback so we can make contributing to this project as pain-free as possible.
+where `{env}` is specified by the `APP_ENV` environment variable and defaults to `development`.
 
-# Licence
+# Available settings
 
-The osu! client code, framework, and server-side components are licensed under the [MIT licence](https://opensource.org/licenses/MIT). Please see [the licence file](LICENCE) for more information. [tl;dr](https://tldrlegal.com/license/mit-license) you can do whatever you want as long as you include the original copyright and license notice in any copy of the software/source.
+Settings should be set in `appsettings` or environment appropriate to the platform, e.g.
 
-Please note that this *does not cover* the usage of the "osu!" or "ppy" branding in any software, resources, advertising or promotion, as this is protected by trademark law.
+`appsettings.json`
+```json
+{
+  "elasticsearch": {
+    "host": "http://localhost:9200"
+  }
+}
+```
 
-Please also note that game resources are covered by a separate licence. Please see the [ppy/osu-resources](https://github.com/ppy/osu-resources) repository for clarifications.
+`Linux / MacOS`
+```sh
+# note the double underscore
+elasticsearch__host=http://localhost:9200 dotnet run
+```
+
+---
+
+## `ConnectionStrings:osu`
+Standard .NET Connection String to the database.
+
+
+## `elasticsearch:host`
+Elasticsearch host.
+
+
+## `elasticsearch:prefix`
+Assigns a prefix to the indices used.
+
+
+## `modes`
+Game modes to index in a comma separated list.
+Available modes are `"osu,fruits,mania,taiko"`.
+
+
+## `chunk_size`
+Batch size when querying from the database.
+Defaults to `10000`
+
+
+## `resume_from`
+Cursor value of where to resume reading from.
+
+
+## `watch`
+Sets the program into watch mode.
+In watch mode, the program will keep polling for updates to index.
+
+
+# Index aliasing and resume support
+Index aliases are used to support zero-downtime index switches.
+When creating new indices, the new index is suffixed with a timestamp.
+At the end of the indexing process, the alias is updated to point to the new index.
+
+The program keeps track of progress information by writing to a `_index_meta` index. When starting, it will try to resume from the last known position.
+
+Setting `resume_from=0` will force the indexer to being reading from the beginning.
+
+
+# TODO
+These items are considered important but not implemented yet:
+- Watching for new data.
+- Handle elasticsearch response errors.
+- Support writing metadata info to database.
+- Option to ignore existing index and create a new one.
