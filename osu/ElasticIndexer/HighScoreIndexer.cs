@@ -58,17 +58,18 @@ namespace osu.ElasticIndexer
             Console.WriteLine();
 
             var start = DateTime.Now;
-            var consumerTask = consumerLoop(index);
-            var producerTask = producerLoop(resumeFrom);
+            using (var consumerTask = consumerLoop(index))
+            using (var producerTask = producerLoop(resumeFrom))
+            {
+                producerTask.Wait();
+                endingTask().Wait();
+                consumerTask.Wait();
 
-            producerTask.Wait();
-            endingTask().Wait();
-            consumerTask.Wait();
-
-            var count = producerTask.Result;
-            var span = DateTime.Now - start;
-            Console.WriteLine($"{count} records took {span}");
-            if (count > 0) Console.WriteLine($"{count / span.TotalSeconds} records/s");
+                var count = producerTask.Result;
+                var span = DateTime.Now - start;
+                Console.WriteLine($"{count} records took {span}");
+                if (count > 0) Console.WriteLine($"{count / span.TotalSeconds} records/s");
+            }
 
             updateAlias(Name, index);
         }
