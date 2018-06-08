@@ -6,7 +6,7 @@ using System.Globalization;
 using System.Threading;
 using Dapper;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     public class Program
     {

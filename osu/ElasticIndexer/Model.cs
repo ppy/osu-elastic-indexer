@@ -9,7 +9,7 @@ using System.Reflection;
 using Dapper;
 using Dapper.Contrib.Extensions;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     [CursorColumn("id")]
     public abstract class Model

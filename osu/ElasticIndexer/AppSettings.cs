@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     public class AppSettings
     {

@@ -3,10 +3,10 @@
 
 using Dapper.Contrib.Extensions;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
-    [Table("osu_scores_high")]
-    public class HighScoreOsu : HighScore
+    [Table("osu_scores_taiko_high")]
+    public class HighScoreTaiko : HighScore
     {
     }
 }

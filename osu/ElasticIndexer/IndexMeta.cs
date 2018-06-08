@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Nest;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     [ElasticsearchType(Name = "index_meta", IdProperty = nameof(Index))]
     public class IndexMeta

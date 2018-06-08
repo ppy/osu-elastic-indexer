@@ -13,7 +13,7 @@ using Elasticsearch.Net;
 using MySql.Data.MySqlClient;
 using Nest;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     public class HighScoreIndexer<T> where T : Model
     {

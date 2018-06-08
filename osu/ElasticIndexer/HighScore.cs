@@ -7,7 +7,7 @@ using System.Linq;
 using Dapper.Contrib.Extensions;
 using Nest;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     [CursorColumn("score_id")]
     [ElasticsearchType(Name = "high_score", IdProperty = nameof(Id))]

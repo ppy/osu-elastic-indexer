@@ -3,7 +3,7 @@
 
 using Dapper.Contrib.Extensions;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     [Table("osu_scores_mania_high")]
     public class HighScoreMania : HighScore

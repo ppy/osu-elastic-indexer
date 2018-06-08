@@ -3,7 +3,7 @@
 
 using System;
 
-namespace ElasticIndex
+namespace osu.ElasticIndexer
 {
     /// <summary>
     /// Attributes which column to use as the cursor column.
