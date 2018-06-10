@@ -40,7 +40,7 @@ namespace osu.ElasticIndexer
                 Type indexerType = typeof(HighScoreIndexer<>)
                     .MakeGenericType(Type.GetType(className, true));
 
-                dynamic indexer = Activator.CreateInstance(indexerType);
+                var indexer = (IIndexer) Activator.CreateInstance(indexerType);
                 indexer.Suffix = suffix;
                 indexer.Name = indexName;
                 indexer.ResumeFrom = resumeFrom;

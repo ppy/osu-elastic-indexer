@@ -15,7 +15,7 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class HighScoreIndexer<T> where T : Model
+    public class HighScoreIndexer<T> : IIndexer where T : Model
     {
         public string Name { get; set; }
         public long? ResumeFrom { get; set; }
