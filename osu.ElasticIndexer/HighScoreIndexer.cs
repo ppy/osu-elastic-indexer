@@ -63,7 +63,7 @@ namespace osu.ElasticIndexer
             using (var producerTask = producerLoop(resumeFrom))
             {
                 producerTask.Wait();
-                endingTask().Wait();
+                endingTask();
                 consumerTask.Wait();
 
                 var count = producerTask.Result;
@@ -75,17 +75,17 @@ namespace osu.ElasticIndexer
             updateAlias(Name, index);
         }
 
-        private async Task endingTask()
+        private void endingTask()
         {
-            await Task.WhenAll(pendingTasks);
+            Task.WhenAll(pendingTasks).Wait();
             // Spin until queue and pendingTasks are empty.
             while (waitingCount > 0)
             {
                 var delayDuration = Math.Max(waitingCount, delay) * 100;
                 Console.WriteLine($@"Waiting for queues to empty...({defaultQueue.Count}) ({retryQueue.Count}) ({pendingTasks.Count}) delay for {delayDuration} ms");
 
-                await Task.Delay(delayDuration);
-                await Task.WhenAll(pendingTasks);
+                Task.Delay(delayDuration).Wait();
+                Task.WhenAll(pendingTasks).Wait();
             }
 
             retryQueue.CompleteAdding();
