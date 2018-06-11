@@ -21,8 +21,7 @@ namespace osu.ElasticIndexer
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
-        private readonly IDbConnection dbConnection;
-        private readonly ElasticClient elasticClient;
+        private static readonly ElasticClient elasticClient;
 
         private readonly ConcurrentBag<Task<IBulkResponse>> pendingTasks = new ConcurrentBag<Task<IBulkResponse>>();
 
@@ -36,15 +35,17 @@ namespace osu.ElasticIndexer
         // throttle control
         private int delay;
 
-        public HighScoreIndexer()
+        static HighScoreIndexer()
         {
-            queues = new [] { retryQueue, defaultQueue };
-
-            dbConnection = new MySqlConnection(AppSettings.ConnectionString);
             elasticClient = new ElasticClient
             (
                 new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
             );
+        }
+
+        public HighScoreIndexer()
+        {
+            queues = new [] { retryQueue, defaultQueue };
         }
 
         public void Run()
@@ -92,7 +93,7 @@ namespace osu.ElasticIndexer
 
         private Task consumerLoop(string index)
         {
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
             {
                 while (!defaultQueue.IsCompleted || !retryQueue.IsCompleted)
                 {
@@ -136,16 +137,16 @@ namespace osu.ElasticIndexer
 
                     if (delay > 0) Interlocked.Decrement(ref delay);
                 }
-            });
+            }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
         }
 
         private Task<long> producerLoop(long? resumeFrom)
         {
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
             {
                 long count = 0;
 
-                using (dbConnection)
+                using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
                 {
                     dbConnection.Open();
                     // TODO: retry needs to be added on timeout
@@ -161,7 +162,7 @@ namespace osu.ElasticIndexer
                 Console.WriteLine("Mark queue as completed.");
 
                 return count;
-            });
+            },TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
         }
 
         private void waitIfTooBusy()
