@@ -121,8 +121,8 @@ namespace osu.ElasticIndexer
                     task.ContinueWith(t =>
                     {
                         // wait until after any requeueing needs to be done before removing the task.
-                        handleResult(task.Result, chunk);
-                        pendingTasks.TryTake(out task);
+                        handleResult(t.Result, chunk);
+                        pendingTasks.TryTake(out t);
                     });
 
                     // TODO: Less blind-fire update.
