@@ -21,31 +21,29 @@ namespace osu.ElasticIndexer
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
-        private static readonly ElasticClient elasticClient;
+        // ElasticClient is thread-safe and should be shared per host.
+        private static readonly ElasticClient elasticClient = new ElasticClient
+        (
+            new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
+        );
 
         private readonly ConcurrentBag<Task<IBulkResponse>> pendingTasks = new ConcurrentBag<Task<IBulkResponse>>();
 
-        // Queues
-        private readonly BlockingCollection<List<T>> defaultQueue = new BlockingCollection<List<T>>(AppSettings.QueueSize);
-        private readonly BlockingCollection<List<T>> retryQueue = new BlockingCollection<List<T>>(AppSettings.QueueSize);
+        // BlockingCollection queues serve as a self-limiting read-ahead buffer to ensure
+        // there is always data ready to be dispatched to Elasticsearch. The separate queue buffer for
+        // retries allows retries to preempt the read buffer.
+        private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
+        private readonly BlockingCollection<List<T>> retryBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
         private readonly BlockingCollection<List<T>>[] queues;
 
-        private int waitingCount => pendingTasks.Count + defaultQueue.Count + retryQueue.Count;
-
-        // throttle control
+        // throttle control; Gracefully handles busy signals from the server
+        // by gruadually increasing the delay on busy signals,
+        // while decreasing  as dispatches complete.
         private int delay;
-
-        static HighScoreIndexer()
-        {
-            elasticClient = new ElasticClient
-            (
-                new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
-            );
-        }
 
         public HighScoreIndexer()
         {
-            queues = new [] { retryQueue, defaultQueue };
+            queues = new [] { retryBuffer, readBuffer };
         }
 
         public void Run()
@@ -59,14 +57,14 @@ namespace osu.ElasticIndexer
             Console.WriteLine();
 
             var start = DateTime.Now;
-            using (var consumerTask = consumerLoop(index))
-            using (var producerTask = producerLoop(resumeFrom))
+            using (var dispatcherTask = elasticsearchDispatcherTask(index))
+            using (var readerTask = databaseReaderTask(resumeFrom))
             {
-                producerTask.Wait();
-                endingTask();
-                consumerTask.Wait();
+                readerTask.Wait();
+                prepareToShutdown();
+                dispatcherTask.Wait();
 
-                var count = producerTask.Result;
+                var count = readerTask.Result;
                 var span = DateTime.Now - start;
                 Console.WriteLine($"{count} records took {span}");
                 if (count > 0) Console.WriteLine($"{count / span.TotalSeconds} records/s");
@@ -75,30 +73,51 @@ namespace osu.ElasticIndexer
             updateAlias(Name, index);
         }
 
-        private void endingTask()
-        {
-            Task.WhenAll(pendingTasks).Wait();
-            // Spin until queue and pendingTasks are empty.
-            while (waitingCount > 0)
-            {
-                var delayDuration = Math.Max(waitingCount, delay) * 100;
-                Console.WriteLine($@"Waiting for queues to empty...({defaultQueue.Count}) ({retryQueue.Count}) ({pendingTasks.Count}) delay for {delayDuration} ms");
-
-                Task.Delay(delayDuration).Wait();
-                Task.WhenAll(pendingTasks).Wait();
-            }
-
-            retryQueue.CompleteAdding();
-        }
-
-        private Task consumerLoop(string index)
+        /// <summary>
+        /// Self contained database reader task. Reads the database by cursoring through records
+        /// and adding chunks into readBuffer.
+        /// </summary>
+        /// <param name="resumeFrom">The cursor value to resume from;
+        /// use null to resume from the last known value.</param>
+        /// <returns>The database reader task.</returns>
+        private Task<long> databaseReaderTask(long? resumeFrom)
         {
             return Task.Factory.StartNew(() =>
             {
-                while (!defaultQueue.IsCompleted || !retryQueue.IsCompleted)
+                long count = 0;
+
+                using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
                 {
-                    if (delay > 0) Task.Delay(delay * 100).Wait();
-                    waitIfTooBusy();
+                    dbConnection.Open();
+                    // TODO: retry needs to be added on timeout
+                    var chunks = Model.Chunk<T>(dbConnection, AppSettings.ChunkSize, resumeFrom);
+                    foreach (var chunk in chunks)
+                    {
+                        readBuffer.Add(chunk);
+                        count += chunk.Count;
+                    }
+                }
+
+                readBuffer.CompleteAdding();
+                Console.WriteLine($"Finished reading database {count} records.");
+
+                return count;
+            }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
+        }
+
+        /// <summary>
+        /// Creates a task that loops and takes items from readBuffer until completion,
+        /// dispatching them to Elasticsearch for indexing.
+        /// </summary>
+        /// <param name="index">The name of the index to dispatch to.</param>
+        /// <returns>The dispatcher task.</returns>
+        private Task elasticsearchDispatcherTask(string index)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                while (!readBuffer.IsCompleted || !retryBuffer.IsCompleted)
+                {
+                    throttledWait();
 
                     List<T> chunk;
 
@@ -114,13 +133,11 @@ namespace osu.ElasticIndexer
                     }
 
                     var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
-
                     Task<IBulkResponse> task = elasticClient.BulkAsync(bulkDescriptor);
                     pendingTasks.Add(task);
 
                     task.ContinueWith(t =>
                     {
-                        // wait until after any requeueing needs to be done before removing the task.
                         handleResult(t.Result, chunk);
                         pendingTasks.TryTake(out t);
                     });
@@ -135,43 +152,49 @@ namespace osu.ElasticIndexer
                         UpdatedAt = DateTimeOffset.UtcNow
                     });
 
-                    if (delay > 0) Interlocked.Decrement(ref delay);
+                    unthrottle();
                 }
             }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
         }
 
-        private Task<long> producerLoop(long? resumeFrom)
+        private void handleResult(IBulkResponse response, List<T> chunk)
         {
-            return Task.Factory.StartNew(() =>
-            {
-                long count = 0;
+            if (response.ItemsWithErrors.All(item => item.Status != 429)) return;
 
-                using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-                {
-                    dbConnection.Open();
-                    // TODO: retry needs to be added on timeout
-                    var chunks = Model.Chunk<T>(dbConnection, AppSettings.ChunkSize, resumeFrom);
-                    foreach (var chunk in chunks)
-                    {
-                        defaultQueue.Add(chunk);
-                        count += chunk.Count;
-                    }
-                }
+            Interlocked.Increment(ref delay);
+            retryBuffer.Add(chunk);
 
-                defaultQueue.CompleteAdding();
-                Console.WriteLine("Mark queue as completed.");
-
-                return count;
-            },TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
+            Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
         }
 
-        private void waitIfTooBusy()
+        /// <summary>
+        /// Prepares the instance for stopping by waiting for buffers to drain.
+        /// </summary>
+        private void prepareToShutdown()
         {
+            Console.WriteLine($@"Draining buffers...");
+            while (pendingTasks.Count + readBuffer.Count + retryBuffer.Count > 0) {
+                Task.Delay(100).Wait();
+                Task.WhenAll(pendingTasks).Wait();
+            }
+
+            retryBuffer.CompleteAdding();
+        }
+
+        private void throttledWait()
+        {
+            if (delay > 0) Task.Delay(delay * 100).Wait();
+
             // too many pending responses, wait and let them be handled.
             if (pendingTasks.Count > AppSettings.QueueSize * 2) {
                 Console.WriteLine($"Too many pending responses ({pendingTasks.Count}), waiting...");
                 pendingTasks.FirstOrDefault()?.Wait();
             }
+        }
+
+        private void unthrottle()
+        {
+            if (delay > 0) Interlocked.Decrement(ref delay);
         }
 
         /// <summary>
@@ -217,16 +240,6 @@ namespace osu.ElasticIndexer
             return index;
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
-        }
-
-        private void handleResult(IBulkResponse response, List<T> chunk)
-        {
-            if (response.ItemsWithErrors.All(item => item.Status != 429)) return;
-
-            Interlocked.Increment(ref delay);
-            retryQueue.Add(chunk);
-
-            Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
         }
 
         private void updateAlias(string alias, string index)
