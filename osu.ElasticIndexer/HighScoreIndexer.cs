@@ -4,13 +4,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
-using MySql.Data.MySqlClient;
 using Nest;
 
 namespace osu.ElasticIndexer
@@ -86,16 +84,11 @@ namespace osu.ElasticIndexer
             {
                 long count = 0;
 
-                using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+                var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
+                foreach (var chunk in chunks)
                 {
-                    dbConnection.Open();
-                    // TODO: retry needs to be added on timeout
-                    var chunks = Model.Chunk<T>(dbConnection, AppSettings.ChunkSize, resumeFrom);
-                    foreach (var chunk in chunks)
-                    {
-                        readBuffer.Add(chunk);
-                        count += chunk.Count;
-                    }
+                    readBuffer.Add(chunk);
+                    count += chunk.Count;
                 }
 
                 readBuffer.CompleteAdding();
