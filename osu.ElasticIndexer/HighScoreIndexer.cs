@@ -4,13 +4,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
-using MySql.Data.MySqlClient;
 using Nest;
 
 namespace osu.ElasticIndexer
@@ -86,15 +85,25 @@ namespace osu.ElasticIndexer
             {
                 long count = 0;
 
-                using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+                while (true)
                 {
-                    dbConnection.Open();
-                    // TODO: retry needs to be added on timeout
-                    var chunks = Model.Chunk<T>(dbConnection, AppSettings.ChunkSize, resumeFrom);
-                    foreach (var chunk in chunks)
+                    try
                     {
-                        readBuffer.Add(chunk);
-                        count += chunk.Count;
+                        var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
+                        foreach (var chunk in chunks)
+                        {
+                            readBuffer.Add(chunk);
+                            count += chunk.Count;
+                            // update resumeFrom in this scope to allow resuming from connection errors.
+                            resumeFrom = chunk.Last().CursorValue;
+                        }
+
+                        break;
+                    }
+                    catch (DbException ex)
+                    {
+                        Console.Error.WriteLine(ex.Message);
+                        Task.Delay(1000).Wait();
                     }
                 }
 
