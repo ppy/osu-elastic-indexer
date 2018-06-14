@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -84,11 +85,26 @@ namespace osu.ElasticIndexer
             {
                 long count = 0;
 
-                var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
-                foreach (var chunk in chunks)
+                while (true)
                 {
-                    readBuffer.Add(chunk);
-                    count += chunk.Count;
+                    try
+                    {
+                        var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
+                        foreach (var chunk in chunks)
+                        {
+                            readBuffer.Add(chunk);
+                            count += chunk.Count;
+                            // update resumeFrom in this scope to allow resuming from connection errors.
+                            resumeFrom = chunk.Last().CursorValue;
+                        }
+
+                        break;
+                    }
+                    catch (DbException ex)
+                    {
+                        Console.Error.WriteLine(ex.Message);
+                        Task.Delay(1000).Wait();
+                    }
                 }
 
                 readBuffer.CompleteAdding();
