@@ -14,6 +14,8 @@ namespace osu.ElasticIndexer
         // TODO: readonly
         public static readonly IImmutableList<string> VALID_MODES = ImmutableList.Create("osu", "mania", "taiko", "fruits");
 
+        private static IConfigurationRoot config;
+
         private AppSettings()
         {
         }
@@ -21,12 +23,14 @@ namespace osu.ElasticIndexer
         static AppSettings()
         {
             var env = Environment.GetEnvironmentVariable("APP_ENV") ?? "development";
-            var config = new ConfigurationBuilder()
-                         .SetBasePath(Directory.GetCurrentDirectory())
-                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                         .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
-                         .AddEnvironmentVariables()
-                         .Build();
+            config = new ConfigurationBuilder()
+                     .SetBasePath(Directory.GetCurrentDirectory())
+                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                     .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
+                     .AddEnvironmentVariables()
+                     .Build();
+
+            IsNew = parseBool("new");
 
             ChunkSize = string.IsNullOrEmpty(config["chunk_size"])
                         ? 10000
@@ -40,7 +44,7 @@ namespace osu.ElasticIndexer
             if (!string.IsNullOrEmpty(config["resume_from"]))
                 ResumeFrom = long.Parse(config["resume_from"]);
 
-            IsWatching = new [] { "1", "true" }.Contains((config["watch"] ?? string.Empty).ToLowerInvariant());
+            IsWatching = parseBool("watch");
             PollingInterval = string.IsNullOrEmpty(config["polling_interval"])
                               ? 10000
                               : int.Parse(config["polling_interval"]);
@@ -62,6 +66,8 @@ namespace osu.ElasticIndexer
 
         public static string ElasticsearchPrefix { get; private set; }
 
+        public static bool IsNew { get; private set; }
+
         public static bool IsWatching { get; private set; }
 
         public static ImmutableArray<string> Modes { get; private set; }
@@ -73,5 +79,10 @@ namespace osu.ElasticIndexer
         public static int QueueSize { get; private set; } = 5;
 
         public static long? ResumeFrom { get; private set; }
+
+        private static bool parseBool(string key)
+        {
+            return new [] { "1", "true" }.Contains((config[key] ?? string.Empty).ToLowerInvariant());
+        }
     }
 }
