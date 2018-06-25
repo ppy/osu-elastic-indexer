@@ -276,7 +276,11 @@ namespace osu.ElasticIndexer
 
             Console.WriteLine(elasticClient.Alias(aliasDescriptor));
 
-            // TODO: cleanup unaliased indices.
+            foreach (var toDelete in oldIndices.Where(x => x != index))
+            {
+                Console.WriteLine($"Deleting {toDelete}");
+                elasticClient.DeleteIndex(toDelete);
+            }
         }
     }
 }
