@@ -22,30 +22,12 @@ namespace osu.ElasticIndexer
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
-        // ElasticClient is thread-safe and should be shared per host.
         private static readonly ElasticClient elasticClient = new ElasticClient
         (
             new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
         );
 
-        private readonly ConcurrentBag<Task<IBulkResponse>> pendingTasks = new ConcurrentBag<Task<IBulkResponse>>();
-
-        // BlockingCollection queues serve as a self-limiting read-ahead buffer to ensure
-        // there is always data ready to be dispatched to Elasticsearch. The separate queue buffer for
-        // retries allows retries to preempt the read buffer.
-        private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
-        private readonly BlockingCollection<List<T>> retryBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
-        private readonly BlockingCollection<List<T>>[] queues;
-
-        // throttle control; Gracefully handles busy signals from the server
-        // by gruadually increasing the delay on busy signals,
-        // while decreasing  as dispatches complete.
-        private int delay;
-
-        public HighScoreIndexer()
-        {
-            queues = new [] { retryBuffer, readBuffer };
-        }
+        private BulkIndexingDispatcher<T> dispatcher;
 
         public void Run()
         {
@@ -64,11 +46,15 @@ namespace osu.ElasticIndexer
                 StartedAt = DateTime.Now
             };
 
-            using (var dispatcherTask = elasticsearchDispatcherTask(index))
+            dispatcher = new BulkIndexingDispatcher<T>(
+                alias: Name,
+                index: index
+            );
+            using (var dispatcherTask = dispatcher.Start())
             using (var readerTask = databaseReaderTask(resumeFrom))
             {
                 readerTask.Wait();
-                prepareToShutdown();
+                dispatcher.prepareToShutdown();
                 dispatcherTask.Wait();
 
                 indexCompletedArgs.Count = readerTask.Result;
@@ -99,7 +85,7 @@ namespace osu.ElasticIndexer
                         var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
                         foreach (var chunk in chunks)
                         {
-                            readBuffer.Add(chunk);
+                            dispatcher.Enqueue(chunk);
                             count += chunk.Count;
                             // update resumeFrom in this scope to allow resuming from connection errors.
                             resumeFrom = chunk.Last().CursorValue;
@@ -114,103 +100,11 @@ namespace osu.ElasticIndexer
                     }
                 }
 
-                readBuffer.CompleteAdding();
+                dispatcher.EnqueueEnd();
                 Console.WriteLine($"Finished reading database {count} records.");
 
                 return count;
             }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
-        }
-
-        /// <summary>
-        /// Creates a task that loops and takes items from readBuffer until completion,
-        /// dispatching them to Elasticsearch for indexing.
-        /// </summary>
-        /// <param name="index">The name of the index to dispatch to.</param>
-        /// <returns>The dispatcher task.</returns>
-        private Task elasticsearchDispatcherTask(string index)
-        {
-            return Task.Factory.StartNew(() =>
-            {
-                while (!readBuffer.IsCompleted || !retryBuffer.IsCompleted)
-                {
-                    throttledWait();
-
-                    List<T> chunk;
-
-                    try
-                    {
-                        BlockingCollection<List<T>>.TakeFromAny(queues, out chunk);
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        // queue was marked as completed while blocked.
-                        Console.WriteLine(ex.Message);
-                        continue;
-                    }
-
-                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
-                    Task<IBulkResponse> task = elasticClient.BulkAsync(bulkDescriptor);
-                    pendingTasks.Add(task);
-
-                    task.ContinueWith(t =>
-                    {
-                        handleResult(t.Result, chunk);
-                        pendingTasks.TryTake(out t);
-                    });
-
-                    // TODO: Less blind-fire update.
-                    // I feel like this is in the wrong place...
-                    IndexMeta.Update(new IndexMeta
-                    {
-                        Index = index,
-                        Alias = Name,
-                        LastId = chunk.Last().CursorValue,
-                        UpdatedAt = DateTimeOffset.UtcNow
-                    });
-
-                    unthrottle();
-                }
-            }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
-        }
-
-        private void handleResult(IBulkResponse response, List<T> chunk)
-        {
-            if (response.ItemsWithErrors.All(item => item.Status != 429)) return;
-
-            Interlocked.Increment(ref delay);
-            retryBuffer.Add(chunk);
-
-            Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
-        }
-
-        /// <summary>
-        /// Prepares the instance for stopping by waiting for buffers to drain.
-        /// </summary>
-        private void prepareToShutdown()
-        {
-            Console.WriteLine($@"Draining buffers...");
-            while (pendingTasks.Count + readBuffer.Count + retryBuffer.Count > 0) {
-                Task.Delay(100).Wait();
-                Task.WhenAll(pendingTasks).Wait();
-            }
-
-            retryBuffer.CompleteAdding();
-        }
-
-        private void throttledWait()
-        {
-            if (delay > 0) Task.Delay(delay * 100).Wait();
-
-            // too many pending responses, wait and let them be handled.
-            if (pendingTasks.Count > AppSettings.QueueSize * 2) {
-                Console.WriteLine($"Too many pending responses ({pendingTasks.Count}), waiting...");
-                pendingTasks.FirstOrDefault()?.Wait();
-            }
-        }
-
-        private void unthrottle()
-        {
-            if (delay > 0) Interlocked.Decrement(ref delay);
         }
 
         /// <summary>
