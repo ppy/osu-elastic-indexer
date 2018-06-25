@@ -7,6 +7,8 @@ namespace osu.ElasticIndexer
 {
     interface IIndexer
     {
+        event EventHandler<IndexCompletedArgs> IndexCompleted;
+
         string Name { get; set; }
         long? ResumeFrom { get; set; }
         string Suffix { get; set; }

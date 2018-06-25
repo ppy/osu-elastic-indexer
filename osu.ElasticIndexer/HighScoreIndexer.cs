@@ -16,6 +16,8 @@ namespace osu.ElasticIndexer
 {
     public class HighScoreIndexer<T> : IIndexer where T : Model
     {
+        public event EventHandler<IndexCompletedArgs> IndexCompleted;
+
         public string Name { get; set; }
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
@@ -55,7 +57,13 @@ namespace osu.ElasticIndexer
             Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
             Console.WriteLine();
 
-            var start = DateTime.Now;
+            var indexCompletedArgs = new IndexCompletedArgs
+            {
+                Alias = Name,
+                Index = index,
+                StartedAt = DateTime.Now
+            };
+
             using (var dispatcherTask = elasticsearchDispatcherTask(index))
             using (var readerTask = databaseReaderTask(resumeFrom))
             {
@@ -63,13 +71,12 @@ namespace osu.ElasticIndexer
                 prepareToShutdown();
                 dispatcherTask.Wait();
 
-                var count = readerTask.Result;
-                var span = DateTime.Now - start;
-                Console.WriteLine($"{count} records took {span}");
-                if (count > 0) Console.WriteLine($"{count / span.TotalSeconds} records/s");
+                indexCompletedArgs.Count = readerTask.Result;
+                indexCompletedArgs.CompletedAt = DateTime.Now;
             }
 
             updateAlias(Name, index);
+            IndexCompleted(this, indexCompletedArgs);
         }
 
         /// <summary>
