@@ -225,22 +225,26 @@ namespace osu.ElasticIndexer
             Console.WriteLine($"Find or create index for `{name}`...");
             var metas = IndexMeta.GetByAlias(name).ToList();
             var indices = elasticClient.GetIndicesPointingToAlias(name);
+            string index;
 
-            string index = metas.FirstOrDefault(m => indices.Contains(m.Index))?.Index;
-            // 3 cases are handled:
-            // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
-            if (index != null)
+            if (!AppSettings.IsNew)
             {
-                Console.WriteLine($"Found matching aliased index `{index}`.");
-                return index;
-            }
+                index = metas.FirstOrDefault(m => indices.Contains(m.Index))?.Index;
+                // 3 cases are handled:
+                // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
+                if (index != null)
+                {
+                    Console.WriteLine($"Found matching aliased index `{index}`.");
+                    return index;
+                }
 
-            // 2. Index has not been aliased and has tracking information; likely resuming from an imcomplete job.
-            index = metas.FirstOrDefault()?.Index;
-            if (index != null)
-            {
-                Console.WriteLine($"Found previous index `{index}`.");
-                return index;
+                // 2. Index has not been aliased and has tracking information; likely resuming from an imcomplete job.
+                index = metas.FirstOrDefault()?.Index;
+                if (index != null)
+                {
+                    Console.WriteLine($"Found previous index `{index}`.");
+                    return index;
+                }
             }
 
             // 3. Not aliased and no tracking information; likely starting from scratch
