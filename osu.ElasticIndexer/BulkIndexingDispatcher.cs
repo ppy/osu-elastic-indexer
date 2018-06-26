@@ -61,18 +61,8 @@ namespace osu.ElasticIndexer
                 {
                     throttledWait();
 
-                    List<T> chunk;
-
-                    try
-                    {
-                        BlockingCollection<List<T>>.TakeFromAny(queues, out chunk);
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        // queue was marked as completed while blocked.
-                        Console.WriteLine(ex.Message);
-                        continue;
-                    }
+                    List<T> chunk = getNextChunk();
+                    if (chunk == null) continue;
 
                     var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
                     Task<IBulkResponse> task = elasticClient.BulkAsync(bulkDescriptor);
@@ -116,6 +106,23 @@ namespace osu.ElasticIndexer
             }
 
             retryBuffer.CompleteAdding();
+        }
+
+        private List<T> getNextChunk()
+        {
+            List<T> chunk = null;
+
+            try
+            {
+                BlockingCollection<List<T>>.TakeFromAny(queues, out chunk);
+            }
+            catch (ArgumentException ex)
+            {
+                // queue was marked as completed while blocked.
+                Console.WriteLine(ex.Message);
+            }
+
+            return chunk;
         }
 
         private bool handleResult(IBulkResponse response, List<T> chunk)
