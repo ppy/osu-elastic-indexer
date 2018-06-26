@@ -18,9 +18,16 @@ namespace osu.ElasticIndexer
         );
 
 
+        /// <summary>
+        /// The actual name of the index.
+        /// </summary>
         [Text(Name = "index")]
         public string Index { get; set; }
 
+        /// <summary>
+        /// The intended alias for the index.
+        /// This is used to store the alias that the index should be set to on completion.
+        /// </summary>
         [Text(Name = "alias")]
         public string Alias { get; set; }
 
@@ -38,9 +45,7 @@ namespace osu.ElasticIndexer
         public static IndexMeta GetByName(string name)
         {
             var response = client.Search<IndexMeta>(s => s
-                .Query(q => q
-                    .Ids(d => d.Values(name))
-                )
+                .Query(q => q.Ids(d => d.Values(name)))
             );
 
             return response.Documents.FirstOrDefault();
@@ -49,9 +54,8 @@ namespace osu.ElasticIndexer
         public static IEnumerable<IndexMeta> GetByAlias(string name)
         {
             var response = client.Search<IndexMeta>(s => s
-                .Query(q => q
-                    .Term(d => d.Alias, name)
-                )
+                .Query(q => q.Term(d => d.Alias, name))
+                .Sort(sort => sort.Descending(p => p.UpdatedAt))
             );
 
             return response.Documents;

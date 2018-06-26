@@ -31,7 +31,7 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
-            var index = findOrCreateIndex(Name);
+            var (alias, index) = findOrCreateIndex(Name);
             // find out if we should be resuming
             var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId;
 
@@ -111,25 +111,27 @@ namespace osu.ElasticIndexer
         /// Attemps to find the matching index or creates a new one.
         /// </summary>
         /// <param name="name">Name of the alias to find the matching index for.</param>
-        /// <returns>Name of index found or created.</returns>
-        private string findOrCreateIndex(string name)
+        /// <returns>Name of index found or created and any existing alias.</returns>
+        private (string alias, string index) findOrCreateIndex(string name)
         {
             Console.WriteLine();
             Console.WriteLine();
             Console.WriteLine($"Find or create index for `{name}`...");
             var metas = IndexMeta.GetByAlias(name).ToList();
-            var indices = elasticClient.GetIndicesPointingToAlias(name);
+            var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
             string index;
 
             if (!AppSettings.IsNew)
             {
-                index = metas.FirstOrDefault(m => indices.Contains(m.Index))?.Index;
+                // TODO: query ES that the index actually exists.
+
+                index = metas.FirstOrDefault(m => aliasedIndices.Contains(m.Index))?.Index;
                 // 3 cases are handled:
                 // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
                 if (index != null)
                 {
                     Console.WriteLine($"Found matching aliased index `{index}`.");
-                    return index;
+                    return (name, index);
                 }
 
                 // 2. Index has not been aliased and has tracking information; likely resuming from an imcomplete job.
@@ -137,7 +139,7 @@ namespace osu.ElasticIndexer
                 if (index != null)
                 {
                     Console.WriteLine($"Found previous index `{index}`.");
-                    return index;
+                    return (null, index);
                 }
             }
 
@@ -151,7 +153,7 @@ namespace osu.ElasticIndexer
             var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
             elasticClient.LowLevel.IndicesCreate<DynamicResponse>(index, json);
 
-            return index;
+            return (null, index);
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
