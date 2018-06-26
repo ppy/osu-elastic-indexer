@@ -22,14 +22,10 @@ namespace osu.ElasticIndexer
             new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
         );
 
-        private readonly ConcurrentBag<Task<IBulkResponse>> pendingTasks = new ConcurrentBag<Task<IBulkResponse>>();
-
         // BlockingCollection queues serve as a self-limiting read-ahead buffer to ensure
         // there is always data ready to be dispatched to Elasticsearch. The separate queue buffer for
         // retries allows retries to preempt the read buffer.
         private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
-        private readonly BlockingCollection<List<T>> retryBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
-        private readonly BlockingCollection<List<T>>[] queues;
 
         // throttle control; Gracefully handles busy signals from the server
         // by gruadually increasing the delay on busy signals,
@@ -43,7 +39,6 @@ namespace osu.ElasticIndexer
         {
             this.alias = alias;
             this.index = index;
-            queues = new [] { retryBuffer, readBuffer };
         }
 
         internal void Enqueue(List<T> list) => readBuffer.Add(list);
@@ -116,12 +111,6 @@ namespace osu.ElasticIndexer
         private void throttledWait()
         {
             if (delay > 0) Task.Delay(delay * 100).Wait();
-
-            // too many pending responses, wait and let them be handled.
-            if (pendingTasks.Count > AppSettings.QueueSize * 2) {
-                Console.WriteLine($"Too many pending responses ({pendingTasks.Count}), waiting...");
-                pendingTasks.FirstOrDefault()?.Wait();
-            }
         }
 
         /// <summary>
