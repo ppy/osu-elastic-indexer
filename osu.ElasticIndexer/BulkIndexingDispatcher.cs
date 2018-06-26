@@ -80,8 +80,13 @@ namespace osu.ElasticIndexer
 
                     task.ContinueWith(t =>
                     {
-                        handleResult(t.Result, chunk);
+                        var result = handleResult(t.Result, chunk);
                         pendingTasks.TryTake(out t);
+
+                        if (!result) {
+                            readBuffer.CompleteAdding();
+                            retryBuffer.CompleteAdding();
+                        }
                     });
 
                     // TODO: Less blind-fire update.
@@ -113,14 +118,24 @@ namespace osu.ElasticIndexer
             retryBuffer.CompleteAdding();
         }
 
-        private void handleResult(IBulkResponse response, List<T> chunk)
+        private bool handleResult(IBulkResponse response, List<T> chunk)
         {
-            if (response.ItemsWithErrors.All(item => item.Status != 429)) return;
+            // Elasticsearch bulk thread pool is full.
+            if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
+            {
+                Interlocked.Increment(ref delay);
+                retryBuffer.Add(chunk);
 
-            Interlocked.Increment(ref delay);
-            retryBuffer.Add(chunk);
+                Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
+                return true;
+            }
 
-            Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
+            // Index was closed, possibly because it was switched. Flag for bailout.
+            if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
+                Console.Error.WriteLine($"{index} was closed.");
+
+            // TODO: other errors should do some kind of notification.
+            return false;
         }
 
         /// <summary>

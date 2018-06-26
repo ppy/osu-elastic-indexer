@@ -51,19 +51,25 @@ namespace osu.ElasticIndexer
                 index: index
             );
 
-            using (var dispatcherTask = dispatcher.Start())
-            using (var readerTask = databaseReaderTask(resumeFrom))
+            try
             {
+                var dispatcherTask = dispatcher.Start();
+                var readerTask = databaseReaderTask(resumeFrom);
                 readerTask.Wait();
                 dispatcher.prepareToShutdown();
                 dispatcherTask.Wait();
 
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;
-            }
 
-            updateAlias(Name, index);
-            IndexCompleted(this, indexCompletedArgs);
+                updateAlias(Name, index);
+                IndexCompleted(this, indexCompletedArgs);
+            }
+            catch (AggregateException ex)
+            {
+                // queue was marked as completed while blocked.
+                Console.WriteLine(ex.Message);
+            }
         }
 
         /// <summary>
