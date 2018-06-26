@@ -50,6 +50,7 @@ namespace osu.ElasticIndexer
                 alias: Name,
                 index: index
             );
+
             using (var dispatcherTask = dispatcher.Start())
             using (var readerTask = databaseReaderTask(resumeFrom))
             {
@@ -158,7 +159,7 @@ namespace osu.ElasticIndexer
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
-        private void updateAlias(string alias, string index)
+        private void updateAlias(string alias, string index, bool close = true)
         {
             Console.WriteLine($"Updating `{alias}` alias to `{index}`...");
 
@@ -172,10 +173,12 @@ namespace osu.ElasticIndexer
 
             Console.WriteLine(elasticClient.Alias(aliasDescriptor));
 
-            foreach (var toDelete in oldIndices.Where(x => x != index))
+            // cleanup
+            if (!close) return;
+            foreach (var toClose in oldIndices.Where(x => x != index))
             {
-                Console.WriteLine($"Deleting {toDelete}");
-                elasticClient.DeleteIndex(toDelete);
+                Console.WriteLine($"Closing {toClose}");
+                elasticClient.CloseIndex(toClose);
             }
         }
     }
