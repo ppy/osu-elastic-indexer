@@ -23,13 +23,10 @@ namespace osu.ElasticIndexer
         );
 
         // BlockingCollection queues serve as a self-limiting read-ahead buffer to ensure
-        // there is always data ready to be dispatched to Elasticsearch. The separate queue buffer for
-        // retries allows retries to preempt the read buffer.
+        // there is always data ready to be dispatched to Elasticsearch.
         private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
 
-        // throttle control; Gracefully handles busy signals from the server
-        // by gruadually increasing the delay on busy signals,
-        // while decreasing  as dispatches complete.
+        // throttle control for adding delay on backpressure from the server.
         private int delay;
 
         private string alias;
@@ -45,10 +42,8 @@ namespace osu.ElasticIndexer
         internal void EnqueueEnd() => readBuffer.CompleteAdding();
 
         /// <summary>
-        /// Creates a task that loops and takes items from readBuffer until completion,
-        /// dispatching them to Elasticsearch for indexing.
-        /// <returns>The dispatcher task.</returns>
-        // internal Task Start()
+        /// Reads a buffer and dispatches bulk index requests to Elasticsearch until the buffer
+        /// is marked as complete.
         internal void Run()
         {
             // custom partitioner and options to prevent Parallel.ForEach from going out of control.
