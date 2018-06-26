@@ -53,59 +53,53 @@ namespace osu.ElasticIndexer
         /// Creates a task that loops and takes items from readBuffer until completion,
         /// dispatching them to Elasticsearch for indexing.
         /// <returns>The dispatcher task.</returns>
-        internal Task Start()
+        // internal Task Start()
+        internal async Task Run()
         {
-            return Task.Factory.StartNew(() =>
+            foreach (var chunk in readBuffer.GetConsumingEnumerable())
             {
-                while (!readBuffer.IsCompleted || !retryBuffer.IsCompleted)
+                throttledWait();
+                await dispatch(chunk, index);
+
+                // TODO: Less blind-fire update.
+                // I feel like this is in the wrong place...
+                IndexMeta.Update(new IndexMeta
                 {
-                    throttledWait();
+                    Index = index,
+                    Alias = alias,
+                    LastId = chunk.Last().CursorValue,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
 
-                    List<T> chunk = getNextChunk();
-                    if (chunk == null) continue;
-
-                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
-                    Task<IBulkResponse> task = elasticClient.BulkAsync(bulkDescriptor);
-                    pendingTasks.Add(task);
-
-                    task.ContinueWith(t =>
-                    {
-                        var result = handleResult(t.Result, chunk);
-                        pendingTasks.TryTake(out t);
-
-                        if (!result) {
-                            readBuffer.CompleteAdding();
-                            retryBuffer.CompleteAdding();
-                        }
-                    });
-
-                    // TODO: Less blind-fire update.
-                    // I feel like this is in the wrong place...
-                    IndexMeta.Update(new IndexMeta
-                    {
-                        Index = index,
-                        Alias = alias,
-                        LastId = chunk.Last().CursorValue,
-                        UpdatedAt = DateTimeOffset.UtcNow
-                    });
-
-                    unthrottle();
-                }
-            }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
+                unthrottle();
+            }
         }
 
-        /// <summary>
-        /// Prepares the instance for stopping by waiting for buffers to drain.
-        /// </summary>
-        internal void prepareToShutdown()
+        private async Task<DynamicResponse> dispatch(List<T> chunk, string index)
         {
-            Console.WriteLine($@"Draining buffers...");
-            while (pendingTasks.Count + readBuffer.Count + retryBuffer.Count > 0) {
-                Task.Delay(100).Wait();
-                Task.WhenAll(pendingTasks).Wait();
+            var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
+            var response = await elasticClient.BulkAsync(bulkDescriptor);
+
+            // Elasticsearch bulk thread pool is full.
+            if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
+            {
+                Interlocked.Increment(ref delay);
+
+                Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
+                // TODO: only retry items with errors?
+                return await dispatch(chunk, index);
             }
 
-            retryBuffer.CompleteAdding();
+            // Index was closed, possibly because it was switched. Flag for bailout.
+            if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
+            {
+                Console.Error.WriteLine($"{index} was closed.");
+                readBuffer.CompleteAdding();
+            }
+
+            // TODO: other errors should do some kind of notification.
+
+            return new DynamicResponse();
         }
 
         private List<T> getNextChunk()
@@ -123,26 +117,6 @@ namespace osu.ElasticIndexer
             }
 
             return chunk;
-        }
-
-        private bool handleResult(IBulkResponse response, List<T> chunk)
-        {
-            // Elasticsearch bulk thread pool is full.
-            if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
-            {
-                Interlocked.Increment(ref delay);
-                retryBuffer.Add(chunk);
-
-                Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
-                return true;
-            }
-
-            // Index was closed, possibly because it was switched. Flag for bailout.
-            if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
-                Console.Error.WriteLine($"{index} was closed.");
-
-            // TODO: other errors should do some kind of notification.
-            return false;
         }
 
         /// <summary>

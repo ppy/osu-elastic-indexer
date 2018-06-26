@@ -53,11 +53,9 @@ namespace osu.ElasticIndexer
 
             try
             {
-                var dispatcherTask = dispatcher.Start();
                 var readerTask = databaseReaderTask(resumeFrom);
+                dispatcher.Run();
                 readerTask.Wait();
-                dispatcher.prepareToShutdown();
-                dispatcherTask.Wait();
 
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;
