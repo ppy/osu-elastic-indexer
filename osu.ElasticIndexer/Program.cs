@@ -41,6 +41,12 @@ namespace osu.ElasticIndexer
                     .MakeGenericType(Type.GetType(className, true));
 
                 var indexer = (IIndexer) Activator.CreateInstance(indexerType);
+                indexer.IndexCompleted += (sender, args) =>
+                {
+                    Console.WriteLine($"{args.Count} records took {args.TimeTaken}");
+                    if (args.Count > 0) Console.WriteLine($"{args.Count / args.TimeTaken.TotalSeconds} records/s");
+                };
+
                 indexer.Suffix = suffix;
                 indexer.Name = indexName;
                 indexer.ResumeFrom = resumeFrom;
