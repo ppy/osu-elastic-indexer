@@ -4,12 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elasticsearch.Net;
 using Nest;
 
 namespace osu.ElasticIndexer
@@ -29,8 +26,8 @@ namespace osu.ElasticIndexer
         // throttle control for adding delay on backpressure from the server.
         private int delay;
 
-        private string alias;
-        private string index;
+        private readonly string alias;
+        private readonly string index;
 
         internal BulkIndexingDispatcher(string alias, string index)
         {
@@ -44,6 +41,7 @@ namespace osu.ElasticIndexer
         /// <summary>
         /// Reads a buffer and dispatches bulk index requests to Elasticsearch until the buffer
         /// is marked as complete.
+        /// </summary>
         internal void Run()
         {
             // custom partitioner and options to prevent Parallel.ForEach from going out of control.

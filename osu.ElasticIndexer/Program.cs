@@ -34,8 +34,7 @@ namespace osu.ElasticIndexer
             foreach (var mode in AppSettings.Modes)
             {
                 var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
-                var upcase = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode);
-                var className = $"{typeof(HighScore).Namespace}.HighScore{upcase}";
+                var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
 
                 Type indexerType = typeof(HighScoreIndexer<>)
                     .MakeGenericType(Type.GetType(className, true));

@@ -14,7 +14,7 @@ namespace osu.ElasticIndexer
         // TODO: readonly
         public static readonly IImmutableList<string> VALID_MODES = ImmutableList.Create("osu", "mania", "taiko", "fruits");
 
-        private static IConfigurationRoot config;
+        private static readonly IConfigurationRoot config;
 
         private AppSettings()
         {

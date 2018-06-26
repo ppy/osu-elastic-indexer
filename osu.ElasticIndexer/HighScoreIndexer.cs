@@ -2,12 +2,9 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-elastic-indexer/master/LICENCE
 
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
@@ -16,7 +13,7 @@ namespace osu.ElasticIndexer
 {
     public class HighScoreIndexer<T> : IIndexer where T : Model
     {
-        public event EventHandler<IndexCompletedArgs> IndexCompleted;
+        public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate {};
 
         public string Name { get; set; }
         public long? ResumeFrom { get; set; }
