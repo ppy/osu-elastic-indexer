@@ -54,12 +54,20 @@ namespace osu.ElasticIndexer
         /// dispatching them to Elasticsearch for indexing.
         /// <returns>The dispatcher task.</returns>
         // internal Task Start()
-        internal async Task Run()
+        internal void Run()
         {
-            foreach (var chunk in readBuffer.GetConsumingEnumerable())
+            // custom partitioner and options to prevent Parallel.ForEach from going out of control.
+            var partitioner = Partitioner.Create(
+                readBuffer.GetConsumingEnumerable(),
+                EnumerablePartitionerOptions.NoBuffering // buffering causes spastic behaviour.
+            );
+
+            var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+
+            Parallel.ForEach(partitioner, options, (chunk) =>
             {
                 throttledWait();
-                await dispatch(chunk, index);
+                dispatch(chunk, index).Wait();
 
                 // TODO: Less blind-fire update.
                 // I feel like this is in the wrong place...
@@ -72,7 +80,7 @@ namespace osu.ElasticIndexer
                 });
 
                 unthrottle();
-            }
+            });
         }
 
         private async Task<DynamicResponse> dispatch(List<T> chunk, string index)
@@ -100,23 +108,6 @@ namespace osu.ElasticIndexer
             // TODO: other errors should do some kind of notification.
 
             return new DynamicResponse();
-        }
-
-        private List<T> getNextChunk()
-        {
-            List<T> chunk = null;
-
-            try
-            {
-                BlockingCollection<List<T>>.TakeFromAny(queues, out chunk);
-            }
-            catch (ArgumentException ex)
-            {
-                // queue was marked as completed while blocked.
-                Console.WriteLine(ex.Message);
-            }
-
-            return chunk;
         }
 
         /// <summary>
