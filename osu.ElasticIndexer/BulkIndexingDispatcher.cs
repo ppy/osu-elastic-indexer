@@ -67,7 +67,12 @@ namespace osu.ElasticIndexer
             Parallel.ForEach(partitioner, options, (chunk) =>
             {
                 throttledWait();
-                dispatch(chunk, index).Wait();
+                while (true)
+                {
+                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
+                    var response = elasticClient.Bulk(bulkDescriptor);
+                    if (!retryOnResponse(response, chunk)) break;
+                }
 
                 // TODO: Less blind-fire update.
                 // I feel like this is in the wrong place...
@@ -83,19 +88,14 @@ namespace osu.ElasticIndexer
             });
         }
 
-        private async Task<DynamicResponse> dispatch(List<T> chunk, string index)
+        private bool retryOnResponse(IBulkResponse response, List<T> chunk)
         {
-            var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
-            var response = await elasticClient.BulkAsync(bulkDescriptor);
-
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
                 Interlocked.Increment(ref delay);
-
                 Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
-                // TODO: only retry items with errors?
-                return await dispatch(chunk, index);
+                return true;
             }
 
             // Index was closed, possibly because it was switched. Flag for bailout.
@@ -103,11 +103,11 @@ namespace osu.ElasticIndexer
             {
                 Console.Error.WriteLine($"{index} was closed.");
                 readBuffer.CompleteAdding();
+                return false;
             }
 
             // TODO: other errors should do some kind of notification.
-
-            return new DynamicResponse();
+            return false;
         }
 
         /// <summary>
