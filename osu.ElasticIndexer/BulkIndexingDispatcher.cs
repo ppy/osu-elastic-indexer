@@ -61,36 +61,43 @@ namespace osu.ElasticIndexer
 
             Parallel.ForEach(partitioner, options, (chunk) =>
             {
-                throttledWait();
-                while (true)
+                bool retry = true;
+                bool success = false;
+
+                while (retry)
                 {
+                    throttledWait();
+
                     var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
                     var response = elasticClient.Bulk(bulkDescriptor);
-                    if (!retryOnResponse(response, chunk)) break;
+                    (success, retry) = retryOnResponse(response, chunk);
+
+                    unthrottle();
+                    if (!retry) break;
                 }
 
-                // TODO: Less blind-fire update.
-                // I feel like this is in the wrong place...
-                IndexMeta.Update(new IndexMeta
+                if (success)
                 {
-                    Index = index,
-                    Alias = alias,
-                    LastId = chunk.Last().CursorValue,
-                    UpdatedAt = DateTimeOffset.UtcNow
-                });
-
-                unthrottle();
+                    // TODO: should probably aggregate responses and update to highest successful.
+                    IndexMeta.Update(new IndexMeta
+                    {
+                        Index = index,
+                        Alias = alias,
+                        LastId = chunk.Last().CursorValue,
+                        UpdatedAt = DateTimeOffset.UtcNow
+                    });
+                }
             });
         }
 
-        private bool retryOnResponse(IBulkResponse response, List<T> chunk)
+        private (bool success, bool retry) retryOnResponse(IBulkResponse response, List<T> chunk)
         {
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
                 Interlocked.Increment(ref delay);
                 Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
-                return true;
+                return (success: false, retry: true);
             }
 
             // Index was closed, possibly because it was switched. Flag for bailout.
@@ -98,11 +105,11 @@ namespace osu.ElasticIndexer
             {
                 Console.Error.WriteLine($"{index} was closed.");
                 readBuffer.CompleteAdding();
-                return false;
+                return (success: false, retry: false);
             }
 
             // TODO: other errors should do some kind of notification.
-            return false;
+            return (success: true, retry: false);
         }
 
         /// <summary>
