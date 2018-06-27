@@ -23,9 +23,6 @@ namespace osu.ElasticIndexer
         // there is always data ready to be dispatched to Elasticsearch.
         private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
 
-        // throttle control for adding delay on backpressure from the server.
-        private int delay;
-
         private readonly string alias;
         private readonly string index;
 
@@ -86,7 +83,6 @@ namespace osu.ElasticIndexer
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Interlocked.Increment(ref delay);
                 Console.WriteLine($"Server returned 429, requeued chunk with lastId {chunk.Last().CursorValue}");
                 return (success: false, retry: true);
             }
