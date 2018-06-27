@@ -65,8 +65,11 @@ namespace osu.ElasticIndexer
                     var response = elasticClient.Bulk(bulkDescriptor);
                     (success, retry) = retryOnResponse(response, chunk);
 
-                    unthrottle();
-                    if (!retry) break;
+                    if (!retry)
+                    {
+                        unthrottle();
+                        break;
+                    }
                 }
 
                 if (success)
@@ -110,7 +113,7 @@ namespace osu.ElasticIndexer
         /// </summary>
         private void throttledWait()
         {
-            if (delay > 0) Task.Delay(delay * 100).Wait();
+            if (delay > 0) Task.Delay(delay * 1000).Wait();
         }
 
         /// <summary>
