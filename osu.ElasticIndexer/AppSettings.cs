@@ -30,17 +30,11 @@ namespace osu.ElasticIndexer
                      .AddEnvironmentVariables()
                      .Build();
 
-            Concurrency = string.IsNullOrEmpty(config["concurrency"])
-                          ? 4
-                          : int.Parse(config["concurrency"]);
+            if (!string.IsNullOrEmpty(config["concurrency"]))
+                Concurrency = int.Parse(config["concurrency"]);
 
-            IsNew = parseBool("new");
-
-            ChunkSize = string.IsNullOrEmpty(config["chunk_size"])
-                        ? 10000
-                        : int.Parse(config["chunk_size"]);
-
-            ConnectionString = config.GetConnectionString("osu");
+            if (!string.IsNullOrEmpty(config["chunk_size"]))
+                ChunkSize = int.Parse(config["chunk_size"]);
 
             if (!string.IsNullOrEmpty(config["queue_size"]))
                 QueueSize = int.Parse(config["queue_size"]);
@@ -48,15 +42,16 @@ namespace osu.ElasticIndexer
             if (!string.IsNullOrEmpty(config["resume_from"]))
                 ResumeFrom = long.Parse(config["resume_from"]);
 
-            IsWatching = parseBool("watch");
-            PollingInterval = string.IsNullOrEmpty(config["polling_interval"])
-                              ? 10000
-                              : int.Parse(config["polling_interval"]);
-
-            Prefix = config["elasticsearch:prefix"];
+            if (!string.IsNullOrEmpty(config["polling_interval"]))
+                PollingInterval =  int.Parse(config["polling_interval"]);
 
             var modesStr = config["modes"] ?? string.Empty;
             Modes = modesStr.Split(',', StringSplitOptions.RemoveEmptyEntries).Intersect(VALID_MODES).ToImmutableArray();
+
+            ConnectionString = config.GetConnectionString("osu");
+            IsNew = parseBool("new");
+            IsWatching = parseBool("watch");
+            Prefix = config["elasticsearch:prefix"];
 
             ElasticsearchHost = config["elasticsearch:host"];
             ElasticsearchPrefix = config["elasticsearch:prefix"];
@@ -65,9 +60,9 @@ namespace osu.ElasticIndexer
         // same value as elasticsearch-net
         public static TimeSpan BulkAllBackOffTimeDefault = TimeSpan.FromMinutes(1);
 
-        public static int ChunkSize { get; private set; }
+        public static int ChunkSize { get; private set; } = 10000;
 
-        public static int Concurrency { get; private set; }
+        public static int Concurrency { get; private set; } = 4;
 
         public static string ConnectionString { get; private set; }
 
@@ -81,7 +76,7 @@ namespace osu.ElasticIndexer
 
         public static ImmutableArray<string> Modes { get; private set; }
 
-        public static int PollingInterval { get; private set; }
+        public static int PollingInterval { get; private set; } = 10000;
 
         public static string Prefix { get; private set; }
 
