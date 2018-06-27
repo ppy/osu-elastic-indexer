@@ -19,9 +19,9 @@ namespace osu.ElasticIndexer
             new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
         );
 
-        // BlockingCollection queues serve as a self-limiting read-ahead buffer to ensure
+        // Self-limiting read-ahead buffer to ensure
         // there is always data ready to be dispatched to Elasticsearch.
-        private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.QueueSize);
+        private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.BufferSize);
 
         private readonly string alias;
         private readonly string index;

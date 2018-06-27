@@ -36,8 +36,8 @@ namespace osu.ElasticIndexer
             if (!string.IsNullOrEmpty(config["chunk_size"]))
                 ChunkSize = int.Parse(config["chunk_size"]);
 
-            if (!string.IsNullOrEmpty(config["queue_size"]))
-                QueueSize = int.Parse(config["queue_size"]);
+            if (!string.IsNullOrEmpty(config["buffer_size"]))
+                BufferSize = int.Parse(config["buffer_size"]);
 
             if (!string.IsNullOrEmpty(config["resume_from"]))
                 ResumeFrom = long.Parse(config["resume_from"]);
@@ -80,7 +80,7 @@ namespace osu.ElasticIndexer
 
         public static string Prefix { get; private set; }
 
-        public static int QueueSize { get; private set; } = 5;
+        public static int BufferSize { get; private set; } = 5;
 
         public static long? ResumeFrom { get; private set; }
 

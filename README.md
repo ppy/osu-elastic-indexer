@@ -41,6 +41,16 @@ elasticsearch__host=http://localhost:9200 dotnet run
 
 ---
 
+## `buffer_size`
+Number of chunks from the database to read-ahead and buffer.
+Defaults to `5`
+
+
+## `concurrency`
+Don't change this.
+Defaults to `4`
+
+
 ## `ConnectionStrings:osu`
 Standard .NET Connection String to the database.
 
