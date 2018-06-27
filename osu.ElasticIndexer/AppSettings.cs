@@ -30,6 +30,10 @@ namespace osu.ElasticIndexer
                      .AddEnvironmentVariables()
                      .Build();
 
+            Concurrency = string.IsNullOrEmpty(config["concurrency"])
+                          ? 4
+                          : int.Parse(config["concurrency"]);
+
             IsNew = parseBool("new");
 
             ChunkSize = string.IsNullOrEmpty(config["chunk_size"])
@@ -58,7 +62,12 @@ namespace osu.ElasticIndexer
             ElasticsearchPrefix = config["elasticsearch:prefix"];
         }
 
+        // same value as elasticsearch-net
+        public static TimeSpan BulkAllBackOffTimeDefault = TimeSpan.FromMinutes(1);
+
         public static int ChunkSize { get; private set; }
+
+        public static int Concurrency { get; private set; }
 
         public static string ConnectionString { get; private set; }
 

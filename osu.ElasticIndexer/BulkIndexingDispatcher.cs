@@ -50,7 +50,7 @@ namespace osu.ElasticIndexer
                 EnumerablePartitionerOptions.NoBuffering // buffering causes spastic behaviour.
             );
 
-            var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+            var options = new ParallelOptions { MaxDegreeOfParallelism = AppSettings.Concurrency };
 
             Parallel.ForEach(partitioner, options, (chunk) =>
             {
@@ -59,17 +59,12 @@ namespace osu.ElasticIndexer
 
                 while (retry)
                 {
-                    throttledWait();
-
                     var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
                     var response = elasticClient.Bulk(bulkDescriptor);
                     (success, retry) = retryOnResponse(response, chunk);
 
-                    if (!retry)
-                    {
-                        unthrottle();
-                        break;
-                    }
+                    if (!retry) break;
+                    Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
                 }
 
                 if (success)
@@ -106,22 +101,6 @@ namespace osu.ElasticIndexer
 
             // TODO: other errors should do some kind of notification.
             return (success: true, retry: false);
-        }
-
-        /// <summary>
-        /// Slows down when the server is busy or too many requests are in-flight.
-        /// </summary>
-        private void throttledWait()
-        {
-            if (delay > 0) Task.Delay(delay * 1000).Wait();
-        }
-
-        /// <summary>
-        /// Gradually reduces the delay time between requests.
-        /// </summary>
-        private void unthrottle()
-        {
-            if (delay > 0) Interlocked.Decrement(ref delay);
         }
     }
 }
