@@ -60,10 +60,18 @@ namespace osu.ElasticIndexer
                 updateAlias(Name, index);
                 IndexCompleted(this, indexCompletedArgs);
             }
-            catch (AggregateException ex)
+            catch (AggregateException ae)
             {
-                // queue was marked as completed while blocked.
+                ae.Handle(HandleAggregateException);
+            }
+
+            // Local function exception handler.
+            bool HandleAggregateException(Exception ex)
+            {
+                if (!(ex is InvalidOperationException)) return false;
+
                 Console.WriteLine(ex.Message);
+                return true;
             }
         }
 

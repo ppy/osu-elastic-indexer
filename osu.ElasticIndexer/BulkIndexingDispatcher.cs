@@ -97,7 +97,7 @@ namespace osu.ElasticIndexer
             if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
             {
                 Console.Error.WriteLine($"{index} was closed.");
-                readBuffer.CompleteAdding();
+                readBuffer.CompleteAdding(); // FIXME: should cancel instead.
                 return (success: false, retry: false);
             }
 
