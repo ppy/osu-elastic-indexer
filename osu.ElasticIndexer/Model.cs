@@ -16,7 +16,7 @@ namespace osu.ElasticIndexer
     {
         public abstract long CursorValue { get; }
 
-        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : Model
+        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, long? resumeFrom = null) where T : Model
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
@@ -26,11 +26,15 @@ namespace osu.ElasticIndexer
                 var cursorColumn = typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
                 var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
 
+                // FIXME: this is terrible.
+                var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
+
                 dbConnection.Open();
+
+                string query = $"select * from {table} where {cursorColumn} > @lastId {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
 
                 while (lastId != null)
                 {
-                    string query = $"select * from {table} where {cursorColumn} > @lastId order by {cursorColumn} asc limit @chunkSize;";
                     var parameters = new { lastId, chunkSize };
                     Console.WriteLine("{0} {1}", query, parameters);
                     var queryResult = dbConnection.Query<T>(query, parameters).AsList();
@@ -40,5 +44,8 @@ namespace osu.ElasticIndexer
                 }
             }
         }
+
+        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : Model =>
+            Chunk<T>(null, chunkSize, resumeFrom);
     }
 }

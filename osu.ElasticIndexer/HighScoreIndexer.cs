@@ -92,7 +92,7 @@ namespace osu.ElasticIndexer
                 {
                     try
                     {
-                        var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
+                        var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
                         foreach (var chunk in chunks)
                         {
                             dispatcher.Enqueue(chunk);
