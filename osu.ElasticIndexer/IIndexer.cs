@@ -9,8 +9,19 @@ namespace osu.ElasticIndexer
     {
         event EventHandler<IndexCompletedArgs> IndexCompleted;
 
+        /// <summary>
+        /// The index's name.
+        /// </summary>
         string Name { get; set; }
+
+        /// <summary>
+        /// The ID from which to resume indexing from. If null, the most recent ID is used.
+        /// </summary>
         long? ResumeFrom { get; set; }
+
+        /// <summary>
+        /// The index suffix (generally a timestamp string).
+        /// </summary>
         string Suffix { get; set; }
 
         void Run();
