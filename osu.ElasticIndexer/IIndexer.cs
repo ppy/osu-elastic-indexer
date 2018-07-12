@@ -5,7 +5,7 @@ using System;
 
 namespace osu.ElasticIndexer
 {
-    interface IIndexer
+    internal interface IIndexer
     {
         event EventHandler<IndexCompletedArgs> IndexCompleted;
 

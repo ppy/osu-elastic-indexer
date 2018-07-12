@@ -13,22 +13,19 @@ namespace osu.ElasticIndexer
 {
     public class HighScoreIndexer<T> : IIndexer where T : Model
     {
-        public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate {};
+        public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
         public string Name { get; set; }
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
-        private static readonly ElasticClient elasticClient = new ElasticClient
-        (
-            new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
-        );
+        private readonly ElasticClient elasticClient = new ElasticClient(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)));
 
         private BulkIndexingDispatcher<T> dispatcher;
 
         public void Run()
         {
-            var (alias, index) = findOrCreateIndex(Name);
+            var index = findOrCreateIndex(Name);
             // find out if we should be resuming
             var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId;
 
@@ -43,10 +40,7 @@ namespace osu.ElasticIndexer
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(
-                alias: Name,
-                index: index
-            );
+            dispatcher = new BulkIndexingDispatcher<T>(Name, index);
 
             try
             {
@@ -62,11 +56,11 @@ namespace osu.ElasticIndexer
             }
             catch (AggregateException ae)
             {
-                ae.Handle(HandleAggregateException);
+                ae.Handle(handleAggregateException);
             }
 
             // Local function exception handler.
-            bool HandleAggregateException(Exception ex)
+            bool handleAggregateException(Exception ex)
             {
                 if (!(ex is InvalidOperationException)) return false;
 
@@ -85,44 +79,43 @@ namespace osu.ElasticIndexer
         private Task<long> databaseReaderTask(long? resumeFrom)
         {
             return Task.Factory.StartNew(() =>
-            {
-                long count = 0;
-
-                while (true)
                 {
-                    try
+                    long count = 0;
+
+                    while (true)
                     {
-                        var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
-                        foreach (var chunk in chunks)
+                        try
                         {
-                            dispatcher.Enqueue(chunk);
-                            count += chunk.Count;
-                            // update resumeFrom in this scope to allow resuming from connection errors.
-                            resumeFrom = chunk.Last().CursorValue;
+                            var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
+                            foreach (var chunk in chunks)
+                            {
+                                dispatcher.Enqueue(chunk);
+                                count += chunk.Count;
+                                // update resumeFrom in this scope to allow resuming from connection errors.
+                                resumeFrom = chunk.Last().CursorValue;
+                            }
+
+                            break;
                         }
-
-                        break;
+                        catch (DbException ex)
+                        {
+                            Console.Error.WriteLine(ex.Message);
+                            Task.Delay(1000).Wait();
+                        }
                     }
-                    catch (DbException ex)
-                    {
-                        Console.Error.WriteLine(ex.Message);
-                        Task.Delay(1000).Wait();
-                    }
-                }
 
-                dispatcher.EnqueueEnd();
-                Console.WriteLine($"Finished reading database {count} records.");
+                    dispatcher.EnqueueEnd();
+                    Console.WriteLine($"Finished reading database {count} records.");
 
-                return count;
-            }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
+                    return count;
+                }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
         }
 
         /// <summary>
-        /// Attemps to find the matching index or creates a new one.
+        /// Attempts to find the matching index or creates a new one.
         /// </summary>
-        /// <param name="name">Name of the alias to find the matching index for.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        private (string alias, string index) findOrCreateIndex(string name)
+        private string findOrCreateIndex(string name)
         {
             Console.WriteLine();
             Console.WriteLine();
@@ -141,15 +134,15 @@ namespace osu.ElasticIndexer
                 if (index != null)
                 {
                     Console.WriteLine($"Found matching aliased index `{index}`.");
-                    return (name, index);
+                    return index;
                 }
 
-                // 2. Index has not been aliased and has tracking information; likely resuming from an imcomplete job.
+                // 2. Index has not been aliased and has tracking information; likely resuming from an incomplete job.
                 index = metas.FirstOrDefault()?.Index;
                 if (index != null)
                 {
                     Console.WriteLine($"Found previous index `{index}`.");
-                    return (null, index);
+                    return index;
                 }
             }
 
@@ -163,7 +156,7 @@ namespace osu.ElasticIndexer
             var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
             elasticClient.LowLevel.IndicesCreate<DynamicResponse>(index, json);
 
-            return (null, index);
+            return index;
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }

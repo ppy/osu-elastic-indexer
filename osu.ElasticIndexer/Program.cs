@@ -36,10 +36,9 @@ namespace osu.ElasticIndexer
                 var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
                 var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
 
-                Type indexerType = typeof(HighScoreIndexer<>)
-                    .MakeGenericType(Type.GetType(className, true));
+                Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(Type.GetType(className, true));
 
-                var indexer = (IIndexer) Activator.CreateInstance(indexerType);
+                var indexer = (IIndexer)Activator.CreateInstance(indexerType);
                 indexer.IndexCompleted += (sender, args) =>
                 {
                     Console.WriteLine($"{args.Count} records took {args.TimeTaken}");

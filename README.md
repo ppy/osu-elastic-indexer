@@ -1,7 +1,5 @@
 # ElasticIndex
 
-TODO: Readme
-
 Component for loading [osu!](https://osu.ppy.sh) data into Elasticsearch.
 
 Currently limited to user high scores.
@@ -9,7 +7,6 @@ Currently limited to user high scores.
 # Requirements
 
 - .NET Core 2.1
-
 
 # Configuration
 
@@ -41,52 +38,42 @@ elasticsearch__host=http://localhost:9200 dotnet run
 
 ---
 
-## `buffer_size`
+### `buffer_size`
 Number of chunks from the database to read-ahead and buffer.
 Defaults to `5`
 
-
-## `concurrency`
+### `concurrency`
 Don't change this.
 Defaults to `4`
 
-
-## `ConnectionStrings:osu`
+### `ConnectionStrings:osu`
 Standard .NET Connection String to the database.
 
-
-## `elasticsearch:host`
+### `elasticsearch:host`
 Elasticsearch host.
 
-
-## `elasticsearch:prefix`
+### `elasticsearch:prefix`
 Assigns a prefix to the indices used.
 
-
-## `modes`
+### `modes`
 Game modes to index in a comma separated list.
 Available modes are `"osu,fruits,mania,taiko"`.
 
-
-## `new`
+### `new`
 Forces the indexer to always create a new index.
 
 `new` and `resume_from` incompatible and should not be used together.
 
-
-## `chunk_size`
+### `chunk_size`
 Batch size when querying from the database.
 Defaults to `10000`
 
-
-## `resume_from`
+### `resume_from`
 Cursor value of where to resume reading from.
 
-
-## `watch`
+### `watch`
 Sets the program into watch mode.
 In watch mode, the program will keep polling for updates to index.
-
 
 # Index aliasing and resume support
 Index aliases are used to support zero-downtime index switches.
@@ -99,10 +86,8 @@ Setting `resume_from=0` will force the indexer to being reading from the beginni
 
 `new` and `resume_from` incompatible and should not be used together.
 
-
 # Creating a new index while the watcher is running
 The indexer supports running in watch mode while a different indexer process is creating a new index. Once the new index is complete, the watching indexer will automatically switch to updating the new index.
-
 
 # TODO
 

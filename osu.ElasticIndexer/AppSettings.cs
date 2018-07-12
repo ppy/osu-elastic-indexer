@@ -11,7 +11,6 @@ namespace osu.ElasticIndexer
 {
     public class AppSettings
     {
-        // TODO: readonly
         public static readonly IImmutableList<string> VALID_MODES = ImmutableList.Create("osu", "mania", "taiko", "fruits");
 
         private static readonly IConfigurationRoot config;
@@ -43,7 +42,7 @@ namespace osu.ElasticIndexer
                 ResumeFrom = long.Parse(config["resume_from"]);
 
             if (!string.IsNullOrEmpty(config["polling_interval"]))
-                PollingInterval =  int.Parse(config["polling_interval"]);
+                PollingInterval = int.Parse(config["polling_interval"]);
 
             var modesStr = config["modes"] ?? string.Empty;
             Modes = modesStr.Split(',', StringSplitOptions.RemoveEmptyEntries).Intersect(VALID_MODES).ToImmutableArray();
@@ -86,7 +85,7 @@ namespace osu.ElasticIndexer
 
         private static bool parseBool(string key)
         {
-            return new [] { "1", "true" }.Contains((config[key] ?? string.Empty).ToLowerInvariant());
+            return new[] { "1", "true" }.Contains((config[key] ?? string.Empty).ToLowerInvariant());
         }
     }
 }
