@@ -33,23 +33,30 @@ namespace osu.ElasticIndexer
 
             foreach (var mode in AppSettings.Modes)
             {
-                var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
-                var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
-
-                Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(Type.GetType(className, true));
-
-                var indexer = (IIndexer)Activator.CreateInstance(indexerType);
-                indexer.IndexCompleted += (sender, args) =>
-                {
-                    Console.WriteLine($"{args.Count} records took {args.TimeTaken}");
-                    if (args.Count > 0) Console.WriteLine($"{args.Count / args.TimeTaken.TotalSeconds} records/s");
-                };
-
+                var indexer = getIndexerFromModeString(mode);
                 indexer.Suffix = suffix;
-                indexer.Name = indexName;
                 indexer.ResumeFrom = resumeFrom;
                 indexer.Run();
             }
+        }
+
+        private IIndexer getIndexerFromModeString(string mode)
+        {
+            var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
+            var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
+
+            Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(Type.GetType(className, true));
+
+            var indexer = (IIndexer)Activator.CreateInstance(indexerType);
+
+            indexer.Name = indexName;
+            indexer.IndexCompleted += (sender, args) =>
+            {
+                Console.WriteLine($"{args.Count} records took {args.TimeTaken}");
+                if (args.Count > 0) Console.WriteLine($"{args.Count / args.TimeTaken.TotalSeconds} records/s");
+            };
+
+            return indexer;
         }
 
         public static void Main()
