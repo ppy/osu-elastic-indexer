@@ -75,6 +75,9 @@ Cursor value of where to resume reading from.
 Sets the program into watch mode.
 In watch mode, the program will keep polling for updates to index.
 
+### `polling_interval`
+The time between watch polls.
+
 # Index aliasing and resume support
 Index aliases are used to support zero-downtime index switches.
 When creating new indices, the new index is suffixed with a timestamp.
