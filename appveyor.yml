@@ -16,11 +16,11 @@ before_build:
   - cmd: CodeFileSanity.exe
   - cmd: nuget restore -verbosity quiet
 environment:
-  TargetFramework: net471
+  TargetFramework: netcoreapp2.1
 build:
-  project: osu.Server.sln
+  project: osu.ElasticIndexer.sln
   parallel: true
   verbosity: minimal
 after_build:
-  - cmd: inspectcode --o="inspectcodereport.xml" --caches-home="inspectcode" osu.Server.sln > NUL
+  - cmd: inspectcode --o="inspectcodereport.xml" --caches-home="inspectcode" osu.ElasticIndexer.sln > NUL
   - cmd: NVika parsereport "inspectcodereport.xml" --treatwarningsaserrors
