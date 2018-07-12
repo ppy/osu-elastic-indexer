@@ -15,20 +15,34 @@ namespace osu.ElasticIndexer
             DefaultTypeMap.MatchNamesWithUnderscores = true;
 
             if (AppSettings.IsWatching)
-                Console.WriteLine($"Running in watch mode with {AppSettings.PollingInterval}ms poll.");
-
-            bool ranOnce = false;
-
-            while (!ranOnce || AppSettings.IsWatching)
+                runWatchLoop();
+            else
             {
-                // When running in watch mode, the indexer should be told to resume from the
-                // last known saved point instead of the configured value.
-                runIndexing(ranOnce ? null : AppSettings.ResumeFrom);
-                ranOnce = true;
-                if (AppSettings.IsWatching) Thread.Sleep(AppSettings.PollingInterval);
+                // do a single run
+                runIndexing(AppSettings.ResumeFrom);
             }
         }
 
+        // ReSharper disable once FunctionNeverReturns
+        private static void runWatchLoop()
+        {
+            Console.WriteLine($"Running in watch mode with {AppSettings.PollingInterval}ms poll.");
+
+            // run once with config resuming
+            runIndexing(AppSettings.ResumeFrom);
+
+            while (true)
+            {
+                // run continuously with automatic resume logic
+                runIndexing(null);
+                Thread.Sleep(AppSettings.PollingInterval);
+            }
+        }
+
+        /// <summary>
+        /// Performs a single indexing run for all specified modes.
+        /// </summary>
+        /// <param name="resumeFrom">An optional resume point.</param>
         private static void runIndexing(long? resumeFrom)
         {
             var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
