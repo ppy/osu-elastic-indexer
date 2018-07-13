@@ -65,7 +65,7 @@ namespace osu.ElasticIndexer
                 if (success)
                 {
                     // TODO: should probably aggregate responses and update to highest successful.
-                    IndexMeta.Update(new IndexMeta
+                    IndexMeta.UpdateAsync(new IndexMeta
                     {
                         Index = index,
                         Alias = alias,
@@ -74,6 +74,8 @@ namespace osu.ElasticIndexer
                     });
                 }
             });
+
+            IndexMeta.Refresh();
         }
 
         private (bool success, bool retry) retryOnResponse(IBulkResponse response, List<T> chunk)

@@ -13,6 +13,7 @@ namespace osu.ElasticIndexer
         public static void Main()
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
+            IndexMeta.CreateIndex();
 
             if (AppSettings.IsWatching)
                 runWatchLoop();

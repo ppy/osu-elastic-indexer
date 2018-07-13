@@ -37,7 +37,21 @@ namespace osu.ElasticIndexer
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }
 
-        public static void Update(IndexMeta indexMeta)
+        public static ICreateIndexResponse CreateIndex()
+        {
+            return client.CreateIndex($"{AppSettings.ElasticsearchPrefix}index_meta", c => c
+                .Settings(s => s.NumberOfShards(1))
+                .Mappings(ms => ms.Map<IndexMeta>(m => m.AutoMap()))
+                .WaitForActiveShards("1")
+            );
+        }
+
+        public static void Refresh()
+        {
+            client.Refresh($"{AppSettings.ElasticsearchPrefix}index_meta");
+        }
+
+        public static void UpdateAsync(IndexMeta indexMeta)
         {
             client.IndexDocumentAsync(indexMeta);
         }
