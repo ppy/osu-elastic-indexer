@@ -19,7 +19,7 @@ namespace osu.ElasticIndexer
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
-        private readonly ElasticClient elasticClient = new ElasticClient(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)));
+        private static readonly ElasticClient elasticClient = new ElasticClient(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)));
 
         private BulkIndexingDispatcher<T> dispatcher;
 

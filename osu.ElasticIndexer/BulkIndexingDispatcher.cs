@@ -13,7 +13,7 @@ namespace osu.ElasticIndexer
     internal class BulkIndexingDispatcher<T> where T : Model
     {
         // ElasticClient is thread-safe and should be shared per host.
-        private readonly ElasticClient elasticClient = new ElasticClient(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)));
+        private static readonly ElasticClient elasticClient = new ElasticClient(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)));
 
         // Self-limiting read-ahead buffer to ensure
         // there is always data ready to be dispatched to Elasticsearch.
