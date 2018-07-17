@@ -6,12 +6,16 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
+using Nest;
 
 namespace osu.ElasticIndexer
 {
     public class AppSettings
     {
         public static readonly IImmutableList<string> VALID_MODES = ImmutableList.Create("osu", "mania", "taiko", "fruits");
+
+        // shared client without a default index.
+        internal static readonly ElasticClient ELASTIC_CLIENT;
 
         private static readonly IConfigurationRoot config;
 
@@ -54,6 +58,8 @@ namespace osu.ElasticIndexer
 
             ElasticsearchHost = config["elasticsearch:host"];
             ElasticsearchPrefix = config["elasticsearch:prefix"];
+
+            ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
         }
 
         // same value as elasticsearch-net
