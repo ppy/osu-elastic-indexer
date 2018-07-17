@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer
         public static readonly IImmutableList<string> VALID_MODES = ImmutableList.Create("osu", "mania", "taiko", "fruits");
 
         // shared client without a default index.
-        internal static readonly ElasticClient ElasticClient;
+        internal static readonly ElasticClient ELASTIC_CLIENT;
 
         private static readonly IConfigurationRoot config;
 
@@ -59,7 +59,7 @@ namespace osu.ElasticIndexer
             ElasticsearchHost = config["elasticsearch:host"];
             ElasticsearchPrefix = config["elasticsearch:prefix"];
 
-            ElasticClient = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
+            ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
         }
 
         // same value as elasticsearch-net

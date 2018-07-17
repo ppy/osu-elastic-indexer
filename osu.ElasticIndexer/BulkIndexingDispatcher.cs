@@ -49,7 +49,7 @@ namespace osu.ElasticIndexer
                 while (true)
                 {
                     var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
-                    var response = AppSettings.ElasticClient.Bulk(bulkDescriptor);
+                    var response = AppSettings.ELASTIC_CLIENT.Bulk(bulkDescriptor);
 
                     bool retry;
                     (success, retry) = retryOnResponse(response, chunk);

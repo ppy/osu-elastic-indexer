@@ -119,7 +119,7 @@ namespace osu.ElasticIndexer
             Console.WriteLine();
             Console.WriteLine($"Find or create index for `{name}`...");
             var metas = IndexMeta.GetByAlias(name).ToList();
-            var aliasedIndices = AppSettings.ElasticClient.GetIndicesPointingToAlias(name);
+            var aliasedIndices = AppSettings.ELASTIC_CLIENT.GetIndicesPointingToAlias(name);
             string index;
 
             if (!AppSettings.IsNew)
@@ -152,7 +152,7 @@ namespace osu.ElasticIndexer
             // create by supplying the json file instead of the attributed class because we're not
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
-            AppSettings.ElasticClient.LowLevel.IndicesCreate<DynamicResponse>(index, json);
+            AppSettings.ELASTIC_CLIENT.LowLevel.IndicesCreate<DynamicResponse>(index, json);
 
             return index;
 
@@ -164,21 +164,21 @@ namespace osu.ElasticIndexer
             Console.WriteLine($"Updating `{alias}` alias to `{index}`...");
 
             var aliasDescriptor = new BulkAliasDescriptor();
-            var oldIndices = AppSettings.ElasticClient.GetIndicesPointingToAlias(alias);
+            var oldIndices = AppSettings.ELASTIC_CLIENT.GetIndicesPointingToAlias(alias);
 
             foreach (var oldIndex in oldIndices)
                 aliasDescriptor.Remove(d => d.Alias(alias).Index(oldIndex));
 
             aliasDescriptor.Add(d => d.Alias(alias).Index(index));
 
-            Console.WriteLine(AppSettings.ElasticClient.Alias(aliasDescriptor));
+            Console.WriteLine(AppSettings.ELASTIC_CLIENT.Alias(aliasDescriptor));
 
             // cleanup
             if (!close) return;
             foreach (var toClose in oldIndices.Where(x => x != index))
             {
                 Console.WriteLine($"Closing {toClose}");
-                AppSettings.ElasticClient.CloseIndex(toClose);
+                AppSettings.ELASTIC_CLIENT.CloseIndex(toClose);
             }
         }
     }
