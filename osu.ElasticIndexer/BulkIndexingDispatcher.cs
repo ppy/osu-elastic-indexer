@@ -12,6 +12,9 @@ namespace osu.ElasticIndexer
 {
     internal class BulkIndexingDispatcher<T> where T : Model
     {
+        // use shared instance to avoid socket leakage.
+        private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
+
         // Self-limiting read-ahead buffer to ensure
         // there is always data ready to be dispatched to Elasticsearch.
         private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.BufferSize);
@@ -49,7 +52,7 @@ namespace osu.ElasticIndexer
                 while (true)
                 {
                     var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
-                    var response = AppSettings.ELASTIC_CLIENT.Bulk(bulkDescriptor);
+                    var response = elasticClient.Bulk(bulkDescriptor);
 
                     bool retry;
                     (success, retry) = retryOnResponse(response, chunk);

@@ -19,6 +19,9 @@ namespace osu.ElasticIndexer
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
+        // use shared instance to avoid socket leakage.
+        private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
+
         private BulkIndexingDispatcher<T> dispatcher;
 
         public void Run()
@@ -119,7 +122,7 @@ namespace osu.ElasticIndexer
             Console.WriteLine();
             Console.WriteLine($"Find or create index for `{name}`...");
             var metas = IndexMeta.GetByAlias(name).ToList();
-            var aliasedIndices = AppSettings.ELASTIC_CLIENT.GetIndicesPointingToAlias(name);
+            var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
             string index;
 
             if (!AppSettings.IsNew)
@@ -152,7 +155,7 @@ namespace osu.ElasticIndexer
             // create by supplying the json file instead of the attributed class because we're not
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
-            AppSettings.ELASTIC_CLIENT.LowLevel.IndicesCreate<DynamicResponse>(index, json);
+            elasticClient.LowLevel.IndicesCreate<DynamicResponse>(index, json);
 
             return index;
 
@@ -164,21 +167,21 @@ namespace osu.ElasticIndexer
             Console.WriteLine($"Updating `{alias}` alias to `{index}`...");
 
             var aliasDescriptor = new BulkAliasDescriptor();
-            var oldIndices = AppSettings.ELASTIC_CLIENT.GetIndicesPointingToAlias(alias);
+            var oldIndices = elasticClient.GetIndicesPointingToAlias(alias);
 
             foreach (var oldIndex in oldIndices)
                 aliasDescriptor.Remove(d => d.Alias(alias).Index(oldIndex));
 
             aliasDescriptor.Add(d => d.Alias(alias).Index(index));
 
-            Console.WriteLine(AppSettings.ELASTIC_CLIENT.Alias(aliasDescriptor));
+            Console.WriteLine(elasticClient.Alias(aliasDescriptor));
 
             // cleanup
             if (!close) return;
             foreach (var toClose in oldIndices.Where(x => x != index))
             {
                 Console.WriteLine($"Closing {toClose}");
-                AppSettings.ELASTIC_CLIENT.CloseIndex(toClose);
+                elasticClient.CloseIndex(toClose);
             }
         }
     }
