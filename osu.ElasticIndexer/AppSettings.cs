@@ -60,6 +60,8 @@ namespace osu.ElasticIndexer
             ElasticsearchPrefix = config["elasticsearch:prefix"];
 
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
+
+            UseDocker = Environment.GetEnvironmentVariable("DOCKER")?.Contains("1") ?? false;
         }
 
         // same value as elasticsearch-net
@@ -88,6 +90,8 @@ namespace osu.ElasticIndexer
         public static int BufferSize { get; private set; } = 5;
 
         public static long? ResumeFrom { get; private set; }
+
+        public static bool UseDocker { get; private set; }
 
         private static bool parseBool(string key)
         {
