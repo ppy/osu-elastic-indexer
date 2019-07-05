@@ -5,6 +5,7 @@ using Dapper.Contrib.Extensions;
 
 namespace osu.ElasticIndexer
 {
+    [RulesetId(1)]
     [Table("osu_scores_taiko_high")]
     public class HighScoreTaiko : HighScore
     {

@@ -43,7 +43,9 @@ namespace osu.ElasticIndexer
             else
             {
                 // do a single run
-                runIndexing(AppSettings.ResumeFrom);
+                runIndexing(AppSettings.ResumeFrom, true);
+                // go through the queue
+                runIndexing(null, false);
             }
 
             if (AppSettings.UseDocker)
@@ -65,12 +67,12 @@ namespace osu.ElasticIndexer
             Console.WriteLine($"Running in watch mode with {AppSettings.PollingInterval}ms poll.");
 
             // run once with config resuming
-            runIndexing(AppSettings.ResumeFrom);
+            runIndexing(AppSettings.ResumeFrom, true);
 
             while (true)
             {
                 // run continuously with automatic resume logic
-                runIndexing(null);
+                runIndexing(null, false);
                 Thread.Sleep(AppSettings.PollingInterval);
             }
         }
@@ -79,7 +81,7 @@ namespace osu.ElasticIndexer
         /// Performs a single indexing run for all specified modes.
         /// </summary>
         /// <param name="resumeFrom">An optional resume point.</param>
-        private static void runIndexing(long? resumeFrom)
+        private static void runIndexing(long? resumeFrom, bool crawl)
         {
             var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 

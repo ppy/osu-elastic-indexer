@@ -45,6 +45,43 @@ namespace osu.ElasticIndexer
             }
         }
 
+        public static List<T> FetchQueued<T>() where T : Model
+        {
+            // probably does not need chunking?
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
+
+                dbConnection.Open();
+
+                string queueQuery = $"select score_id from score_process_queue where status = 1 and mode = @mode";
+                var scoreIds = dbConnection.Query<long>(queueQuery, new { mode }).AsList();
+
+                if (scoreIds.Count > 0) {
+                    string query = $"select * from {table} where score_id in @scoreIds";
+                    return dbConnection.Query<T>(query, new { scoreIds }).AsList();
+                }
+
+                return new List<T>(0);
+            }
+        }
+
+        public static void CompleteQueued<T>(List<T> models) where T : Model
+        {
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
+                var scoreIds = models.Select(x => x.CursorValue); // TODO: should change to ScoreId
+
+                dbConnection.Open();
+
+                string query = $"update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
+                dbConnection.Execute(query, new { scoreIds, mode });
+            }
+        }
+
         public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : Model =>
             Chunk<T>(null, chunkSize, resumeFrom);
     }
