@@ -58,7 +58,8 @@ namespace osu.ElasticIndexer
                 string queueQuery = $"select score_id from score_process_queue where status = 1 and mode = @mode";
                 var scoreIds = dbConnection.Query<long>(queueQuery, new { mode }).AsList();
 
-                if (scoreIds.Count > 0) {
+                if (scoreIds.Count > 0)
+                {
                     string query = $"select * from {table} where score_id in @scoreIds";
                     return dbConnection.Query<T>(query, new { scoreIds }).AsList();
                 }
@@ -77,8 +78,12 @@ namespace osu.ElasticIndexer
 
                 dbConnection.Open();
 
-                string query = $"update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
-                dbConnection.Execute(query, new { scoreIds, mode });
+                if (scoreIds.Count() > 0)
+                {
+                    string query = $"update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
+                    dbConnection.Execute(query, new { scoreIds, mode });
+                }
+
             }
         }
 
