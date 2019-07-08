@@ -106,6 +106,7 @@ namespace osu.ElasticIndexer
                                 var models = Model.FetchQueued<T>();
                                 dispatcher.Enqueue(models);
                                 Model.CompleteQueued(models);
+                                count += models.Count;
                             }
 
                             break;
