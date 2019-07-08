@@ -33,7 +33,7 @@ namespace osu.ElasticIndexer
             var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId ?? 0;
 
             Console.WriteLine();
-            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
+            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`, crawling `{IsCrawler}`");
             Console.WriteLine();
 
             var indexCompletedArgs = new IndexCompletedArgs
@@ -43,7 +43,7 @@ namespace osu.ElasticIndexer
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(Name, index);
+            dispatcher = new BulkIndexingDispatcher<T>(Name, index, IsCrawler);
 
             try
             {
