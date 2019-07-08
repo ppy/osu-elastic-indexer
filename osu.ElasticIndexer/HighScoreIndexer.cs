@@ -103,10 +103,13 @@ namespace osu.ElasticIndexer
                             else
                             {
                                 Console.WriteLine("do the other thing");
-                                var models = Model.FetchQueued<T>();
-                                dispatcher.Enqueue(models);
-                                Model.CompleteQueued(models);
-                                count += models.Count;
+                                var chunks = Model.FetchQueued<T>(AppSettings.ChunkSize);
+                                foreach (var chunk in chunks)
+                                {
+                                    dispatcher.Enqueue(chunk);
+                                    Model.CompleteQueued(chunk);
+                                    count += chunk.Count;
+                                }
                             }
 
                             break;

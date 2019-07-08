@@ -45,31 +45,37 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static List<T> FetchQueued<T>() where T : Model
+        public static IEnumerable<List<T>> FetchQueued<T>(int chunkSize = 10000) where T : Model
         {
             // probably does not need chunking?
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
+                long? lastId = 0;
+
                 var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
                 var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
 
                 dbConnection.Open();
 
-                string queueQuery = $"select score_id from score_process_queue where status = 1 and mode = @mode";
-                var scoreIds = dbConnection.Query<long>(queueQuery, new { mode }).AsList();
+                string queueQuery = $"select queue_id, score_id from score_process_queue where status = 1 and mode = @mode and queue_id > @lastId order by queue_id asc limit @chunkSize";
 
-                Console.WriteLine($"{scoreIds.Count} score_ids found.");
-                if (scoreIds.Count > 0)
+                while (lastId != null)
                 {
-                    string query = $"select * from {table} where score_id in @scoreIds";
-                    var records = dbConnection.Query<T>(query, new { scoreIds }).AsList();
-                    Console.WriteLine($"{records.Count} records selected.");
+                    var parameters = new { mode, lastId, chunkSize };
+                    var queryResult = dbConnection.Query<dynamic>(queueQuery, parameters).AsList();
 
-                    return records;
+                    lastId = queryResult.LastOrDefault()?.queue_id;
+                    Console.WriteLine($"{queryResult.Count} score_ids found.");
+                    if (queryResult.Count > 0)
+                    {
+                        var scoreIds = queryResult.Select(x => x.score_id);
+                        string query = $"select * from {table} where score_id in @scoreIds";
+                        var records = dbConnection.Query<T>(query, new { scoreIds }).AsList();
+                        Console.WriteLine($"{records.Count} records selected.");
+
+                        yield return records;
+                    }
                 }
-
-                Console.WriteLine("no records selected.");
-                return new List<T>(0);
             }
         }
 
