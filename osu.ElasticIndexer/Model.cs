@@ -58,12 +58,17 @@ namespace osu.ElasticIndexer
                 string queueQuery = $"select score_id from score_process_queue where status = 1 and mode = @mode";
                 var scoreIds = dbConnection.Query<long>(queueQuery, new { mode }).AsList();
 
+                Console.WriteLine($"{scoreIds.Count} score_ids found.");
                 if (scoreIds.Count > 0)
                 {
                     string query = $"select * from {table} where score_id in @scoreIds";
-                    return dbConnection.Query<T>(query, new { scoreIds }).AsList();
+                    var records = dbConnection.Query<T>(query, new { scoreIds }).AsList();
+                    Console.WriteLine($"{records.Count} records selected.");
+
+                    return records;
                 }
 
+                Console.WriteLine("no records selected.");
                 return new List<T>(0);
             }
         }
