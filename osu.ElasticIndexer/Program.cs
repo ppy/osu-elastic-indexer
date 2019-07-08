@@ -90,6 +90,7 @@ namespace osu.ElasticIndexer
                 var indexer = getIndexerFromModeString(mode);
                 indexer.Suffix = suffix;
                 indexer.ResumeFrom = resumeFrom;
+                indexer.IsCrawler = crawl;
                 indexer.Run();
             }
         }
