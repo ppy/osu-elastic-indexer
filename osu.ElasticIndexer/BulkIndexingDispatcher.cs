@@ -10,7 +10,7 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    internal class BulkIndexingDispatcher<T> where T : Model
+    internal class BulkIndexingDispatcher<T> where T : HighScore
     {
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;

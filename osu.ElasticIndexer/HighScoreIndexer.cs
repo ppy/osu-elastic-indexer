@@ -5,13 +5,14 @@ using System;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class HighScoreIndexer<T> : IIndexer where T : Model
+    public class HighScoreIndexer<T> : IIndexer where T : HighScore
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
@@ -91,6 +92,7 @@ namespace osu.ElasticIndexer
                         {
                             if (IsCrawler)
                             {
+                                Console.WriteLine("Crawling records...");
                                 var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
                                 foreach (var chunk in chunks)
                                 {
@@ -102,13 +104,17 @@ namespace osu.ElasticIndexer
                             }
                             else
                             {
-                                Console.WriteLine("do the other thing");
-                                var chunks = Model.FetchQueued<T>(AppSettings.ChunkSize);
+                                Console.WriteLine("Reading from queue...");
+                                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
+                                var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
                                 foreach (var chunk in chunks)
                                 {
-                                    dispatcher.Enqueue(chunk);
-                                    Model.CompleteQueued(chunk);
-                                    count += chunk.Count;
+                                    var scores = ScoreProcessQueue.FetchIds<T>(chunk);
+                                    Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores");
+
+                                    dispatcher.Enqueue(scores);
+                                    ScoreProcessQueue.CompleteQueued<T>(chunk);
+                                    count += scores.Count;
                                 }
                             }
 

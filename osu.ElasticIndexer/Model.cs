@@ -21,10 +21,10 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 long? lastId = resumeFrom ?? 0;
-                Console.WriteLine($"Starting from {lastId}...");
-
                 var cursorColumn = typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
                 var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+
+                Console.WriteLine($"Starting {table} from {lastId}...");
 
                 // FIXME: this is terrible.
                 var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
@@ -42,59 +42,6 @@ namespace osu.ElasticIndexer
                     lastId = queryResult.LastOrDefault()?.CursorValue;
                     if (lastId.HasValue) yield return queryResult;
                 }
-            }
-        }
-
-        public static IEnumerable<List<T>> FetchQueued<T>(int chunkSize = 10000) where T : Model
-        {
-            // probably does not need chunking?
-            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-            {
-                long? lastId = 0;
-
-                var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
-                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
-
-                dbConnection.Open();
-
-                string queueQuery = $"select queue_id, score_id from score_process_queue where status = 1 and mode = @mode and queue_id > @lastId order by queue_id asc limit @chunkSize";
-
-                while (lastId != null)
-                {
-                    var parameters = new { mode, lastId, chunkSize };
-                    var queryResult = dbConnection.Query<dynamic>(queueQuery, parameters).AsList();
-
-                    lastId = queryResult.LastOrDefault()?.queue_id;
-                    Console.WriteLine($"{queryResult.Count} score_ids found.");
-                    if (queryResult.Count > 0)
-                    {
-                        var scoreIds = queryResult.Select(x => x.score_id);
-                        string query = $"select * from {table} where score_id in @scoreIds";
-                        var records = dbConnection.Query<T>(query, new { scoreIds }).AsList();
-                        Console.WriteLine($"{records.Count} records selected.");
-
-                        yield return records;
-                    }
-                }
-            }
-        }
-
-        public static void CompleteQueued<T>(List<T> models) where T : Model
-        {
-            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-            {
-                var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
-                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
-                var scoreIds = models.Select(x => x.CursorValue); // TODO: should change to ScoreId
-
-                dbConnection.Open();
-
-                if (scoreIds.Count() > 0)
-                {
-                    string query = $"update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
-                    dbConnection.Execute(query, new { scoreIds, mode });
-                }
-
             }
         }
 
