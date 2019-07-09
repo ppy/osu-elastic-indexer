@@ -22,6 +22,21 @@ namespace osu.ElasticIndexer
 
         public ulong ScoreId { get; set; }
 
+        public static void CompleteQueued<T>(List<ulong> scoreIds) where T : HighScore
+        {
+            if (!scoreIds.Any()) return;
+
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+
+                dbConnection.Open();
+
+                const string query = "update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
+                dbConnection.Execute(query, new { scoreIds, mode });
+            }
+        }
+
         public static List<T> FetchByScoreIds<T>(List<ulong> scoreIds) where T : HighScore
         {
             var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
@@ -35,21 +50,6 @@ namespace osu.ElasticIndexer
                 Console.WriteLine("{0} {1}", query, parameters);
 
                 return dbConnection.Query<T>(query, parameters).AsList();
-            }
-        }
-
-        public static void CompleteQueued<T>(List<ulong> scoreIds) where T : HighScore
-        {
-            if (!scoreIds.Any()) return;
-
-            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-            {
-                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
-
-                dbConnection.Open();
-
-                const string query = "update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
-                dbConnection.Execute(query, new { scoreIds, mode });
             }
         }
     }
