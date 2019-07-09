@@ -89,19 +89,7 @@ namespace osu.ElasticIndexer
                     {
                         try
                         {
-                            if (AppSettings.IsCrawler)
-                            {
-                                Console.WriteLine("Crawling records...");
-                                var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
-                                foreach (var chunk in chunks)
-                                {
-                                    dispatcher.Enqueue(chunk);
-                                    count += chunk.Count;
-                                    // update resumeFrom in this scope to allow resuming from connection errors.
-                                    resumeFrom = chunk.Last().CursorValue;
-                                }
-                            }
-                            else
+                            if (AppSettings.IsUsingQueue)
                             {
                                 Console.WriteLine("Reading from queue...");
                                 var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
@@ -114,6 +102,18 @@ namespace osu.ElasticIndexer
                                     dispatcher.Enqueue(scores);
                                     ScoreProcessQueue.CompleteQueued<T>(chunk);
                                     count += scores.Count;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Crawling records...");
+                                var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
+                                foreach (var chunk in chunks)
+                                {
+                                    dispatcher.Enqueue(chunk);
+                                    count += chunk.Count;
+                                    // update resumeFrom in this scope to allow resuming from connection errors.
+                                    resumeFrom = chunk.Last().CursorValue;
                                 }
                             }
 

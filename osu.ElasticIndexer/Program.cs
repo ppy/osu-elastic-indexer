@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             IndexMeta.CreateIndex();
 
-            Console.WriteLine($"Using queue: `{!AppSettings.IsCrawler}`");
+            Console.WriteLine($"Using queue: `{AppSettings.IsUsingQueue}`");
             if (AppSettings.IsWatching)
                 runWatchLoop();
             else

@@ -62,7 +62,7 @@ namespace osu.ElasticIndexer
                     Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
                 }
 
-                if (success && AppSettings.IsCrawler)
+                if (success && !AppSettings.IsUsingQueue)
                 {
                     // TODO: should probably aggregate responses and update to highest successful.
                     IndexMeta.UpdateAsync(new IndexMeta

@@ -52,8 +52,8 @@ namespace osu.ElasticIndexer
             Modes = modesStr.Split(',', StringSplitOptions.RemoveEmptyEntries).Intersect(VALID_MODES).ToImmutableArray();
 
             ConnectionString = config.GetConnectionString("osu");
-            IsCrawler = parseBool("crawl");
             IsNew = parseBool("new");
+            IsUsingQueue = !parseBool("crawl");
             IsWatching = parseBool("watch");
             Prefix = config["elasticsearch:prefix"];
 
@@ -78,9 +78,9 @@ namespace osu.ElasticIndexer
 
         public static string ElasticsearchPrefix { get; private set; }
 
-        public static bool IsCrawler { get; private set; }
-
         public static bool IsNew { get; private set; }
+
+        public static bool IsUsingQueue { get; private set; }
 
         public static bool IsWatching { get; private set; }
 
