@@ -38,14 +38,12 @@ namespace osu.ElasticIndexer
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             IndexMeta.CreateIndex();
 
+            Console.WriteLine($"Using queue: `{!AppSettings.IsCrawler}`");
             if (AppSettings.IsWatching)
                 runWatchLoop();
             else
             {
-                // do a single run
-                runIndexing(AppSettings.ResumeFrom, true);
-                // go through the queue
-                runIndexing(null, false);
+                runIndexing(AppSettings.ResumeFrom);
             }
 
             if (AppSettings.UseDocker)
@@ -67,12 +65,12 @@ namespace osu.ElasticIndexer
             Console.WriteLine($"Running in watch mode with {AppSettings.PollingInterval}ms poll.");
 
             // run once with config resuming
-            runIndexing(AppSettings.ResumeFrom, true);
+            runIndexing(AppSettings.ResumeFrom);
 
             while (true)
             {
                 // run continuously with automatic resume logic
-                runIndexing(null, false);
+                runIndexing(null);
                 Thread.Sleep(AppSettings.PollingInterval);
             }
         }
@@ -81,7 +79,7 @@ namespace osu.ElasticIndexer
         /// Performs a single indexing run for all specified modes.
         /// </summary>
         /// <param name="resumeFrom">An optional resume point.</param>
-        private static void runIndexing(long? resumeFrom, bool crawl)
+        private static void runIndexing(long? resumeFrom)
         {
             var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 
@@ -90,7 +88,6 @@ namespace osu.ElasticIndexer
                 var indexer = getIndexerFromModeString(mode);
                 indexer.Suffix = suffix;
                 indexer.ResumeFrom = resumeFrom;
-                indexer.IsCrawler = crawl;
                 indexer.Run();
             }
         }

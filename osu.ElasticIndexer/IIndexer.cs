@@ -10,11 +10,6 @@ namespace osu.ElasticIndexer
         event EventHandler<IndexCompletedArgs> IndexCompleted;
 
         /// <summary>
-        /// Does the indexer run as a crawler or not.
-        /// </summary>
-        bool IsCrawler { get; set; }
-
-        /// <summary>
         /// The index's name.
         /// </summary>
         string Name { get; set; }

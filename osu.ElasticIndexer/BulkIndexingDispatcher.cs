@@ -20,13 +20,11 @@ namespace osu.ElasticIndexer
         private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.BufferSize);
 
         private readonly string alias;
-        private readonly bool isCrawler;
         private readonly string index;
 
-        internal BulkIndexingDispatcher(string alias, string index, bool isCrawler)
+        internal BulkIndexingDispatcher(string alias, string index)
         {
             this.alias = alias;
-            this.isCrawler = isCrawler;
             this.index = index;
         }
 
@@ -64,7 +62,7 @@ namespace osu.ElasticIndexer
                     Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
                 }
 
-                if (success && isCrawler)
+                if (success && AppSettings.IsCrawler)
                 {
                     // TODO: should probably aggregate responses and update to highest successful.
                     IndexMeta.UpdateAsync(new IndexMeta

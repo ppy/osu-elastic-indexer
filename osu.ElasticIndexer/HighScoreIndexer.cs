@@ -16,7 +16,6 @@ namespace osu.ElasticIndexer
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
-        public bool IsCrawler { get; set; }
         public string Name { get; set; }
         public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
@@ -34,7 +33,7 @@ namespace osu.ElasticIndexer
             var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId ?? 0;
 
             Console.WriteLine();
-            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`, crawling `{IsCrawler}`");
+            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
             Console.WriteLine();
 
             var indexCompletedArgs = new IndexCompletedArgs
@@ -44,7 +43,7 @@ namespace osu.ElasticIndexer
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(Name, index, IsCrawler);
+            dispatcher = new BulkIndexingDispatcher<T>(Name, index);
 
             try
             {
@@ -90,7 +89,7 @@ namespace osu.ElasticIndexer
                     {
                         try
                         {
-                            if (IsCrawler)
+                            if (AppSettings.IsCrawler)
                             {
                                 Console.WriteLine("Crawling records...");
                                 var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
