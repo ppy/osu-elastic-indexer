@@ -31,11 +31,12 @@ namespace osu.ElasticIndexer
 
                 dbConnection.Open();
 
-                string query = $"select * from {table} where {cursorColumn} > @lastId {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
+                var max = dbConnection.QuerySingle<ulong>($"SELECT MAX({cursorColumn}) from {table}");
+                string query = $"select * from {table} where {cursorColumn} > @lastId and {cursorColumn} <= @max {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
 
                 while (lastId != null)
                 {
-                    var parameters = new { lastId, chunkSize };
+                    var parameters = new { lastId, max, chunkSize };
                     Console.WriteLine("{0} {1}", query, parameters);
                     var queryResult = dbConnection.Query<T>(query, parameters).AsList();
 
