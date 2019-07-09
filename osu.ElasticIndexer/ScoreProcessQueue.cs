@@ -22,13 +22,12 @@ namespace osu.ElasticIndexer
 
         public ulong ScoreId { get; set; }
 
-        public static List<T> FetchIds<T>(List<ScoreProcessQueue> items) where T : HighScore
+        public static List<T> FetchByScoreIds<T>(List<ulong> scoreIds) where T : HighScore
         {
+            var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                var scoreIds = items.Select(x => x.ScoreId).AsList();
-                var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
-
                 dbConnection.Open();
 
                 string query = $"select * from {table} where score_id in @scoreIds";
@@ -39,14 +38,13 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static void CompleteQueued<T>(List<ScoreProcessQueue> items) where T : HighScore
+        public static void CompleteQueued<T>(List<ulong> scoreIds) where T : HighScore
         {
+            if (!scoreIds.Any()) return;
+
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                var scoreIds = items.Select(x => x.ScoreId).AsList();
                 var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
-
-                if (!scoreIds.Any()) return;
 
                 dbConnection.Open();
 

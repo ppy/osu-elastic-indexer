@@ -96,11 +96,12 @@ namespace osu.ElasticIndexer
                                 var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
                                 foreach (var chunk in chunks)
                                 {
-                                    var scores = ScoreProcessQueue.FetchIds<T>(chunk);
+                                    var scoreIds = chunk.Select(x => x.ScoreId).ToList();
+                                    var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds);
                                     Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores");
 
                                     dispatcher.Enqueue(scores);
-                                    ScoreProcessQueue.CompleteQueued<T>(chunk);
+                                    ScoreProcessQueue.CompleteQueued<T>(scoreIds);
                                     count += scores.Count;
                                 }
                             }
