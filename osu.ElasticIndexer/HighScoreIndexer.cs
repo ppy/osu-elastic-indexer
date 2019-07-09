@@ -92,7 +92,7 @@ namespace osu.ElasticIndexer
                             if (AppSettings.IsUsingQueue)
                             {
                                 Console.WriteLine("Reading from queue...");
-                                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
+                                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
                                 var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
                                 foreach (var chunk in chunks)
                                 {

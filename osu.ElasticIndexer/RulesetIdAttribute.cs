@@ -9,10 +9,10 @@ namespace osu.ElasticIndexer
     /// Integer value of the game mode.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class RulesetId : Attribute
+    public class RulesetIdAttribute : Attribute
     {
         public int Id { get; }
 
-        public RulesetId(int id) => Id = id;
+        public RulesetIdAttribute(int id) => Id = id;
     }
 }

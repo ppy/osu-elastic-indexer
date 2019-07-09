@@ -28,7 +28,6 @@ namespace osu.ElasticIndexer
             {
                 var scoreIds = items.Select(x => x.ScoreId).AsList();
                 var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
-                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
 
                 dbConnection.Open();
 
@@ -45,15 +44,14 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 var scoreIds = items.Select(x => x.ScoreId).AsList();
-                var mode = typeof(T).GetCustomAttributes<RulesetId>().First().Id;
+                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+
+                if (!scoreIds.Any()) return;
 
                 dbConnection.Open();
 
-                if (scoreIds.Count() > 0)
-                {
-                    string query = $"update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
-                    dbConnection.Execute(query, new { scoreIds, mode });
-                }
+                const string query = "update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
+                dbConnection.Execute(query, new { scoreIds, mode });
             }
         }
     }
