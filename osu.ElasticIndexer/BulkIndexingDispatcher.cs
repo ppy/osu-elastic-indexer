@@ -51,21 +51,10 @@ namespace osu.ElasticIndexer
 
                 while (true)
                 {
-                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk.IndexItems);
-                    var response = elasticClient.Bulk(bulkDescriptor);
-
-                    var deleteResponse = elasticClient.DeleteByQuery<T>(d => d
-                        .Index(index)
-                        .Query(q => q
-                            .Terms(t => t
-                                .Field(s => s.ScoreId)
-                                .Terms(chunk.DeleteScoreIds)
-                            )
-                        )
-                    );
-
                     bool retry;
-                    (success, retry) = retryOnResponse(response, chunk);
+                    // TODO: do index or delete only, not both.
+                    (success, retry) = bulkIndex(chunk.IndexItems);
+                    (success, retry) = delete(chunk.DeleteScoreIds);
 
                     if (!retry) break;
 
@@ -88,12 +77,39 @@ namespace osu.ElasticIndexer
             IndexMeta.Refresh();
         }
 
-        private (bool success, bool retry) retryOnResponse(IBulkResponse response, DispatcherQueueItem<T> chunk)
+        private (bool success, bool retry) bulkIndex(List<T> items)
+        {
+            if (items == null) return (success: true, retry: false);
+
+            var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(items);
+            var response = elasticClient.Bulk(bulkDescriptor);
+
+            return retryOnResponse(response, items);
+        }
+
+        private (bool success, bool retry) delete(List<long> scoreIds)
+        {
+            if (scoreIds == null) return (success: true, retry: false);
+
+            var deleteResponse = elasticClient.DeleteByQuery<T>(d => d
+                .Index(index)
+                .Query(q => q
+                    .Terms(t => t
+                        .Field(s => s.ScoreId)
+                        .Terms(scoreIds)
+                    )
+                )
+            );
+
+            return (success: true, retry: false);
+        }
+
+        private (bool success, bool retry) retryOnResponse(IBulkResponse response, List<T> items)
         {
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {chunk.IndexItems.Last().CursorValue}");
+                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {items.Last().CursorValue}");
                 return (success: false, retry: true);
             }
 
