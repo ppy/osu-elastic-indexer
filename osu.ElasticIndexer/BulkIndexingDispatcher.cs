@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer
             this.index = index;
         }
 
-        internal void Enqueue(List<T> list) => readBuffer.Add(new DispatcherQueueItem<T>(list) );
+        internal void Enqueue(List<T> add = null, List<long> remove = null) => readBuffer.Add(new DispatcherQueueItem<T>(add, remove) );
         internal void EnqueueEnd() => readBuffer.CompleteAdding();
 
         /// <summary>
@@ -51,8 +51,18 @@ namespace osu.ElasticIndexer
 
                 while (true)
                 {
-                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk.IndexItems).DeleteMany(chunk.DeleteItems);
+                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk.IndexItems);
                     var response = elasticClient.Bulk(bulkDescriptor);
+
+                    var deleteResponse = elasticClient.DeleteByQuery<T>(d => d
+                        .Index(index)
+                        .Query(q => q
+                            .Terms(t => t
+                                .Field(s => s.ScoreId)
+                                .Terms(chunk.DeleteScoreIds)
+                            )
+                        )
+                    );
 
                     bool retry;
                     (success, retry) = retryOnResponse(response, chunk);

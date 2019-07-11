@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer
         public string Id => $"{UserId}-{BeatmapId}-{EnabledMods}";
 
         [Number(NumberType.Long, Name = "score_id")]
-        public uint ScoreId { get; set; }
+        public long ScoreId { get; set; }
 
         [Number(NumberType.Long, Name = "beatmap_id")]
         public uint BeatmapId { get; set; }

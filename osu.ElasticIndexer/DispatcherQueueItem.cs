@@ -8,11 +8,12 @@ namespace osu.ElasticIndexer
     public class DispatcherQueueItem<T> where T : HighScore
     {
         public List<T> IndexItems { get; private set; }
-        public List<T> DeleteItems { get; private set; }
 
-        public DispatcherQueueItem(List<T> index, List<T> delete = null) {
+        public List<long> DeleteScoreIds { get; private set; }
+
+        public DispatcherQueueItem(List<T> index, List<long> delete = null) {
             IndexItems = index;
-            DeleteItems = delete;
+            DeleteScoreIds = delete;
         }
     }
 }

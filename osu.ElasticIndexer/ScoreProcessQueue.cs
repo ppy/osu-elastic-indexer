@@ -20,9 +20,9 @@ namespace osu.ElasticIndexer
         // These are the only columns we care about at the momemnt.
         public uint QueueId { get; set; }
 
-        public ulong ScoreId { get; set; }
+        public long ScoreId { get; set; }
 
-        public static void CompleteQueued<T>(List<ulong> scoreIds) where T : HighScore
+        public static void CompleteQueued<T>(List<long> scoreIds) where T : HighScore
         {
             if (!scoreIds.Any()) return;
 
@@ -37,7 +37,7 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static List<T> FetchByScoreIds<T>(List<ulong> scoreIds) where T : HighScore
+        public static List<T> FetchByScoreIds<T>(List<long> scoreIds) where T : HighScore
         {
             var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
 

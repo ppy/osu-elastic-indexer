@@ -98,9 +98,10 @@ namespace osu.ElasticIndexer
                                 {
                                     var scoreIds = chunk.Select(x => x.ScoreId).ToList();
                                     var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds);
-                                    Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores");
+                                    var removedScores = scoreIds.Except(scores.Select(x => x.ScoreId)).ToList();
+                                    Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
 
-                                    dispatcher.Enqueue(scores);
+                                    dispatcher.Enqueue(add: scores, remove: removedScores);
                                     ScoreProcessQueue.CompleteQueued<T>(scoreIds);
                                     count += scores.Count;
                                 }
