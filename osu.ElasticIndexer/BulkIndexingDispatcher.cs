@@ -17,7 +17,7 @@ namespace osu.ElasticIndexer
 
         // Self-limiting read-ahead buffer to ensure
         // there is always data ready to be dispatched to Elasticsearch.
-        private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.BufferSize);
+        private readonly BlockingCollection<DispatcherQueueItem<T>> readBuffer = new BlockingCollection<DispatcherQueueItem<T>>(AppSettings.BufferSize);
 
         private readonly string alias;
         private readonly string index;
@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer
             this.index = index;
         }
 
-        internal void Enqueue(List<T> list) => readBuffer.Add(list);
+        internal void Enqueue(List<T> list) => readBuffer.Add(new DispatcherQueueItem<T>(list) );
         internal void EnqueueEnd() => readBuffer.CompleteAdding();
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace osu.ElasticIndexer
 
                 while (true)
                 {
-                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
+                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk.IndexItems).DeleteMany(chunk.DeleteItems);
                     var response = elasticClient.Bulk(bulkDescriptor);
 
                     bool retry;
@@ -69,7 +69,7 @@ namespace osu.ElasticIndexer
                     {
                         Index = index,
                         Alias = alias,
-                        LastId = chunk.Last().CursorValue,
+                        LastId = chunk.IndexItems.Last().CursorValue,
                         UpdatedAt = DateTimeOffset.UtcNow
                     });
                 }
@@ -78,12 +78,12 @@ namespace osu.ElasticIndexer
             IndexMeta.Refresh();
         }
 
-        private (bool success, bool retry) retryOnResponse(IBulkResponse response, List<T> chunk)
+        private (bool success, bool retry) retryOnResponse(IBulkResponse response, DispatcherQueueItem<T> chunk)
         {
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {chunk.Last().CursorValue}");
+                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {chunk.IndexItems.Last().CursorValue}");
                 return (success: false, retry: true);
             }
 
