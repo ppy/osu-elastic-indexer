@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer
     {
         [Computed]
         [Ignore]
-        public override long CursorValue => ScoreId;
+        public override long CursorValue => (long) ScoreId;
 
         [Computed]
         [Ignore]
@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer
         public string Id => $"{UserId}-{BeatmapId}-{EnabledMods}";
 
         [Number(NumberType.Long, Name = "score_id")]
-        public long ScoreId { get; set; }
+        public ulong ScoreId { get; set; }
 
         [Number(NumberType.Long, Name = "beatmap_id")]
         public uint BeatmapId { get; set; }
