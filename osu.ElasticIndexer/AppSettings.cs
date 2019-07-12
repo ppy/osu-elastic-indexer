@@ -53,6 +53,7 @@ namespace osu.ElasticIndexer
 
             ConnectionString = config.GetConnectionString("osu");
             IsNew = parseBool("new");
+            IsUsingQueue = !parseBool("crawl");
             IsWatching = parseBool("watch");
             Prefix = config["elasticsearch:prefix"];
 
@@ -78,6 +79,8 @@ namespace osu.ElasticIndexer
         public static string ElasticsearchPrefix { get; private set; }
 
         public static bool IsNew { get; private set; }
+
+        public static bool IsUsingQueue { get; private set; }
 
         public static bool IsWatching { get; private set; }
 

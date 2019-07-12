@@ -5,13 +5,14 @@ using System;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class HighScoreIndexer<T> : IIndexer where T : Model
+    public class HighScoreIndexer<T> : IIndexer where T : HighScore
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
@@ -27,8 +28,9 @@ namespace osu.ElasticIndexer
         public void Run()
         {
             var index = findOrCreateIndex(Name);
-            // find out if we should be resuming
-            var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId;
+            // find out if we should be resuming; could be resuming from a previously aborted run,
+            // so don't assume the presence of a value means completion.
+            var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId ?? 0;
 
             Console.WriteLine();
             Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
@@ -77,7 +79,7 @@ namespace osu.ElasticIndexer
         /// <param name="resumeFrom">The cursor value to resume from;
         /// use null to resume from the last known value.</param>
         /// <returns>The database reader task.</returns>
-        private Task<long> databaseReaderTask(long? resumeFrom)
+        private Task<long> databaseReaderTask(long resumeFrom)
         {
             return Task.Factory.StartNew(() =>
                 {
@@ -87,13 +89,33 @@ namespace osu.ElasticIndexer
                     {
                         try
                         {
-                            var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
-                            foreach (var chunk in chunks)
+                            if (AppSettings.IsUsingQueue)
                             {
-                                dispatcher.Enqueue(chunk);
-                                count += chunk.Count;
-                                // update resumeFrom in this scope to allow resuming from connection errors.
-                                resumeFrom = chunk.Last().CursorValue;
+                                Console.WriteLine("Reading from queue...");
+                                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                                var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
+                                foreach (var chunk in chunks)
+                                {
+                                    var scoreIds = chunk.Select(x => x.ScoreId).ToList();
+                                    var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds);
+                                    Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores");
+
+                                    dispatcher.Enqueue(scores);
+                                    ScoreProcessQueue.CompleteQueued<T>(scoreIds);
+                                    count += scores.Count;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Crawling records...");
+                                var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
+                                foreach (var chunk in chunks)
+                                {
+                                    dispatcher.Enqueue(chunk);
+                                    count += chunk.Count;
+                                    // update resumeFrom in this scope to allow resuming from connection errors.
+                                    resumeFrom = chunk.Last().CursorValue;
+                                }
                             }
 
                             break;

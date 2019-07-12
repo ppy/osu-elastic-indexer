@@ -21,21 +21,24 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 long? lastId = resumeFrom ?? 0;
-                Console.WriteLine($"Starting from {lastId}...");
-
                 var cursorColumn = typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
                 var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+
+                Console.WriteLine($"Starting {table} from {lastId}...");
 
                 // FIXME: this is terrible.
                 var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
 
                 dbConnection.Open();
 
-                string query = $"select * from {table} where {cursorColumn} > @lastId {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
+                var max = dbConnection.QuerySingle<ulong?>($"SELECT MAX({cursorColumn}) FROM {table} WHERE {where}");
+                if (!max.HasValue) yield break;
+
+                string query = $"select * from {table} where {cursorColumn} > @lastId and {cursorColumn} <= @max {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
 
                 while (lastId != null)
                 {
-                    var parameters = new { lastId, chunkSize };
+                    var parameters = new { lastId, max, chunkSize };
                     Console.WriteLine("{0} {1}", query, parameters);
                     var queryResult = dbConnection.Query<T>(query, parameters).AsList();
 

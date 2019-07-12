@@ -10,7 +10,7 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    internal class BulkIndexingDispatcher<T> where T : Model
+    internal class BulkIndexingDispatcher<T> where T : HighScore
     {
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
@@ -62,7 +62,7 @@ namespace osu.ElasticIndexer
                     Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
                 }
 
-                if (success)
+                if (success && !AppSettings.IsUsingQueue)
                 {
                     // TODO: should probably aggregate responses and update to highest successful.
                     IndexMeta.UpdateAsync(new IndexMeta
