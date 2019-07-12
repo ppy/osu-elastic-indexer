@@ -31,7 +31,9 @@ namespace osu.ElasticIndexer
 
                 dbConnection.Open();
 
-                var max = dbConnection.QuerySingle<ulong>($"SELECT MAX({cursorColumn}) from {table}");
+                var max = dbConnection.QuerySingle<ulong?>($"SELECT MAX({cursorColumn}) FROM {table} WHERE {where}");
+                if (!max.HasValue) yield break;
+
                 string query = $"select * from {table} where {cursorColumn} > @lastId and {cursorColumn} <= @max {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
 
                 while (lastId != null)
