@@ -98,7 +98,10 @@ namespace osu.ElasticIndexer
                                 {
                                     var scoreIds = chunk.Select(x => x.ScoreId).ToList();
                                     var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds);
-                                    var removedScores = scoreIds.Except(scores.Select(x => x.ScoreId)).ToList();
+                                    var removedScores = scoreIds
+                                        .Except(scores.Select(x => x.ScoreId))
+                                        .Select(x => x.ToString())
+                                        .ToList();
                                     Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
 
                                     dispatcher.Enqueue(add: scores, remove: removedScores);
@@ -109,7 +112,7 @@ namespace osu.ElasticIndexer
                             else
                             {
                                 Console.WriteLine("Crawling records...");
-                                var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
+                                var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
                                 foreach (var chunk in chunks)
                                 {
                                     dispatcher.Enqueue(chunk);

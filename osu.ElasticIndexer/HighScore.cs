@@ -10,12 +10,16 @@ using Nest;
 namespace osu.ElasticIndexer
 {
     [CursorColumn("score_id")]
-    [ElasticsearchType(Name = "high_score", IdProperty = nameof(Id))]
+    [ElasticsearchType(Name = "high_score", IdProperty = nameof(ScoreId))]
     public abstract class HighScore : Model
     {
         [Computed]
         [Ignore]
         public override long CursorValue => ScoreId;
+
+        [Computed]
+        [Ignore]
+        public bool ShouldIndex => Pp > 0;
 
         // Properties ordered in the order they appear in the table.
 

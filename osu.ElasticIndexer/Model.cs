@@ -26,14 +26,17 @@ namespace osu.ElasticIndexer
 
                 Console.WriteLine($"Starting {table} from {lastId}...");
 
-                // FIXME: this is terrible.
-                var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
-
                 dbConnection.Open();
 
-                var max = dbConnection.QuerySingle<long?>($"SELECT MAX({cursorColumn}) FROM {table} WHERE {where}");
+                string maxQuery = $"SELECT MAX({cursorColumn}) FROM {table}";
+                if (!string.IsNullOrWhiteSpace(where))
+                    maxQuery += $" WHERE {where}";
+
+                var max = dbConnection.QuerySingle<ulong?>(maxQuery);
                 if (!max.HasValue) yield break;
 
+                // FIXME: this is terrible.
+                var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
                 string query = $"select * from {table} where {cursorColumn} > @lastId and {cursorColumn} <= @max {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
 
                 while (lastId != null)
