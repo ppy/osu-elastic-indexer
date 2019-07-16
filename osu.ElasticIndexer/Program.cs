@@ -4,6 +4,7 @@
 using System;
 using System.Globalization;
 using System.Threading;
+using System.Linq;
 using Dapper;
 using MySql.Data.MySqlClient;
 
@@ -79,19 +80,26 @@ namespace osu.ElasticIndexer
 
             foreach (var mode in AppSettings.Modes)
             {
+                var type = getTypeFromModeString(mode);
+                var modeInt = ((RulesetIdAttribute) type.GetCustomAttributes(typeof(RulesetIdAttribute), true).First()).Id;
+                var firstPendingQueueId = AppSettings.IsRebuild ? ScoreProcessQueue.GetFirstPendingQueueId(modeInt) : null;
+
                 var indexer = getIndexerFromModeString(mode);
                 indexer.Suffix = suffix;
                 indexer.ResumeFrom = AppSettings.ResumeFrom;
                 indexer.Run();
+
+                if (firstPendingQueueId.HasValue)
+                    ScoreProcessQueue.UnCompleteQueued(modeInt, firstPendingQueueId.Value);
             }
         }
 
         private static IIndexer getIndexerFromModeString(string mode)
         {
             var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
-            var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
+            var scoreType = getTypeFromModeString(mode);
 
-            Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(Type.GetType(className, true));
+            Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(scoreType);
 
             var indexer = (IIndexer)Activator.CreateInstance(indexerType);
 
@@ -103,6 +111,13 @@ namespace osu.ElasticIndexer
             };
 
             return indexer;
+        }
+
+        private static Type getTypeFromModeString(string mode)
+        {
+            var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
+
+            return Type.GetType(className, true);
         }
     }
 }

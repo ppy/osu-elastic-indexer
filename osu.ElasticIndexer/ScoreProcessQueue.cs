@@ -52,5 +52,27 @@ namespace osu.ElasticIndexer
                 return dbConnection.Query<T>(query, parameters).AsList();
             }
         }
+
+        public static ulong? GetFirstPendingQueueId(int mode)
+        {
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                dbConnection.Open();
+
+                const string query = "select MIN(queue_id) from score_process_queue where mode = @mode";
+                return dbConnection.QuerySingleOrDefault<ulong>(query, new { mode });
+            }
+        }
+
+        public static void UnCompleteQueued(int mode, ulong from)
+        {
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                dbConnection.Open();
+
+                const string query = "update score_process_queue set status = 1 where queue_id >= @from and mode = @mode";
+                dbConnection.Execute(query, new { from, mode });
+            }
+        }
     }
 }
