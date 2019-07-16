@@ -64,9 +64,6 @@ namespace osu.ElasticIndexer
         {
             Console.WriteLine($"Running in watch mode with {AppSettings.PollingInterval}ms poll.");
 
-            // run once with config resuming
-            runIndexing(AppSettings.ResumeFrom);
-
             while (true)
             {
                 // run continuously with automatic resume logic
