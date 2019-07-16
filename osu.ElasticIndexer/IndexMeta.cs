@@ -34,6 +34,9 @@ namespace osu.ElasticIndexer
         [Number(NumberType.Long, Name = "last_id")]
         public ulong LastId { get; set; }
 
+        [Number(NumberType.Long, Name = "reset_queue_to")]
+        public ulong? ResetQueueTo { get; set; }
+
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }
 

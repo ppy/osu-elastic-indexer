@@ -64,10 +64,12 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static void UnCompleteQueued(int mode, ulong from)
+        public static void UnCompleteQueued<T>(ulong from) where T : HighScore
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
+                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+
                 dbConnection.Open();
 
                 const string query = "update score_process_queue set status = 1 where queue_id >= @from and mode = @mode";

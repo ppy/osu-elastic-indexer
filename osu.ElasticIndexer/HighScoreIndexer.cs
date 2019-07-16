@@ -16,6 +16,7 @@ namespace osu.ElasticIndexer
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
+        public ulong? FirstPendingQueueId { get; set; }
         public string Name { get; set; }
         public ulong? ResumeFrom { get; set; }
         public string Suffix { get; set; }
@@ -30,7 +31,10 @@ namespace osu.ElasticIndexer
             var index = findOrCreateIndex(Name);
             // find out if we should be resuming; could be resuming from a previously aborted run,
             // so don't assume the presence of a value means completion.
-            var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId ?? 0;
+            var indexMeta = IndexMeta.GetByName(index);
+            var resumeFrom = ResumeFrom ?? indexMeta?.LastId ?? 0;
+            if (indexMeta.ResetQueueTo.HasValue)
+                ScoreProcessQueue.UnCompleteQueued<T>(indexMeta.ResetQueueTo.Value);
 
             Console.WriteLine();
             Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
@@ -50,6 +54,15 @@ namespace osu.ElasticIndexer
                 var readerTask = databaseReaderTask(resumeFrom);
                 dispatcher.Run();
                 readerTask.Wait();
+
+                // set queue reset position
+                if (AppSettings.IsRebuild)
+                {
+                    indexMeta = IndexMeta.GetByName(index);
+                    indexMeta.ResetQueueTo = FirstPendingQueueId;
+                    IndexMeta.UpdateAsync(indexMeta);
+                    IndexMeta.Refresh();
+                }
 
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;

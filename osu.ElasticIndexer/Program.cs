@@ -87,10 +87,8 @@ namespace osu.ElasticIndexer
                 var indexer = getIndexerFromModeString(mode);
                 indexer.Suffix = suffix;
                 indexer.ResumeFrom = AppSettings.ResumeFrom;
+                indexer.FirstPendingQueueId = firstPendingQueueId;
                 indexer.Run();
-
-                if (firstPendingQueueId.HasValue)
-                    ScoreProcessQueue.UnCompleteQueued(modeInt, firstPendingQueueId.Value);
             }
         }
 
