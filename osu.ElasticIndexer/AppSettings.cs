@@ -63,6 +63,8 @@ namespace osu.ElasticIndexer
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
 
             UseDocker = Environment.GetEnvironmentVariable("DOCKER")?.Contains("1") ?? false;
+
+            assertOptionsCompatible();
         }
 
         // same value as elasticsearch-net
@@ -80,6 +82,8 @@ namespace osu.ElasticIndexer
 
         public static bool IsNew { get; private set; }
 
+        public static bool IsRebuild { get { return !IsUsingQueue; } }
+
         public static bool IsUsingQueue { get; private set; }
 
         public static bool IsWatching { get; private set; }
@@ -95,6 +99,12 @@ namespace osu.ElasticIndexer
         public static ulong? ResumeFrom { get; private set; }
 
         public static bool UseDocker { get; private set; }
+
+        private static void assertOptionsCompatible()
+        {
+            if (IsRebuild && IsWatching)
+                throw new Exception("watch mode cannot be used with index rebuilding.");
+        }
 
         private static bool parseBool(string key)
         {
