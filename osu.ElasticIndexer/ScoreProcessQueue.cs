@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer
     [Table("score_process_queue")]
     public class ScoreProcessQueue : Model
     {
-        public override long CursorValue => QueueId;
+        public override ulong CursorValue => QueueId;
 
         // These are the only columns we care about at the momemnt.
         public uint QueueId { get; set; }

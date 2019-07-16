@@ -43,7 +43,7 @@ namespace osu.ElasticIndexer
                 BufferSize = int.Parse(config["buffer_size"]);
 
             if (!string.IsNullOrEmpty(config["resume_from"]))
-                ResumeFrom = long.Parse(config["resume_from"]);
+                ResumeFrom = ulong.Parse(config["resume_from"]);
 
             if (!string.IsNullOrEmpty(config["polling_interval"]))
                 PollingInterval = int.Parse(config["polling_interval"]);
@@ -92,7 +92,7 @@ namespace osu.ElasticIndexer
 
         public static int BufferSize { get; private set; } = 5;
 
-        public static long? ResumeFrom { get; private set; }
+        public static ulong? ResumeFrom { get; private set; }
 
         public static bool UseDocker { get; private set; }
 

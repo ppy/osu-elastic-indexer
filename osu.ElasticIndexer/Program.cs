@@ -79,7 +79,7 @@ namespace osu.ElasticIndexer
         /// Performs a single indexing run for all specified modes.
         /// </summary>
         /// <param name="resumeFrom">An optional resume point.</param>
-        private static void runIndexing(long? resumeFrom)
+        private static void runIndexing(ulong? resumeFrom)
         {
             var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 

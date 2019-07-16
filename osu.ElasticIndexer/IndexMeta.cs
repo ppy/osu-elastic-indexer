@@ -32,7 +32,7 @@ namespace osu.ElasticIndexer
         public string Alias { get; set; }
 
         [Number(NumberType.Long, Name = "last_id")]
-        public long LastId { get; set; }
+        public ulong LastId { get; set; }
 
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }

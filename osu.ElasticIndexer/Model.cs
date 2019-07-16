@@ -14,13 +14,13 @@ namespace osu.ElasticIndexer
     [CursorColumn("id")]
     public abstract class Model
     {
-        public abstract long CursorValue { get; }
+        public abstract ulong CursorValue { get; }
 
-        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, long? resumeFrom = null) where T : Model
+        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, ulong? resumeFrom = null) where T : Model
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                long? lastId = resumeFrom ?? 0;
+                ulong? lastId = resumeFrom ?? 0;
                 var cursorColumn = typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
                 var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
 
@@ -51,7 +51,7 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : Model =>
+        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, ulong? resumeFrom = null) where T : Model =>
             Chunk<T>(null, chunkSize, resumeFrom);
     }
 }

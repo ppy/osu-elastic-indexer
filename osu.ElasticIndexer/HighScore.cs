@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer
     {
         [Computed]
         [Ignore]
-        public override long CursorValue => (long) ScoreId;
+        public override ulong CursorValue => ScoreId;
 
         [Computed]
         [Ignore]

@@ -17,7 +17,7 @@ namespace osu.ElasticIndexer
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
         public string Name { get; set; }
-        public long? ResumeFrom { get; set; }
+        public ulong? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
         // use shared instance to avoid socket leakage.
@@ -79,7 +79,7 @@ namespace osu.ElasticIndexer
         /// <param name="resumeFrom">The cursor value to resume from;
         /// use null to resume from the last known value.</param>
         /// <returns>The database reader task.</returns>
-        private Task<long> databaseReaderTask(long resumeFrom)
+        private Task<long> databaseReaderTask(ulong resumeFrom)
         {
             return Task.Factory.StartNew(() =>
                 {
