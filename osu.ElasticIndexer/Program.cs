@@ -39,7 +39,7 @@ namespace osu.ElasticIndexer
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             IndexMeta.CreateIndex();
 
-            Console.WriteLine($"Using queue: `{AppSettings.IsUsingQueue}`");
+            Console.WriteLine($"rebuilding index: `{AppSettings.IsRebuild}`");
             if (AppSettings.IsWatching)
                 runWatchLoop();
             else

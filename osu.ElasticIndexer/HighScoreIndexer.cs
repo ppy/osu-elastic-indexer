@@ -108,7 +108,7 @@ namespace osu.ElasticIndexer
                     {
                         try
                         {
-                            if (AppSettings.IsUsingQueue)
+                            if (!AppSettings.IsRebuild)
                             {
                                 Console.WriteLine("Reading from queue...");
                                 var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
@@ -130,7 +130,7 @@ namespace osu.ElasticIndexer
                             }
                             else
                             {
-                                Console.WriteLine("Crawling records...");
+                                Console.WriteLine($"Rebuild from {resumeFrom}...");
                                 var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
                                 foreach (var chunk in chunks)
                                 {
