@@ -53,8 +53,8 @@ namespace osu.ElasticIndexer
                 {
                     var bulkDescriptor = new BulkDescriptor()
                         .Index(index)
-                        .IndexMany(chunk.IndexItems)
-                        .DeleteMany(chunk.DeleteItems);
+                        .IndexMany(chunk.ItemsToIndex)
+                        .DeleteMany(chunk.ItemsToDelete);
                     var response = elasticClient.Bulk(bulkDescriptor);
 
                     bool retry;
@@ -66,7 +66,7 @@ namespace osu.ElasticIndexer
                 }
 
                 if (success)
-                    BatchWithLastIdCompleted(this, chunk.IndexItems.Last().ScoreId);
+                    BatchWithLastIdCompleted(this, chunk.ItemsToIndex.Last().ScoreId);
             });
         }
 
@@ -75,7 +75,7 @@ namespace osu.ElasticIndexer
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {queued.IndexItems.Last().CursorValue}");
+                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {queued.ItemsToIndex.Last().CursorValue}");
                 return (success: false, retry: true);
             }
 
