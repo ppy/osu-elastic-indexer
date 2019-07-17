@@ -33,8 +33,7 @@ namespace osu.ElasticIndexer
             // so don't assume the presence of a value means completion.
             var indexMeta = IndexMeta.GetByName(index);
             var resumeFrom = ResumeFrom ?? indexMeta?.LastId ?? 0;
-            if (indexMeta.ResetQueueTo.HasValue)
-                ScoreProcessQueue.UnCompleteQueued<T>(indexMeta.ResetQueueTo.Value);
+            processQueueReset(indexMeta);
 
             Console.WriteLine();
             Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
@@ -54,15 +53,6 @@ namespace osu.ElasticIndexer
                 var readerTask = databaseReaderTask(resumeFrom);
                 dispatcher.Run();
                 readerTask.Wait();
-
-                // set queue reset position
-                if (AppSettings.IsRebuild)
-                {
-                    indexMeta = IndexMeta.GetByName(index);
-                    indexMeta.ResetQueueTo = FirstPendingQueueId;
-                    IndexMeta.UpdateAsync(indexMeta);
-                    IndexMeta.Refresh();
-                }
 
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;
@@ -199,6 +189,34 @@ namespace osu.ElasticIndexer
             return index;
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
+        }
+
+        /// <summary>
+        /// Saves the position the score processing queue should be reset to if rebuilding an index,
+        /// resets the position of the queue to the saved position, otherwise.
+        /// </summary>
+        /// <param name="indexMeta">Document that contains the saved queue position.</param>
+        private void processQueueReset(IndexMeta indexMeta)
+        {
+            if (AppSettings.IsRebuild)
+            {
+                // If there is already an existing value, the processor is probabaly resuming from a previous run,
+                // so we likely want to preserve that value.
+                if (indexMeta.ResetQueueTo.HasValue) return;
+
+                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                indexMeta.ResetQueueTo = ScoreProcessQueue.GetFirstPendingQueueId(mode);
+            }
+            else
+            {
+                if (!indexMeta.ResetQueueTo.HasValue) return;
+
+                ScoreProcessQueue.UnCompleteQueued<T>(indexMeta.ResetQueueTo.Value);
+                indexMeta.ResetQueueTo = null;
+            }
+
+            IndexMeta.UpdateAsync(indexMeta);
+            IndexMeta.Refresh();
         }
 
         private void updateAlias(string alias, string index, bool close = true)

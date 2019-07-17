@@ -80,14 +80,9 @@ namespace osu.ElasticIndexer
 
             foreach (var mode in AppSettings.Modes)
             {
-                var type = getTypeFromModeString(mode);
-                var modeInt = ((RulesetIdAttribute) type.GetCustomAttributes(typeof(RulesetIdAttribute), true).First()).Id;
-                var firstPendingQueueId = AppSettings.IsRebuild ? ScoreProcessQueue.GetFirstPendingQueueId(modeInt) : null;
-
                 var indexer = getIndexerFromModeString(mode);
                 indexer.Suffix = suffix;
                 indexer.ResumeFrom = AppSettings.ResumeFrom;
-                indexer.FirstPendingQueueId = firstPendingQueueId;
                 indexer.Run();
             }
         }

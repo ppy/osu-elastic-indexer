@@ -10,13 +10,6 @@ namespace osu.ElasticIndexer
         event EventHandler<IndexCompletedArgs> IndexCompleted;
 
         /// <summary>
-        /// The ID where the queue-based indexer should be forced to restart from on its next pass,
-        ///  after the index is rebuilt.
-        /// </summary>
-        /// <value></value>
-        ulong? FirstPendingQueueId { get; set; }
-
-        /// <summary>
         /// The index's name.
         /// </summary>
         string Name { get; set; }
