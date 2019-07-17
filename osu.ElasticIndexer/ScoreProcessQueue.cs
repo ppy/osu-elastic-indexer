@@ -60,7 +60,7 @@ namespace osu.ElasticIndexer
                 dbConnection.Open();
 
                 const string query = "SELECT MAX(queue_id) FROM score_process_queue WHERE status = 2 AND mode = @mode";
-                return dbConnection.QuerySingleOrDefault<ulong>(query, new { mode });
+                return dbConnection.QuerySingle<ulong?>(query, new { mode });
             }
         }
 
