@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer
             this.index = index;
         }
 
-        internal void Enqueue(List<T> add = null, List<string> remove = null) => readBuffer.Add(new DispatcherQueueItem<T>(add, remove));
+        internal void Enqueue(List<T> add = null, List<T> remove = null) => readBuffer.Add(new DispatcherQueueItem<T>(add, remove));
         internal void EnqueueEnd() => readBuffer.CompleteAdding();
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace osu.ElasticIndexer
                     var bulkDescriptor = new BulkDescriptor()
                         .Index(index)
                         .IndexMany(chunk.IndexItems)
-                        .DeleteMany(chunk.DeleteIds);
+                        .DeleteMany(chunk.DeleteItems);
                     var response = elasticClient.Bulk(bulkDescriptor);
 
                     bool retry;

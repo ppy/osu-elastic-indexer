@@ -19,13 +19,9 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Ignore]
-        public bool ShouldIndex => Pp > 0;
+        public bool ShouldIndex => Pp.HasValue;
 
         // Properties ordered in the order they appear in the table.
-
-        [Computed]
-        [Ignore]
-        public string Id => $"{UserId}-{BeatmapId}-{EnabledMods}";
 
         [Number(NumberType.Long, Name = "score_id")]
         public ulong ScoreId { get; set; }
@@ -77,7 +73,7 @@ namespace osu.ElasticIndexer
         public DateTimeOffset Date { get; set; }
 
         [Number(NumberType.Float, Name = "pp")]
-        public float Pp { get; set; }
+        public float? Pp { get; set; }
 
         [Boolean(Name = "replay")]
         public bool Replay { get; set; }

@@ -12,7 +12,7 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class HighScoreIndexer<T> : IIndexer where T : HighScore
+    public class HighScoreIndexer<T> : IIndexer where T : HighScore, new()
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
@@ -107,10 +107,10 @@ namespace osu.ElasticIndexer
                                 foreach (var chunk in chunks)
                                 {
                                     var scoreIds = chunk.Select(x => x.ScoreId).ToList();
-                                    var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds);
+                                    var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds).Where(x => x.ShouldIndex).ToList();
                                     var removedScores = scoreIds
                                         .Except(scores.Select(x => x.ScoreId))
-                                        .Select(x => x.ToString())
+                                        .Select(scoreId => new T { ScoreId = scoreId })
                                         .ToList();
                                     Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
 
@@ -125,7 +125,7 @@ namespace osu.ElasticIndexer
                                 var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
                                 foreach (var chunk in chunks)
                                 {
-                                    dispatcher.Enqueue(chunk);
+                                    dispatcher.Enqueue(chunk.Where(x => x.ShouldIndex).ToList());
                                     count += chunk.Count;
                                     // update resumeFrom in this scope to allow resuming from connection errors.
                                     resumeFrom = chunk.Last().CursorValue;
