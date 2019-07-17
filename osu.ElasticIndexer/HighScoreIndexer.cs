@@ -16,8 +16,8 @@ namespace osu.ElasticIndexer
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
-        public ulong? FirstPendingQueueId { get; set; }
         public string Name { get; set; }
+        public string Index { get; private set; }
         public ulong? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
@@ -28,25 +28,25 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
-            var index = findOrCreateIndex(Name);
+            Index = findOrCreateIndex(Name);
             // find out if we should be resuming; could be resuming from a previously aborted run,
             // so don't assume the presence of a value means completion.
-            var indexMeta = IndexMeta.GetByName(index);
+            var indexMeta = IndexMeta.GetByName(Index);
             var resumeFrom = ResumeFrom ?? indexMeta?.LastId ?? 0;
             processQueueReset(indexMeta);
 
             Console.WriteLine();
-            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
+            Console.WriteLine($"{typeof(T)}, index `{Index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
             Console.WriteLine();
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
                 Alias = Name,
-                Index = index,
+                Index = Index,
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(Name, index);
+            dispatcher = new BulkIndexingDispatcher<T>(Name, Index);
 
             try
             {
@@ -57,7 +57,7 @@ namespace osu.ElasticIndexer
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;
 
-                updateAlias(Name, index);
+                updateAlias(Name, Index);
                 IndexCompleted(this, indexCompletedArgs);
             }
             catch (AggregateException ae)
@@ -200,10 +200,10 @@ namespace osu.ElasticIndexer
         {
             var copy = new IndexMeta
             {
-                Alias = indexMeta.Alias,
-                Index = indexMeta.Index,
-                LastId = indexMeta.LastId,
-                ResetQueueTo = indexMeta.ResetQueueTo,
+                Alias = indexMeta?.Alias ?? Name,
+                Index = indexMeta?.Index ?? Index,
+                LastId = indexMeta?.LastId ?? 0,
+                ResetQueueTo = indexMeta?.ResetQueueTo,
                 UpdatedAt = DateTimeOffset.UtcNow
             };
 
@@ -211,17 +211,19 @@ namespace osu.ElasticIndexer
             {
                 // If there is already an existing value, the processor is probabaly resuming from a previous run,
                 // so we likely want to preserve that value.
-                if (indexMeta.ResetQueueTo.HasValue) return;
-
-                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
-                copy.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
+                if (!copy.ResetQueueTo.HasValue)
+                {
+                    var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                    copy.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
+                }
             }
             else
             {
-                if (!indexMeta.ResetQueueTo.HasValue) return;
-
-                ScoreProcessQueue.UnCompleteQueued<T>(indexMeta.ResetQueueTo.Value);
-                copy.ResetQueueTo = null;
+                if (copy.ResetQueueTo.HasValue)
+                {
+                    ScoreProcessQueue.UnCompleteQueued<T>(copy.ResetQueueTo.Value);
+                    copy.ResetQueueTo = null;
+                }
             }
 
             IndexMeta.UpdateAsync(copy);
