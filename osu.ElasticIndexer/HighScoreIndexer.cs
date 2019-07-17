@@ -198,6 +198,15 @@ namespace osu.ElasticIndexer
         /// <param name="indexMeta">Document that contains the saved queue position.</param>
         private void processQueueReset(IndexMeta indexMeta)
         {
+            var copy = new IndexMeta
+            {
+                Alias = indexMeta.Alias,
+                Index = indexMeta.Index,
+                LastId = indexMeta.LastId,
+                ResetQueueTo = indexMeta.ResetQueueTo,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
             if (AppSettings.IsRebuild)
             {
                 // If there is already an existing value, the processor is probabaly resuming from a previous run,
@@ -205,17 +214,17 @@ namespace osu.ElasticIndexer
                 if (indexMeta.ResetQueueTo.HasValue) return;
 
                 var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
-                indexMeta.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
+                copy.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
             }
             else
             {
                 if (!indexMeta.ResetQueueTo.HasValue) return;
 
                 ScoreProcessQueue.UnCompleteQueued<T>(indexMeta.ResetQueueTo.Value);
-                indexMeta.ResetQueueTo = null;
+                copy.ResetQueueTo = null;
             }
 
-            IndexMeta.UpdateAsync(indexMeta);
+            IndexMeta.UpdateAsync(copy);
             IndexMeta.Refresh();
         }
 
