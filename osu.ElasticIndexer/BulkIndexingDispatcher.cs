@@ -12,6 +12,8 @@ namespace osu.ElasticIndexer
 {
     internal class BulkIndexingDispatcher<T> where T : HighScore
     {
+        internal event EventHandler<ulong> BatchWithLastIdCompleted = delegate { };
+
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
 
@@ -19,12 +21,10 @@ namespace osu.ElasticIndexer
         // there is always data ready to be dispatched to Elasticsearch.
         private readonly BlockingCollection<DispatcherQueueItem<T>> readBuffer = new BlockingCollection<DispatcherQueueItem<T>>(AppSettings.BufferSize);
 
-        private readonly string alias;
         private readonly string index;
 
-        internal BulkIndexingDispatcher(string alias, string index)
+        internal BulkIndexingDispatcher(string index)
         {
-            this.alias = alias;
             this.index = index;
         }
 
@@ -65,20 +65,9 @@ namespace osu.ElasticIndexer
                     Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
                 }
 
-                if (success && !AppSettings.IsUsingQueue)
-                {
-                    // TODO: should probably aggregate responses and update to highest successful.
-                    IndexMeta.UpdateAsync(new IndexMeta
-                    {
-                        Index = index,
-                        Alias = alias,
-                        LastId = chunk.IndexItems.Last().CursorValue,
-                        UpdatedAt = DateTimeOffset.UtcNow
-                    });
-                }
+                if (success)
+                    BatchWithLastIdCompleted(this, chunk.IndexItems.Last().ScoreId);
             });
-
-            IndexMeta.Refresh();
         }
 
         private (bool success, bool retry) retryOnResponse(IBulkResponse response, DispatcherQueueItem<T> queued)

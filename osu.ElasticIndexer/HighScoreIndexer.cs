@@ -33,7 +33,7 @@ namespace osu.ElasticIndexer
             // so don't assume the presence of a value means completion.
             var indexMeta = IndexMeta.GetByName(Index);
             var resumeFrom = ResumeFrom ?? indexMeta?.LastId ?? 0;
-            processQueueReset(indexMeta);
+            indexMeta = processQueueReset(indexMeta);
 
             Console.WriteLine();
             Console.WriteLine($"{typeof(T)}, index `{Index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
@@ -46,7 +46,9 @@ namespace osu.ElasticIndexer
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(Name, Index);
+            dispatcher = new BulkIndexingDispatcher<T>(Index);
+            if (AppSettings.IsRebuild)
+                dispatcher.BatchWithLastIdCompleted += handleBatchWithLastIdCompleted;
 
             try
             {
@@ -57,6 +59,7 @@ namespace osu.ElasticIndexer
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;
 
+                IndexMeta.Refresh();
                 updateAlias(Name, Index);
                 IndexCompleted(this, indexCompletedArgs);
             }
@@ -72,6 +75,19 @@ namespace osu.ElasticIndexer
 
                 Console.WriteLine(ex.Message);
                 return true;
+            }
+
+            void handleBatchWithLastIdCompleted(object sender, ulong lastId)
+            {
+                // TODO: should probably aggregate responses and update to highest successful.
+                IndexMeta.UpdateAsync(new IndexMeta
+                {
+                    Index = Index,
+                    Alias = Name,
+                    LastId = lastId,
+                    ResetQueueTo = indexMeta.ResetQueueTo,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
             }
         }
 
@@ -196,7 +212,7 @@ namespace osu.ElasticIndexer
         /// resets the position of the queue to the saved position, otherwise.
         /// </summary>
         /// <param name="indexMeta">Document that contains the saved queue position.</param>
-        private void processQueueReset(IndexMeta indexMeta)
+        private IndexMeta processQueueReset(IndexMeta indexMeta)
         {
             var copy = new IndexMeta
             {
@@ -228,6 +244,8 @@ namespace osu.ElasticIndexer
 
             IndexMeta.UpdateAsync(copy);
             IndexMeta.Refresh();
+
+            return copy;
         }
 
         private void updateAlias(string alias, string index, bool close = true)
