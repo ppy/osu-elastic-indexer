@@ -4,7 +4,6 @@
 using System;
 using System.Globalization;
 using System.Threading;
-using System.Linq;
 using Dapper;
 using MySql.Data.MySqlClient;
 

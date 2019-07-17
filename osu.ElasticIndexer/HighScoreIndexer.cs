@@ -202,13 +202,11 @@ namespace osu.ElasticIndexer
         {
             var index = findOrCreateIndex(Name);
             // look for any existing resume data.
-            var indexMeta = IndexMeta.GetByName(index);
-            if (indexMeta == null)
-                indexMeta = new IndexMeta
-                {
-                    Alias = Name,
-                    Index = index,
-                };
+            var indexMeta = IndexMeta.GetByName(index) ?? new IndexMeta
+            {
+                Alias = Name,
+                Index = index,
+            };
 
             indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
 
