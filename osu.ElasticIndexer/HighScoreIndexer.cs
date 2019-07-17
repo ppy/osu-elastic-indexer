@@ -205,7 +205,7 @@ namespace osu.ElasticIndexer
                 if (indexMeta.ResetQueueTo.HasValue) return;
 
                 var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
-                indexMeta.ResetQueueTo = ScoreProcessQueue.GetFirstPendingQueueId(mode);
+                indexMeta.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
             }
             else
             {

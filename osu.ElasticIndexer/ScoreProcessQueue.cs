@@ -53,13 +53,13 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static ulong? GetFirstPendingQueueId(int mode)
+        public static ulong? GetLastProcessedQueueId(int mode)
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 dbConnection.Open();
 
-                const string query = "select MIN(queue_id) from score_process_queue where mode = @mode";
+                const string query = "SELECT MAX(queue_id) FROM score_process_queue WHERE status = 2 AND mode = @mode";
                 return dbConnection.QuerySingleOrDefault<ulong>(query, new { mode });
             }
         }
@@ -72,7 +72,7 @@ namespace osu.ElasticIndexer
 
                 dbConnection.Open();
 
-                const string query = "update score_process_queue set status = 1 where queue_id >= @from and mode = @mode";
+                const string query = "UPDATE score_process_queue SET status = 1 WHERE queue_id > @from AND mode = @mode";
                 dbConnection.Execute(query, new { from, mode });
             }
         }
