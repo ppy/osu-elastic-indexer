@@ -17,7 +17,6 @@ namespace osu.ElasticIndexer
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
         public string Name { get; set; }
-        public string Index { get; private set; }
         public ulong? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
@@ -28,31 +27,23 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
-            Index = findOrCreateIndex(Name);
-            // find out if we should be resuming; could be resuming from a previously aborted run,
-            // so don't assume the presence of a value means completion.
-            var indexMeta = IndexMeta.GetByName(Index);
-            var resumeFrom = ResumeFrom ?? indexMeta?.LastId ?? 0;
-            indexMeta = processQueueReset(indexMeta);
-
-            Console.WriteLine();
-            Console.WriteLine($"{typeof(T)}, index `{Index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
-            Console.WriteLine();
+            var initial = initialize();
+            var index = initial.Index;
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
                 Alias = Name,
-                Index = Index,
+                Index = index,
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(Index);
+            dispatcher = new BulkIndexingDispatcher<T>(index);
             if (AppSettings.IsRebuild)
                 dispatcher.BatchWithLastIdCompleted += handleBatchWithLastIdCompleted;
 
             try
             {
-                var readerTask = databaseReaderTask(resumeFrom);
+                var readerTask = databaseReaderTask(initial.LastId);
                 dispatcher.Run();
                 readerTask.Wait();
 
@@ -60,7 +51,7 @@ namespace osu.ElasticIndexer
                 indexCompletedArgs.CompletedAt = DateTime.Now;
 
                 IndexMeta.Refresh();
-                updateAlias(Name, Index);
+                updateAlias(Name, index);
                 IndexCompleted(this, indexCompletedArgs);
             }
             catch (AggregateException ae)
@@ -82,10 +73,10 @@ namespace osu.ElasticIndexer
                 // TODO: should probably aggregate responses and update to highest successful.
                 IndexMeta.UpdateAsync(new IndexMeta
                 {
-                    Index = Index,
+                    Index = index,
                     Alias = Name,
                     LastId = lastId,
-                    ResetQueueTo = indexMeta.ResetQueueTo,
+                    ResetQueueTo = initial.ResetQueueTo,
                     UpdatedAt = DateTimeOffset.UtcNow
                 });
             }
@@ -207,45 +198,52 @@ namespace osu.ElasticIndexer
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
-        /// <summary>
-        /// Saves the position the score processing queue should be reset to if rebuilding an index,
-        /// resets the position of the queue to the saved position, otherwise.
-        /// </summary>
-        /// <param name="indexMeta">Document that contains the saved queue position.</param>
-        private IndexMeta processQueueReset(IndexMeta indexMeta)
+        private IndexMeta initialize()
         {
-            var copy = new IndexMeta
-            {
-                Alias = indexMeta?.Alias ?? Name,
-                Index = indexMeta?.Index ?? Index,
-                LastId = indexMeta?.LastId ?? 0,
-                ResetQueueTo = indexMeta?.ResetQueueTo,
-                UpdatedAt = DateTimeOffset.UtcNow
-            };
+            var index = findOrCreateIndex(Name);
+            // look for any existing resume data.
+            var indexMeta = IndexMeta.GetByName(index);
+            if (indexMeta == null)
+                indexMeta = new IndexMeta
+                {
+                    Alias = Name,
+                    Index = index,
+                };
+
+            indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
+
+            Console.WriteLine();
+            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{indexMeta.LastId}`");
 
             if (AppSettings.IsRebuild)
             {
+                // Save the position the score processing queue should be reset to if rebuilding an index.
                 // If there is already an existing value, the processor is probabaly resuming from a previous run,
                 // so we likely want to preserve that value.
-                if (!copy.ResetQueueTo.HasValue)
+                if (!indexMeta.ResetQueueTo.HasValue)
                 {
                     var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
-                    copy.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
+                    indexMeta.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
                 }
             }
             else
             {
-                if (copy.ResetQueueTo.HasValue)
+                // process queue reset if any.
+                if (indexMeta.ResetQueueTo.HasValue)
                 {
-                    ScoreProcessQueue.UnCompleteQueued<T>(copy.ResetQueueTo.Value);
-                    copy.ResetQueueTo = null;
+                    Console.WriteLine($"Resetting queue_id > {indexMeta.ResetQueueTo}");
+                    ScoreProcessQueue.UnCompleteQueued<T>(indexMeta.ResetQueueTo.Value);
+                    indexMeta.ResetQueueTo = null;
                 }
             }
 
-            IndexMeta.UpdateAsync(copy);
+            indexMeta.UpdatedAt = DateTimeOffset.UtcNow;
+            IndexMeta.UpdateAsync(indexMeta);
             IndexMeta.Refresh();
 
-            return copy;
+            Console.WriteLine();
+
+            return indexMeta;
         }
 
         private void updateAlias(string alias, string index, bool close = true)
