@@ -5,7 +5,6 @@ using System;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
@@ -102,7 +101,7 @@ namespace osu.ElasticIndexer
                             if (!AppSettings.IsRebuild)
                             {
                                 Console.WriteLine("Reading from queue...");
-                                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                                var mode = HighScore.GetRulesetId<T>();
                                 var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
                                 foreach (var chunk in chunks)
                                 {
@@ -220,7 +219,7 @@ namespace osu.ElasticIndexer
                 // so we likely want to preserve that value.
                 if (!indexMeta.ResetQueueTo.HasValue)
                 {
-                    var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                    var mode = HighScore.GetRulesetId<T>();
                     indexMeta.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
                 }
             }

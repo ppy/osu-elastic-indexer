@@ -21,8 +21,8 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 ulong? lastId = resumeFrom ?? 0;
-                var cursorColumn = typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
-                var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+                var cursorColumn = Model.GetCursorColumnName<T>();
+                var table = Model.GetTableName<T>();
 
                 Console.WriteLine($"Starting {table} from {lastId}...");
 
@@ -53,5 +53,15 @@ namespace osu.ElasticIndexer
 
         public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, ulong? resumeFrom = null) where T : Model =>
             Chunk<T>(null, chunkSize, resumeFrom);
+
+        public static string GetCursorColumnName<T>() where T : Model
+        {
+            return typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
+        }
+
+        public static string GetTableName<T>() where T : Model
+        {
+            return typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+        }
     }
 }

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Dapper.Contrib.Extensions;
 using Nest;
 
@@ -130,6 +131,11 @@ namespace osu.ElasticIndexer
             }
 
             return mods.Values.ToList();
+        }
+
+        public static int GetRulesetId<T>() where T : HighScore
+        {
+            return typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
         }
     }
 }

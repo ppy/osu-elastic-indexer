@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using MySql.Data.MySqlClient;
@@ -28,7 +27,7 @@ namespace osu.ElasticIndexer
 
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                var mode = HighScore.GetRulesetId<T>();
 
                 dbConnection.Open();
 
@@ -39,7 +38,7 @@ namespace osu.ElasticIndexer
 
         public static List<T> FetchByScoreIds<T>(List<ulong> scoreIds) where T : HighScore
         {
-            var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+            var table = Model.GetTableName<T>();
 
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
@@ -68,7 +67,7 @@ namespace osu.ElasticIndexer
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                var mode = HighScore.GetRulesetId<T>();
 
                 dbConnection.Open();
 

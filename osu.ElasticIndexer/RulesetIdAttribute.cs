@@ -14,5 +14,7 @@ namespace osu.ElasticIndexer
         public int Id { get; }
 
         public RulesetIdAttribute(int id) => Id = id;
+
+
     }
 }
