@@ -21,8 +21,8 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 ulong? lastId = resumeFrom ?? 0;
-                var cursorColumn = Model.GetCursorColumnName<T>();
-                var table = Model.GetTableName<T>();
+                var cursorColumn = GetCursorColumnName<T>();
+                var table = GetTableName<T>();
 
                 Console.WriteLine($"Starting {table} from {lastId}...");
 

@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer
 
         public static List<T> FetchByScoreIds<T>(List<ulong> scoreIds) where T : HighScore
         {
-            var table = Model.GetTableName<T>();
+            var table = GetTableName<T>();
 
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
