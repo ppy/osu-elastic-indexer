@@ -8,8 +8,6 @@ namespace osu.ElasticIndexer
 {
     public class DispatcherQueueItem<T> where T : HighScore
     {
-        private static readonly IEnumerable<T> empty_list = new ReadOnlyCollection<T>(new List<T>(0));
-
         public IEnumerable<T> ItemsToDelete { get; private set; }
         public IEnumerable<T> ItemsToIndex { get; private set; }
 
