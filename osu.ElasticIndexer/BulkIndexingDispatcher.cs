@@ -12,7 +12,7 @@ namespace osu.ElasticIndexer
 {
     internal class BulkIndexingDispatcher<T> where T : HighScore
     {
-        internal event EventHandler<ulong> BatchWithLastIdCompleted = delegate { };
+        internal event EventHandler<ulong> BatchWithLastIdCompleted;
 
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
@@ -66,7 +66,7 @@ namespace osu.ElasticIndexer
                 }
 
                 if (success)
-                    BatchWithLastIdCompleted(this, chunk.ItemsToIndex.Last().ScoreId);
+                    BatchWithLastIdCompleted?.Invoke(this, chunk.ItemsToIndex.Last().ScoreId);
             });
         }
 
