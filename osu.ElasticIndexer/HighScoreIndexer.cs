@@ -55,7 +55,7 @@ namespace osu.ElasticIndexer
 
                 // when preparing for schema changes, the alias update
                 // should be done by process waiting for the ready signal.
-                if (AppSettings.IsPrepMode)
+                if (AppSettings.IsPrep.Contains(typeof(T)))
                     IndexMeta.MarkAsReady(index);
                 else
                     updateAlias(Name, index);
@@ -92,14 +92,16 @@ namespace osu.ElasticIndexer
 
         private bool checkIfReady()
         {
-            if (!AppSettings.IsPrepMode || AppSettings.IsRebuild)
+            if (!AppSettings.IsPrep.Contains(typeof(T)) || AppSettings.IsRebuild)
                 return true;
 
+            Console.WriteLine();
             var indexMeta = IndexMeta.GetPrepIndex(Name);
 
             if (indexMeta == null)
             {
-                Console.WriteLine($"{Name} is not ready");
+
+                Console.WriteLine($"{Name} is not ready...");
                 return false;
             }
             else
@@ -108,6 +110,8 @@ namespace osu.ElasticIndexer
                 // update alias and go
                 var index = findOrCreateIndex(Name);
                 updateAlias(Name, index);
+                AppSettings.IsPrep.Remove(typeof(T));
+
                 return true;
             }
         }

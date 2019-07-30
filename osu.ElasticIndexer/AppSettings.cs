@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -65,6 +66,10 @@ namespace osu.ElasticIndexer
             UseDocker = parseBool("docker");
 
             IsPrepMode = parseBool("prep");
+            // this is handled per-mode because per-mode indices do not become ready in the same processing loop.
+            if (IsPrepMode)
+                foreach (var mode in Modes)
+                    IsPrep.Add(HighScore.GetTypeFromModeString(mode));
 
             assertOptionsCompatible();
         }
@@ -86,8 +91,6 @@ namespace osu.ElasticIndexer
 
         public static bool IsNew { get; set; }
 
-        public static bool IsPrepMode { get; private set; }
-
         public static bool IsRebuild { get; private set; }
 
         public static bool IsWatching { get; private set; }
@@ -102,21 +105,28 @@ namespace osu.ElasticIndexer
 
         public static bool UseDocker { get; private set; }
 
+        private static bool IsPrepMode { get; set; }
+
         private static void assertOptionsCompatible()
         {
             if (IsRebuild && IsWatching)
                 throw new Exception("watch mode cannot be used with index rebuilding.");
 
-            if (IsPrepMode && ResumeFrom.HasValue)
+            if (IsPrepMode)
+            {
+                if (ResumeFrom.HasValue)
                     throw new Exception("resume_from cannot be used in this mode.");
 
-            if (IsPrepMode && IsNew && !IsRebuild)
-                throw new Exception("cannot use prep mode with creating a new index and not rebuilding.");
+                if (IsNew && !IsRebuild)
+                    throw new Exception("cannot use prep mode with creating a new index and not rebuilding.");
+            }
         }
 
         private static bool parseBool(string key)
         {
             return new[] { "1", "true" }.Contains((config[key] ?? string.Empty).ToLowerInvariant());
         }
+
+        public static HashSet<Type> IsPrep { get; private set; } = new HashSet<Type>();
     }
 }

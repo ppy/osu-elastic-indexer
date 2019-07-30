@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Dapper.Contrib.Extensions;
@@ -136,6 +137,13 @@ namespace osu.ElasticIndexer
         public static int GetRulesetId<T>() where T : HighScore
         {
             return typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+        }
+
+        public static Type GetTypeFromModeString(string mode)
+        {
+            var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
+
+            return Type.GetType(className, true);
         }
     }
 }

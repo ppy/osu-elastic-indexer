@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Globalization;
 using System.Threading;
 using Dapper;
 using MySql.Data.MySqlClient;
@@ -90,7 +89,7 @@ namespace osu.ElasticIndexer
         private static IIndexer getIndexerFromModeString(string mode)
         {
             var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
-            var scoreType = getTypeFromModeString(mode);
+            var scoreType = HighScore.GetTypeFromModeString(mode);
 
             Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(scoreType);
 
@@ -104,13 +103,6 @@ namespace osu.ElasticIndexer
             };
 
             return indexer;
-        }
-
-        private static Type getTypeFromModeString(string mode)
-        {
-            var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
-
-            return Type.GetType(className, true);
         }
     }
 }
