@@ -66,6 +66,7 @@ namespace osu.ElasticIndexer
             {
                 // run continuously with automatic resume logic
                 runIndexing();
+                AppSettings.IsNew = false;
                 Thread.Sleep(AppSettings.PollingInterval);
             }
         }

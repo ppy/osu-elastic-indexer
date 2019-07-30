@@ -84,7 +84,7 @@ namespace osu.ElasticIndexer
 
         public static string ElasticsearchPrefix { get; private set; }
 
-        public static bool IsNew { get; private set; }
+        public static bool IsNew { get; set; }
 
         public static bool IsPrepMode { get; private set; }
 
