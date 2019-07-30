@@ -62,7 +62,7 @@ namespace osu.ElasticIndexer
 
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
 
-            UseDocker = Environment.GetEnvironmentVariable("DOCKER")?.Contains("1") ?? false;
+            UseDocker = parseBool("docker");
 
             assertOptionsCompatible();
         }
