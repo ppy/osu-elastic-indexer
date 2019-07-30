@@ -67,6 +67,8 @@ namespace osu.ElasticIndexer
             assertOptionsCompatible();
         }
 
+        public static int BufferSize { get; private set; } = 5;
+
         // same value as elasticsearch-net
         public static TimeSpan BulkAllBackOffTimeDefault = TimeSpan.FromMinutes(1);
 
@@ -82,7 +84,6 @@ namespace osu.ElasticIndexer
 
         public static bool IsNew { get; private set; }
 
-
         public static bool IsRebuild { get; private set; }
 
         public static bool IsWatching { get; private set; }
@@ -92,8 +93,6 @@ namespace osu.ElasticIndexer
         public static int PollingInterval { get; private set; } = 10000;
 
         public static string Prefix { get; private set; }
-
-        public static int BufferSize { get; private set; } = 5;
 
         public static ulong? ResumeFrom { get; private set; }
 
