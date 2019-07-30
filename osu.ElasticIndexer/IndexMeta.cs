@@ -1,3 +1,4 @@
+using System.Net;
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
@@ -33,6 +34,9 @@ namespace osu.ElasticIndexer
 
         [Number(NumberType.Long, Name = "last_id")]
         public ulong LastId { get; set; }
+
+        [Boolean(Name = "ready")]
+        public bool? Ready { get; set; }
 
         [Number(NumberType.Long, Name = "reset_queue_to")]
         public ulong? ResetQueueTo { get; set; }
@@ -76,6 +80,11 @@ namespace osu.ElasticIndexer
             );
 
             return response.Documents;
+        }
+
+        public static IndexMeta GetPrepIndex(string name)
+        {
+            return GetByAlias(name).Where(x => x.Ready == true).FirstOrDefault();
         }
     }
 }

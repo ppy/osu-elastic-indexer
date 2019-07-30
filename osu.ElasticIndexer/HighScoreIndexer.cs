@@ -26,6 +26,8 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
+            if (!checkIfReady()) return;
+
             var initial = initialize();
             var index = initial.Index;
 
@@ -78,6 +80,28 @@ namespace osu.ElasticIndexer
                     ResetQueueTo = initial.ResetQueueTo,
                     UpdatedAt = DateTimeOffset.UtcNow
                 });
+            }
+        }
+
+        private bool checkIfReady()
+        {
+            if (!AppSettings.IsPrepMode) return true;
+            if (AppSettings.IsRebuild) return true;
+
+            var indexMeta = IndexMeta.GetPrepIndex(Name);
+
+            if (indexMeta == null)
+            {
+                Console.WriteLine($"{Name} is not ready");
+                return false;
+            }
+            else
+            {
+                Console.WriteLine($"{Name} is ready");
+                // update alias and go
+                var index = findOrCreateIndex(Name);
+                updateAlias(Name, index);
+                return true;
             }
         }
 

@@ -64,6 +64,8 @@ namespace osu.ElasticIndexer
 
             UseDocker = parseBool("docker");
 
+            IsPrepMode = parseBool("prep");
+
             assertOptionsCompatible();
         }
 
@@ -84,6 +86,8 @@ namespace osu.ElasticIndexer
 
         public static bool IsNew { get; private set; }
 
+        public static bool IsPrepMode { get; private set; }
+
         public static bool IsRebuild { get; private set; }
 
         public static bool IsWatching { get; private set; }
@@ -102,6 +106,12 @@ namespace osu.ElasticIndexer
         {
             if (IsRebuild && IsWatching)
                 throw new Exception("watch mode cannot be used with index rebuilding.");
+
+            if (IsPrepMode && ResumeFrom.HasValue)
+                    throw new Exception("resume_from cannot be used in this mode.");
+
+            if (IsPrepMode && IsNew && !IsRebuild)
+                throw new Exception("cannot use prep mode with creating a new index and not rebuilding.");
         }
 
         private static bool parseBool(string key)
