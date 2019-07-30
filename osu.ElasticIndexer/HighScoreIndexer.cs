@@ -52,7 +52,14 @@ namespace osu.ElasticIndexer
                 indexCompletedArgs.CompletedAt = DateTime.Now;
 
                 IndexMeta.Refresh();
-                updateAlias(Name, index);
+
+                // when preparing for schema changes, the alias update
+                // should be done by process waiting for the ready signal.
+                if (AppSettings.IsPrepMode)
+                    IndexMeta.MarkAsReady(index);
+                else
+                    updateAlias(Name, index);
+
                 IndexCompleted(this, indexCompletedArgs);
             }
             catch (AggregateException ae)
@@ -85,8 +92,8 @@ namespace osu.ElasticIndexer
 
         private bool checkIfReady()
         {
-            if (!AppSettings.IsPrepMode) return true;
-            if (AppSettings.IsRebuild) return true;
+            if (!AppSettings.IsPrepMode || AppSettings.IsRebuild)
+                return true;
 
             var indexMeta = IndexMeta.GetPrepIndex(Name);
 
