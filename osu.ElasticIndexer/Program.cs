@@ -79,10 +79,17 @@ namespace osu.ElasticIndexer
 
             foreach (var mode in AppSettings.Modes)
             {
-                var indexer = getIndexerFromModeString(mode);
-                indexer.Suffix = suffix;
-                indexer.ResumeFrom = AppSettings.ResumeFrom;
-                indexer.Run();
+                try
+                {
+                    var indexer = getIndexerFromModeString(mode);
+                    indexer.Suffix = suffix;
+                    indexer.ResumeFrom = AppSettings.ResumeFrom;
+                    indexer.Run();
+                }
+                catch (VersionMismatchException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
 

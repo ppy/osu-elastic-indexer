@@ -29,8 +29,6 @@ namespace osu.ElasticIndexer
             if (!checkIfReady()) return;
 
             var initial = initialize();
-            if (initial == null) return;
-
             var index = initial.Index;
             var metaVersion = AppSettings.IsPrepMode ? null : AppSettings.Version;
 
@@ -243,8 +241,7 @@ namespace osu.ElasticIndexer
 
                 if (indexMeta.Version != AppSettings.Version)
                     // A switchover is probably happening, so signal that this mode should be skipped.
-                    Console.WriteLine($"`{Name}` found version {indexMeta.Version}, expecting {AppSettings.Version}");
-                    return null;
+                    throw new VersionMismatchException($"`{Name}` found version {indexMeta.Version}, expecting {AppSettings.Version}");
             }
 
             indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
