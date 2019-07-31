@@ -67,10 +67,6 @@ namespace osu.ElasticIndexer
             UseDocker = parseBool("docker");
 
             IsPrepMode = parseBool("prep");
-            // this is handled per-mode because per-mode indices do not become ready in the same processing loop.
-            if (IsPrepMode)
-                foreach (var mode in Modes)
-                    IsPrep.Add(HighScore.GetTypeFromModeString(mode));
 
             assertOptionsCompatible();
         }
@@ -92,6 +88,8 @@ namespace osu.ElasticIndexer
 
         public static bool IsNew { get; set; }
 
+        public static bool IsPrepMode { get; set; }
+
         public static bool IsRebuild { get; private set; }
 
         public static bool IsWatching { get; private set; }
@@ -108,23 +106,24 @@ namespace osu.ElasticIndexer
 
         public static string Version { get; private set; }
 
-        private static bool IsPrepMode { get; set; }
-
         private static void assertOptionsCompatible()
         {
             if (IsRebuild && IsWatching)
                 throw new Exception("watch mode cannot be used with index rebuilding.");
 
+            if (!IsRebuild && string.IsNullOrWhiteSpace(Version))
+                throw new Exception("queue processing requires a version to be specified.");
+
             if (IsPrepMode)
             {
-                if (IsRebuild && string.IsNullOrWhiteSpace(Version))
+                if (!IsRebuild)
+                    throw new Exception("prep mode is only valid while rebuilding.");
+
+                if (string.IsNullOrWhiteSpace(Version))
                     throw new Exception("rebuilding in prep mode requires a version.");
 
                 if (ResumeFrom.HasValue)
                     throw new Exception("resume_from cannot be used in this mode.");
-
-                if (IsNew && !IsRebuild)
-                    throw new Exception("cannot use prep mode with creating a new index and not rebuilding.");
             }
         }
 
@@ -132,7 +131,5 @@ namespace osu.ElasticIndexer
         {
             return new[] { "1", "true" }.Contains((config[key] ?? string.Empty).ToLowerInvariant());
         }
-
-        public static HashSet<Type> IsPrep { get; private set; } = new HashSet<Type>();
     }
 }
