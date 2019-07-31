@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Dapper;
 using MySql.Data.MySqlClient;
@@ -75,6 +77,7 @@ namespace osu.ElasticIndexer
         /// </summary>
         private static void runIndexing()
         {
+            var mismatched = new HashSet<string>();
             var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 
             foreach (var mode in AppSettings.Modes)
@@ -89,7 +92,15 @@ namespace osu.ElasticIndexer
                 catch (VersionMismatchException ex)
                 {
                     Console.WriteLine(ex.Message);
+                    mismatched.Add(mode);
                 }
+            }
+
+            // A switchover probably happened and this process has nothing to do, so just exit.
+            if (AppSettings.Modes.ToHashSet().SetEquals(mismatched))
+            {
+                Console.Error.WriteLine("All versions mismatched, exiting.");
+                System.Environment.Exit(0);
             }
         }
 
