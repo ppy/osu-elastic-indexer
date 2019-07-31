@@ -32,6 +32,7 @@ namespace osu.ElasticIndexer
 
             var initial = initialize();
             var index = initial.Index;
+            var metaVersion = isPreparing ? null : AppSettings.Version;
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
@@ -41,6 +42,7 @@ namespace osu.ElasticIndexer
             };
 
             dispatcher = new BulkIndexingDispatcher<T>(index);
+
             if (AppSettings.IsRebuild)
                 dispatcher.BatchWithLastIdCompleted += handleBatchWithLastIdCompleted;
 
@@ -87,7 +89,8 @@ namespace osu.ElasticIndexer
                     Alias = Name,
                     LastId = lastId,
                     ResetQueueTo = initial.ResetQueueTo,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    Version = metaVersion
                 });
             }
         }
