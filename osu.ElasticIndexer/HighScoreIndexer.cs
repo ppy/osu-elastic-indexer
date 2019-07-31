@@ -57,10 +57,11 @@ namespace osu.ElasticIndexer
 
                 // when preparing for schema changes, the alias update
                 // should be done by process waiting for the ready signal.
-                if (AppSettings.IsPrepMode)
-                    IndexMeta.MarkAsReady(index);
-                else
-                    updateAlias(Name, index);
+                if (AppSettings.IsRebuild)
+                    if (AppSettings.IsPrepMode)
+                        IndexMeta.MarkAsReady(index);
+                    else
+                        updateAlias(Name, index);
 
                 IndexCompleted(this, indexCompletedArgs);
             }
@@ -93,28 +94,17 @@ namespace osu.ElasticIndexer
             }
         }
 
+        /// <summary>
+        /// Checks if the indexer should wait for the next pass or continue.
+        /// </summary>
+        /// <returns>true if ready; false, otherwise.</returns>
         private bool checkIfReady()
         {
-            if (AppSettings.IsRebuild)
+            if (AppSettings.IsRebuild || IndexMeta.GetByAliasForCurrentVersion(Name) != null)
                 return true;
 
-            Console.WriteLine();
-            var indexMeta = IndexMeta.GetByAliasForCurrentVersion(Name);
-
-            if (indexMeta == null)
-            {
-                Console.WriteLine($"`{Name}` for version `{AppSettings.Version}` is not ready...");
-                return false;
-            }
-            else
-            {
-                // update alias and go
-                // FIXME: do nothing if already sets
-                var index = findOrCreateIndex(Name);
-                updateAlias(Name, index);
-
-                return true;
-            }
+            Console.WriteLine($"`{Name}` for version `{AppSettings.Version}` is not ready...");
+            return false;
         }
 
         /// <summary>
@@ -187,9 +177,8 @@ namespace osu.ElasticIndexer
         /// Attempts to find the matching index or creates a new one.
         /// </summary>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        private string findOrCreateIndex(string name)
+        private (string index, bool aliased) findOrCreateIndex(string name)
         {
-            Console.WriteLine();
             Console.WriteLine();
             Console.WriteLine($"Find or create index for `{name}`...");
             var metas = IndexMeta.GetByAlias(name).ToList();
@@ -206,15 +195,16 @@ namespace osu.ElasticIndexer
                 if (index != null)
                 {
                     Console.WriteLine($"Found matching aliased index `{index}`.");
-                    return index;
+                    return (index, aliased: true);
                 }
 
-                // 2. Index has not been aliased and has tracking information; likely resuming from an incomplete job.
+                // 2. Index has not been aliased and has tracking information;
+                // likely resuming from an incomplete job or waiting to switch over.
                 index = metas.FirstOrDefault()?.Index;
                 if (index != null)
                 {
                     Console.WriteLine($"Found previous index `{index}`.");
-                    return index;
+                    return (index, aliased: false);
                 }
             }
 
@@ -228,14 +218,15 @@ namespace osu.ElasticIndexer
             var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
             elasticClient.LowLevel.IndicesCreate<DynamicResponse>(index, json);
 
-            return index;
+            return (index, aliased: false);
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
         private IndexMeta initialize()
         {
-            var index = findOrCreateIndex(Name);
+            var (index, aliased) = findOrCreateIndex(Name);
+
             // look for any existing resume data.
             var indexMeta = IndexMeta.GetByName(index) ?? new IndexMeta
             {
@@ -261,6 +252,9 @@ namespace osu.ElasticIndexer
             }
             else
             {
+                if (!aliased)
+                    updateAlias(Name, index);
+
                 // process queue reset if any.
                 if (indexMeta.ResetQueueTo.HasValue)
                 {
