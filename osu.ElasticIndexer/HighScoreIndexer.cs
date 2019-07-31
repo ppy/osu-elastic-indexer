@@ -29,6 +29,8 @@ namespace osu.ElasticIndexer
             if (!checkIfReady()) return;
 
             var initial = initialize();
+            if (initial == null) return;
+
             var index = initial.Index;
             var metaVersion = AppSettings.IsPrepMode ? null : AppSettings.Version;
 
@@ -103,7 +105,7 @@ namespace osu.ElasticIndexer
             if (AppSettings.IsRebuild || IndexMeta.GetByAliasForCurrentVersion(Name) != null)
                 return true;
 
-            Console.WriteLine($"`{Name}` for version `{AppSettings.Version}` is not ready...");
+            Console.WriteLine($"`{Name}` for version {AppSettings.Version} is not ready...");
             return false;
         }
 
@@ -234,8 +236,16 @@ namespace osu.ElasticIndexer
                 Index = index,
             };
 
-            if (!AppSettings.IsRebuild && string.IsNullOrWhiteSpace(indexMeta.Version))
-                throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
+            if (!AppSettings.IsRebuild)
+            {
+                if (string.IsNullOrWhiteSpace(indexMeta.Version))
+                    throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
+
+                if (indexMeta.Version != AppSettings.Version)
+                    // A switchover is probably happening, so signal that this mode should be skipped.
+                    Console.WriteLine($"`{Name}` found version {indexMeta.Version}, expecting {AppSettings.Version}");
+                    return null;
+            }
 
             indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
 
