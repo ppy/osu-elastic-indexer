@@ -24,6 +24,8 @@ namespace osu.ElasticIndexer
 
         private BulkIndexingDispatcher<T> dispatcher;
 
+        private bool isPreparing => AppSettings.IsPrep.Contains(typeof(T));
+
         public void Run()
         {
             if (!checkIfReady()) return;
@@ -55,7 +57,7 @@ namespace osu.ElasticIndexer
 
                 // when preparing for schema changes, the alias update
                 // should be done by process waiting for the ready signal.
-                if (AppSettings.IsPrep.Contains(typeof(T)))
+                if (isPreparing)
                     IndexMeta.MarkAsReady(index);
                 else
                     updateAlias(Name, index);
@@ -92,11 +94,11 @@ namespace osu.ElasticIndexer
 
         private bool checkIfReady()
         {
-            if (!AppSettings.IsPrep.Contains(typeof(T)) || AppSettings.IsRebuild)
+            if (AppSettings.IsRebuild)
                 return true;
 
             Console.WriteLine();
-            var indexMeta = IndexMeta.GetPrepIndex(Name);
+            var indexMeta = IndexMeta.GetByAliasForCurrentVersion(Name);
 
             if (indexMeta == null)
             {

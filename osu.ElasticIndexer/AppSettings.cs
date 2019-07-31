@@ -57,6 +57,7 @@ namespace osu.ElasticIndexer
             IsRebuild = parseBool("rebuild");
             IsWatching = parseBool("watch");
             Prefix = config["elasticsearch:prefix"];
+            Version = config["version"];
 
             ElasticsearchHost = config["elasticsearch:host"];
             ElasticsearchPrefix = config["elasticsearch:prefix"];
@@ -105,6 +106,8 @@ namespace osu.ElasticIndexer
 
         public static bool UseDocker { get; private set; }
 
+        public static string Version { get; private set; }
+
         private static bool IsPrepMode { get; set; }
 
         private static void assertOptionsCompatible()
@@ -114,6 +117,9 @@ namespace osu.ElasticIndexer
 
             if (IsPrepMode)
             {
+                if (IsRebuild && string.IsNullOrWhiteSpace(Version))
+                    throw new Exception("rebuilding in prep mode requires a version.");
+
                 if (ResumeFrom.HasValue)
                     throw new Exception("resume_from cannot be used in this mode.");
 

@@ -34,14 +34,14 @@ namespace osu.ElasticIndexer
         [Number(NumberType.Long, Name = "last_id")]
         public ulong LastId { get; set; }
 
-        [Boolean(Name = "ready")]
-        public bool? Ready { get; set; }
-
         [Number(NumberType.Long, Name = "reset_queue_to")]
         public ulong? ResetQueueTo { get; set; }
 
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }
+
+        [Text(Name = "version")]
+        public string Version { get; set; }
 
         public static ICreateIndexResponse CreateIndex()
         {
@@ -54,7 +54,7 @@ namespace osu.ElasticIndexer
 
         public static void MarkAsReady(string index)
         {
-            client.Update<IndexMeta, object>(index, d => d.Doc(new { Ready = true }));
+            client.Update<IndexMeta, object>(index, d => d.Doc(new { Version = AppSettings.Version }));
         }
 
         public static void Refresh()
@@ -86,9 +86,9 @@ namespace osu.ElasticIndexer
             return response.Documents;
         }
 
-        public static IndexMeta GetPrepIndex(string name)
+        public static IndexMeta GetByAliasForCurrentVersion(string name)
         {
-            return GetByAlias(name).Where(x => x.Ready == true).FirstOrDefault();
+            return GetByAlias(name).Where(x => x.Version == AppSettings.Version).FirstOrDefault();
         }
     }
 }
