@@ -234,6 +234,9 @@ namespace osu.ElasticIndexer
                 Index = index,
             };
 
+            if (!AppSettings.IsRebuild && string.IsNullOrWhiteSpace(indexMeta.Version))
+                throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
+
             indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
 
             Console.WriteLine();
