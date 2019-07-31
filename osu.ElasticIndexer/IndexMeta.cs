@@ -88,7 +88,15 @@ namespace osu.ElasticIndexer
 
         public static IndexMeta GetByAliasForCurrentVersion(string name)
         {
-            return GetByAlias(name).Where(x => x.Version == AppSettings.Version).FirstOrDefault();
+            var response = client.Search<IndexMeta>(s => s
+                .Query(q => q
+                    .Term(t => t.Alias, name) && q
+                    .Term(t => t.Version, AppSettings.Version)
+                )
+                .Sort(sort => sort.Descending(p => p.UpdatedAt))
+            );
+
+            return response.Documents.FirstOrDefault();
         }
     }
 }
