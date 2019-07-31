@@ -234,16 +234,6 @@ namespace osu.ElasticIndexer
                 Index = index,
             };
 
-            if (!AppSettings.IsRebuild)
-            {
-                if (string.IsNullOrWhiteSpace(indexMeta.Version))
-                    throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
-
-                if (indexMeta.Version != AppSettings.Version)
-                    // A switchover is probably happening, so signal that this mode should be skipped.
-                    throw new VersionMismatchException($"`{Name}` found version {indexMeta.Version}, expecting {AppSettings.Version}");
-            }
-
             indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
 
             Console.WriteLine();
@@ -262,6 +252,13 @@ namespace osu.ElasticIndexer
             }
             else
             {
+                if (string.IsNullOrWhiteSpace(indexMeta.Version))
+                    throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
+
+                if (indexMeta.Version != AppSettings.Version)
+                    // A switchover is probably happening, so signal that this mode should be skipped.
+                    throw new VersionMismatchException($"`{Name}` found version {indexMeta.Version}, expecting {AppSettings.Version}");
+
                 if (!aliased)
                     updateAlias(Name, index);
 
