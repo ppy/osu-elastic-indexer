@@ -37,6 +37,9 @@ namespace osu.ElasticIndexer
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }
 
+        [Text(Name = "version")]
+        public string Version { get; set; }
+
         public static ICreateIndexResponse CreateIndex()
         {
             return client.CreateIndex($"{AppSettings.ElasticsearchPrefix}index_meta", c => c

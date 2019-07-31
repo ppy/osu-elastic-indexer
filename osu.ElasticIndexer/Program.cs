@@ -2,7 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using Dapper;
 using MySql.Data.MySqlClient;
@@ -81,14 +83,29 @@ namespace osu.ElasticIndexer
         /// <param name="resumeFrom">An optional resume point.</param>
         private static void runIndexing(long? resumeFrom)
         {
+            var mismatched = new HashSet<string>();
             var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 
             foreach (var mode in AppSettings.Modes)
             {
-                var indexer = getIndexerFromModeString(mode);
-                indexer.Suffix = suffix;
-                indexer.ResumeFrom = resumeFrom;
-                indexer.Run();
+                try
+                {
+                    var indexer = getIndexerFromModeString(mode);
+                    indexer.Suffix = suffix;
+                    indexer.ResumeFrom = resumeFrom;
+                    indexer.Run();
+                }
+                catch (VersionMismatchException ex)
+                {
+                    Console.Error.WriteLine(ex.Message);
+                    mismatched.Add(mode);
+                }
+            }
+
+            if (AppSettings.Modes.ToHashSet().SetEquals(mismatched))
+            {
+                Console.Error.WriteLine("versions found for all indices, exiting.");
+                System.Environment.Exit(0);
             }
         }
 
