@@ -100,8 +100,14 @@ namespace osu.ElasticIndexer
         /// <returns>true if ready; false, otherwise.</returns>
         private bool checkIfReady()
         {
-            if (AppSettings.IsRebuild || IndexMeta.GetByAliasForCurrentVersion(Name) != null)
+            if (AppSettings.IsRebuild) return true;
+
+            var indexMeta = IndexMeta.GetByAliasForCurrentVersion(Name);
+            if (indexMeta != null) {
+                // TODO: don't update on every start.
+                updateAlias(indexMeta.Alias, indexMeta.Index);
                 return true;
+            }
 
             Console.WriteLine($"`{Name}` for version {AppSettings.Version} is not ready...");
             return false;
