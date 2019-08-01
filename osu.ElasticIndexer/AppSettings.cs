@@ -54,8 +54,10 @@ namespace osu.ElasticIndexer
 
             ConnectionString = config.GetConnectionString("osu");
             IsNew = parseBool("new");
-            IsRebuild = parseBool("rebuild");
+            IsPrepMode = parseBool("prep");
+            IsRebuild = IsPrepMode || parseBool("rebuild");
             IsWatching = parseBool("watch");
+
             Prefix = config["elasticsearch:prefix"];
             Version = config["version"];
 
@@ -65,8 +67,6 @@ namespace osu.ElasticIndexer
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
 
             UseDocker = parseBool("docker");
-
-            IsPrepMode = parseBool("prep");
 
             assertOptionsCompatible();
         }
