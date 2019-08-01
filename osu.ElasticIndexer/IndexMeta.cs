@@ -40,8 +40,8 @@ namespace osu.ElasticIndexer
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }
 
-        [Text(Name = "version")]
-        public string Version { get; set; }
+        [Text(Name = "schema")]
+        public string Schema { get; set; }
 
         public static ICreateIndexResponse CreateIndex()
         {
@@ -54,7 +54,7 @@ namespace osu.ElasticIndexer
 
         public static void MarkAsReady(string index)
         {
-            client.Update<IndexMeta, object>(index, d => d.Doc(new { Version = AppSettings.Version }));
+            client.Update<IndexMeta, object>(index, d => d.Doc(new { Schema = AppSettings.Schema }));
         }
 
         public static void Refresh()
@@ -91,7 +91,7 @@ namespace osu.ElasticIndexer
             var response = client.Search<IndexMeta>(s => s
                 .Query(q => q
                     .Term(t => t.Alias, name) && q
-                    .Term(t => t.Version, AppSettings.Version)
+                    .Term(t => t.Schema, AppSettings.Schema)
                 )
                 .Sort(sort => sort.Descending(p => p.UpdatedAt))
             );

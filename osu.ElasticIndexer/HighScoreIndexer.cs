@@ -30,7 +30,7 @@ namespace osu.ElasticIndexer
 
             var initial = initialize();
             var index = initial.Index;
-            var metaVersion = AppSettings.IsPrepMode ? null : AppSettings.Version;
+            var metaSchema = AppSettings.IsPrepMode ? null : AppSettings.Schema;
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
@@ -89,7 +89,7 @@ namespace osu.ElasticIndexer
                     LastId = lastId,
                     ResetQueueTo = initial.ResetQueueTo,
                     UpdatedAt = DateTimeOffset.UtcNow,
-                    Version = metaVersion
+                    Schema = metaSchema
                 });
             }
         }
@@ -103,7 +103,7 @@ namespace osu.ElasticIndexer
             if (AppSettings.IsRebuild || IndexMeta.GetByAliasForCurrentVersion(Name).FirstOrDefault() != null)
                 return true;
 
-            Console.WriteLine($"`{Name}` for version {AppSettings.Version} is not ready...");
+            Console.WriteLine($"`{Name}` for version {AppSettings.Schema} is not ready...");
             return false;
         }
 
@@ -262,12 +262,12 @@ namespace osu.ElasticIndexer
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(indexMeta.Version))
+                if (string.IsNullOrWhiteSpace(indexMeta.Schema))
                     throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
 
-                if (indexMeta.Version != AppSettings.Version)
+                if (indexMeta.Schema != AppSettings.Schema)
                     // A switchover is probably happening, so signal that this mode should be skipped.
-                    throw new VersionMismatchException($"`{Name}` found version {indexMeta.Version}, expecting {AppSettings.Version}");
+                    throw new VersionMismatchException($"`{Name}` found version {indexMeta.Schema}, expecting {AppSettings.Schema}");
 
                 // process queue reset if any.
                 if (indexMeta.ResetQueueTo.HasValue)

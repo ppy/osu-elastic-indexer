@@ -99,7 +99,7 @@ namespace osu.ElasticIndexer
             // A switchover probably happened and this process has nothing to do, so just exit.
             if (AppSettings.Modes.ToHashSet().SetEquals(mismatched))
             {
-                Console.Error.WriteLine("All versions mismatched, exiting.");
+                Console.Error.WriteLine("All schema versions mismatched, exiting.");
                 Environment.Exit(0);
             }
         }

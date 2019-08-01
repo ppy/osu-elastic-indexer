@@ -58,7 +58,7 @@ namespace osu.ElasticIndexer
             IsWatching = parseBool("watch");
 
             Prefix = config["elasticsearch:prefix"];
-            Version = config["version"];
+            Schema = config["schema"];
 
             ElasticsearchHost = config["elasticsearch:host"];
             ElasticsearchPrefix = config["elasticsearch:prefix"];
@@ -103,7 +103,7 @@ namespace osu.ElasticIndexer
 
         public static bool UseDocker { get; private set; }
 
-        public static string Version { get; private set; }
+        public static string Schema { get; private set; }
 
         private static void assertOptionsCompatible()
         {
@@ -112,8 +112,8 @@ namespace osu.ElasticIndexer
 
             if (!IsRebuild)
             {
-                if (string.IsNullOrWhiteSpace(Version))
-                    throw new Exception("queue processing requires a version to be specified.");
+                if (string.IsNullOrWhiteSpace(Schema))
+                    throw new Exception("queue processing requires a schema version to be specified.");
 
                 if (IsNew)
                     throw new Exception("creating a new index is not supported with queue processing.");
@@ -124,8 +124,8 @@ namespace osu.ElasticIndexer
                 if (!IsRebuild)
                     throw new Exception("prep mode is only valid while rebuilding.");
 
-                if (string.IsNullOrWhiteSpace(Version))
-                    throw new Exception("rebuilding in prep mode requires a version.");
+                if (string.IsNullOrWhiteSpace(Schema))
+                    throw new Exception("rebuilding in prep mode requires a schema version.");
 
                 if (ResumeFrom.HasValue)
                     throw new Exception("resume_from cannot be used in this mode.");
