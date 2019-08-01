@@ -100,14 +100,8 @@ namespace osu.ElasticIndexer
         /// <returns>true if ready; false, otherwise.</returns>
         private bool checkIfReady()
         {
-            if (AppSettings.IsRebuild) return true;
-
-            var indexMeta = IndexMeta.GetByAliasForCurrentVersion(Name);
-            if (indexMeta != null) {
-                // TODO: don't update on every start.
-                updateAlias(indexMeta.Alias, indexMeta.Index);
+            if (AppSettings.IsRebuild || IndexMeta.GetByAliasForCurrentVersion(Name).FirstOrDefault() != null)
                 return true;
-            }
 
             Console.WriteLine($"`{Name}` for version {AppSettings.Version} is not ready...");
             return false;
@@ -182,13 +176,19 @@ namespace osu.ElasticIndexer
         /// <summary>
         /// Attempts to find the matching index or creates a new one.
         /// </summary>
+        /// <param name="name">name of the index alias.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
         private (string index, bool aliased) findOrCreateIndex(string name)
         {
             Console.WriteLine();
             Console.WriteLine($"Find or create index for `{name}`...");
-            var metas = IndexMeta.GetByAlias(name).ToList();
             var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
+            var metas = (
+                AppSettings.IsRebuild
+                ? IndexMeta.GetByAlias(name)
+                : IndexMeta.GetByAliasForCurrentVersion(name)
+            ).ToList();
+
             string index;
 
             if (!AppSettings.IsNew)
@@ -231,7 +231,11 @@ namespace osu.ElasticIndexer
 
         private IndexMeta initialize()
         {
+            // TODO: all this needs cleaning.
             var (index, aliased) = findOrCreateIndex(Name);
+
+            if (!AppSettings.IsRebuild && !aliased)
+                updateAlias(Name, index);
 
             // look for any existing resume data.
             var indexMeta = IndexMeta.GetByName(index) ?? new IndexMeta
@@ -264,9 +268,6 @@ namespace osu.ElasticIndexer
                 if (indexMeta.Version != AppSettings.Version)
                     // A switchover is probably happening, so signal that this mode should be skipped.
                     throw new VersionMismatchException($"`{Name}` found version {indexMeta.Version}, expecting {AppSettings.Version}");
-
-                if (!aliased)
-                    updateAlias(Name, index);
 
                 // process queue reset if any.
                 if (indexMeta.ResetQueueTo.HasValue)

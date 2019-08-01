@@ -110,8 +110,14 @@ namespace osu.ElasticIndexer
             if (IsRebuild && IsWatching)
                 throw new Exception("watch mode cannot be used with index rebuilding.");
 
-            if (!IsRebuild && string.IsNullOrWhiteSpace(Version))
-                throw new Exception("queue processing requires a version to be specified.");
+            if (!IsRebuild)
+            {
+                if (string.IsNullOrWhiteSpace(Version))
+                    throw new Exception("queue processing requires a version to be specified.");
+
+                if (IsNew)
+                    throw new Exception("creating a new index is not supported with queue processing.");
+            }
 
             if (IsPrepMode)
             {

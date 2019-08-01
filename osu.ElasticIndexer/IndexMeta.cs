@@ -86,7 +86,7 @@ namespace osu.ElasticIndexer
             return response.Documents;
         }
 
-        public static IndexMeta GetByAliasForCurrentVersion(string name)
+        public static IEnumerable<IndexMeta> GetByAliasForCurrentVersion(string name)
         {
             var response = client.Search<IndexMeta>(s => s
                 .Query(q => q
@@ -96,7 +96,7 @@ namespace osu.ElasticIndexer
                 .Sort(sort => sort.Descending(p => p.UpdatedAt))
             );
 
-            return response.Documents.FirstOrDefault();
+            return response.Documents;
         }
     }
 }
