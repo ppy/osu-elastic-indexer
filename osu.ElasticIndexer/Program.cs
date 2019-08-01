@@ -100,7 +100,7 @@ namespace osu.ElasticIndexer
             if (AppSettings.Modes.ToHashSet().SetEquals(mismatched))
             {
                 Console.Error.WriteLine("All versions mismatched, exiting.");
-                System.Environment.Exit(0);
+                Environment.Exit(0);
             }
         }
 
