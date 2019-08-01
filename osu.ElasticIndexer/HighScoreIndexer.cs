@@ -32,7 +32,7 @@ namespace osu.ElasticIndexer
             // so don't assume the presence of a value means completion.
             var indexMeta = IndexMeta.GetByName(index);
             var resumeFrom = ResumeFrom ?? indexMeta?.LastId ?? 0;
-            if (!string.IsNullOrWhiteSpace(indexMeta?.Version))
+            if (!string.IsNullOrWhiteSpace(indexMeta?.Schema))
                 throw new VersionMismatchException("found a version, stopping.");
 
             Console.WriteLine();

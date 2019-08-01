@@ -37,8 +37,8 @@ namespace osu.ElasticIndexer
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }
 
-        [Text(Name = "version")]
-        public string Version { get; set; }
+        [Text(Name = "schema")]
+        public string Schema { get; set; }
 
         public static ICreateIndexResponse CreateIndex()
         {
