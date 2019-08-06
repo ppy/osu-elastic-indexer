@@ -15,8 +15,8 @@ namespace osu.ElasticIndexer
             new ConnectionSettings(
                 new Uri(AppSettings.ElasticsearchHost)
             ).DefaultIndex($"{AppSettings.ElasticsearchPrefix}index_meta")
+            .ThrowExceptions(true)
         );
-
 
         /// <summary>
         /// The actual name of the index.
@@ -49,6 +49,7 @@ namespace osu.ElasticIndexer
                 .Settings(s => s.NumberOfShards(1))
                 .Mappings(ms => ms.Map<IndexMeta>(m => m.AutoMap()))
                 .WaitForActiveShards("1")
+                .RequestConfiguration(r => r.ThrowExceptions(false))
             );
         }
 
