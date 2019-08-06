@@ -54,7 +54,7 @@ namespace osu.ElasticIndexer
 
         public static void MarkAsReady(string index)
         {
-            client.Update<IndexMeta, object>(index, d => d.Doc(new { Schema = AppSettings.Schema }));
+            client.Update<IndexMeta, object>(index, d => d.Doc(new { AppSettings.Schema }));
         }
 
         public static void Refresh()
