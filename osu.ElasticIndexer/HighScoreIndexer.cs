@@ -189,7 +189,7 @@ namespace osu.ElasticIndexer
                 : IndexMeta.GetByAliasForCurrentVersion(name)
             ).ToList();
 
-            string index;
+            string index = null;
 
             if (!AppSettings.IsNew)
             {
@@ -213,6 +213,9 @@ namespace osu.ElasticIndexer
                     return (index, aliased: false);
                 }
             }
+
+            if (!AppSettings.IsRebuild && index == null)
+                throw new Exception("no existing index found");
 
             // 3. Not aliased and no tracking information; likely starting from scratch
             var suffix = Suffix ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
