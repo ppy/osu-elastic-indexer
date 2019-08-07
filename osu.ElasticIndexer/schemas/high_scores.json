@@ -1,6 +1,9 @@
 {
   "mappings": {
     "_doc": {
+      "_source": {
+        "enabled": false
+      },
       "dynamic": false,
       "properties": {
         "score_id": {
