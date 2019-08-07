@@ -1,6 +1,6 @@
 {
   "mappings": {
-    "high_score": {
+    "_doc": {
       "dynamic": false,
       "properties": {
         "score_id": {

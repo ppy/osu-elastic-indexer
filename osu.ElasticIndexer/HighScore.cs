@@ -12,7 +12,7 @@ using Nest;
 namespace osu.ElasticIndexer
 {
     [CursorColumn("score_id")]
-    [ElasticsearchType(Name = "high_score", IdProperty = nameof(ScoreId))]
+    [ElasticsearchType(Name = "_doc", IdProperty = nameof(ScoreId))]
     public abstract class HighScore : Model
     {
         [Computed]
