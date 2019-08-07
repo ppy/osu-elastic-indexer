@@ -105,7 +105,7 @@ namespace osu.ElasticIndexer
             if (AppSettings.Modes.ToHashSet().SetEquals(mismatched))
             {
                 Console.Error.WriteLine("versions found for all indices, exiting.");
-                System.Environment.Exit(0);
+                Environment.Exit(0);
             }
         }
 
