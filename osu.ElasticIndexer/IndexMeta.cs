@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer
             new ConnectionSettings(
                 new Uri(AppSettings.ElasticsearchHost)
             ).DefaultIndex($"{AppSettings.ElasticsearchPrefix}index_meta")
-            .ThrowExceptions(true)
+            .ThrowExceptions()
         );
 
         /// <summary>
