@@ -31,7 +31,7 @@ namespace osu.ElasticIndexer
                 dbConnection.Open();
 
                 const string query = "update score_process_queue set status = 2 where queue_id in @queueIds";
-                dbConnection.Execute(query, new { queueItems });
+                dbConnection.Execute(query, new { queueIds });
             }
         }
 
