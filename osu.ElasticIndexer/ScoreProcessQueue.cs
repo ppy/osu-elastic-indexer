@@ -21,7 +21,7 @@ namespace osu.ElasticIndexer
 
         public ulong ScoreId { get; set; }
 
-        public static void CompleteQueued<T>(List<ScoreProcessQueue> queueItems) where T : HighScore
+        public static void CompleteQueued(List<ScoreProcessQueue> queueItems)
         {
             if (!queueItems.Any()) return;
             var queueIds = queueItems.Select(x => x.QueueId);
