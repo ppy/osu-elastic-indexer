@@ -75,7 +75,10 @@ namespace osu.ElasticIndexer
             {
                 if (!(ex is InvalidOperationException)) return false;
 
-                Console.WriteLine(ex.Message);
+                Console.Error.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                    Console.Error.WriteLine(ex.InnerException.Message);
+
                 return true;
             }
 
