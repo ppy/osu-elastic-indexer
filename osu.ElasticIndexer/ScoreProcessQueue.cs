@@ -21,18 +21,17 @@ namespace osu.ElasticIndexer
 
         public ulong ScoreId { get; set; }
 
-        public static void CompleteQueued<T>(List<ulong> scoreIds) where T : HighScore
+        public static void CompleteQueued<T>(List<ScoreProcessQueue> queueItems) where T : HighScore
         {
-            if (!scoreIds.Any()) return;
+            if (!queueItems.Any()) return;
+            var queueIds = queueItems.Select(x => x.QueueId);
 
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                var mode = HighScore.GetRulesetId<T>();
-
                 dbConnection.Open();
 
-                const string query = "update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
-                dbConnection.Execute(query, new { scoreIds, mode });
+                const string query = "update score_process_queue set status = 2 where queue_id in @queueIds";
+                dbConnection.Execute(query, new { queueItems });
             }
         }
 

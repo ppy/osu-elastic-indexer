@@ -140,7 +140,7 @@ namespace osu.ElasticIndexer
                                     Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
 
                                     dispatcher.Enqueue(add: scores, remove: removedScores);
-                                    ScoreProcessQueue.CompleteQueued<T>(scoreIds);
+                                    ScoreProcessQueue.CompleteQueued<T>(chunk);
                                     count += scores.Count;
                                 }
                             }
