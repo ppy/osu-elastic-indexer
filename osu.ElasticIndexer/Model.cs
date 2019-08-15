@@ -32,7 +32,7 @@ namespace osu.ElasticIndexer
                 if (!string.IsNullOrWhiteSpace(where))
                     maxQuery += $" WHERE {where}";
 
-                var max = dbConnection.QuerySingle<ulong?>(maxQuery);
+                var max = dbConnection.QuerySingleOrDefault<ulong?>(maxQuery);
                 if (!max.HasValue) yield break;
 
                 // FIXME: this is terrible.

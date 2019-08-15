@@ -58,7 +58,7 @@ namespace osu.ElasticIndexer
                 dbConnection.Open();
 
                 const string query = "SELECT queue_id FROM score_process_queue WHERE status = 2 AND mode = @mode order by queue_id DESC LIMIT 1";
-                return dbConnection.QuerySingle<ulong?>(query, new { mode });
+                return dbConnection.QuerySingleOrDefault<ulong?>(query, new { mode });
             }
         }
 
