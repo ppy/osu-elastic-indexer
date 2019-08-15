@@ -43,7 +43,7 @@ namespace osu.ElasticIndexer
                 BufferSize = int.Parse(config["buffer_size"]);
 
             if (!string.IsNullOrEmpty(config["resume_from"]))
-                ResumeFrom = long.Parse(config["resume_from"]);
+                ResumeFrom = ulong.Parse(config["resume_from"]);
 
             if (!string.IsNullOrEmpty(config["polling_interval"]))
                 PollingInterval = int.Parse(config["polling_interval"]);
@@ -53,17 +53,24 @@ namespace osu.ElasticIndexer
 
             ConnectionString = config.GetConnectionString("osu");
             IsNew = parseBool("new");
-            IsUsingQueue = !parseBool("crawl");
+            IsPrepMode = parseBool("prep");
+            IsRebuild = IsPrepMode || parseBool("rebuild");
             IsWatching = parseBool("watch");
+
             Prefix = config["elasticsearch:prefix"];
+            Schema = config["schema"];
 
             ElasticsearchHost = config["elasticsearch:host"];
             ElasticsearchPrefix = config["elasticsearch:prefix"];
 
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
 
-            UseDocker = Environment.GetEnvironmentVariable("DOCKER")?.Contains("1") ?? false;
+            UseDocker = parseBool("docker");
+
+            assertOptionsCompatible();
         }
+
+        public static int BufferSize { get; private set; } = 5;
 
         // same value as elasticsearch-net
         public static TimeSpan BulkAllBackOffTimeDefault = TimeSpan.FromMinutes(1);
@@ -78,9 +85,11 @@ namespace osu.ElasticIndexer
 
         public static string ElasticsearchPrefix { get; private set; }
 
-        public static bool IsNew { get; private set; }
+        public static bool IsNew { get; set; }
 
-        public static bool IsUsingQueue { get; private set; }
+        public static bool IsPrepMode { get; set; }
+
+        public static bool IsRebuild { get; private set; }
 
         public static bool IsWatching { get; private set; }
 
@@ -90,11 +99,38 @@ namespace osu.ElasticIndexer
 
         public static string Prefix { get; private set; }
 
-        public static int BufferSize { get; private set; } = 5;
-
-        public static long? ResumeFrom { get; private set; }
+        public static ulong? ResumeFrom { get; private set; }
 
         public static bool UseDocker { get; private set; }
+
+        public static string Schema { get; private set; }
+
+        private static void assertOptionsCompatible()
+        {
+            if (IsRebuild && IsWatching)
+                throw new Exception("watch mode cannot be used with index rebuilding.");
+
+            if (!IsRebuild)
+            {
+                if (string.IsNullOrWhiteSpace(Schema))
+                    throw new Exception("queue processing requires a schema version to be specified.");
+
+                if (IsNew)
+                    throw new Exception("creating a new index is not supported with queue processing.");
+            }
+
+            if (IsPrepMode)
+            {
+                if (!IsRebuild)
+                    throw new Exception("prep mode is only valid while rebuilding.");
+
+                if (string.IsNullOrWhiteSpace(Schema))
+                    throw new Exception("rebuilding in prep mode requires a schema version.");
+
+                if (ResumeFrom.HasValue)
+                    throw new Exception("resume_from cannot be used in this mode.");
+            }
+        }
 
         private static bool parseBool(string key)
         {

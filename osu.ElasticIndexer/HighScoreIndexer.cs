@@ -5,36 +5,32 @@ using System;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class HighScoreIndexer<T> : IIndexer where T : HighScore
+    public class HighScoreIndexer<T> : IIndexer where T : HighScore, new()
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
         public string Name { get; set; }
-        public long? ResumeFrom { get; set; }
+        public ulong? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
         // use shared instance to avoid socket leakage.
-        private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
+        private readonly ElasticClient elasticClient = IndexMeta.CLIENT;
 
         private BulkIndexingDispatcher<T> dispatcher;
 
         public void Run()
         {
-            var index = findOrCreateIndex(Name);
-            // find out if we should be resuming; could be resuming from a previously aborted run,
-            // so don't assume the presence of a value means completion.
-            var resumeFrom = ResumeFrom ?? IndexMeta.GetByName(index)?.LastId ?? 0;
+            if (!checkIfReady()) return;
 
-            Console.WriteLine();
-            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{resumeFrom}`");
-            Console.WriteLine();
+            var initial = initialize();
+            var index = initial.Index;
+            var metaSchema = AppSettings.IsPrepMode ? null : AppSettings.Schema;
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
@@ -43,18 +39,30 @@ namespace osu.ElasticIndexer
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(Name, index);
+            dispatcher = new BulkIndexingDispatcher<T>(index);
+
+            if (AppSettings.IsRebuild)
+                dispatcher.BatchWithLastIdCompleted += handleBatchWithLastIdCompleted;
 
             try
             {
-                var readerTask = databaseReaderTask(resumeFrom);
+                var readerTask = databaseReaderTask(initial.LastId);
                 dispatcher.Run();
                 readerTask.Wait();
 
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;
 
-                updateAlias(Name, index);
+                IndexMeta.Refresh();
+
+                // when preparing for schema changes, the alias update
+                // should be done by process waiting for the ready signal.
+                if (AppSettings.IsRebuild)
+                    if (AppSettings.IsPrepMode)
+                        IndexMeta.MarkAsReady(index);
+                    else
+                        updateAlias(Name, index);
+
                 IndexCompleted(this, indexCompletedArgs);
             }
             catch (AggregateException ae)
@@ -67,9 +75,39 @@ namespace osu.ElasticIndexer
             {
                 if (!(ex is InvalidOperationException)) return false;
 
-                Console.WriteLine(ex.Message);
+                Console.Error.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                    Console.Error.WriteLine(ex.InnerException.Message);
+
                 return true;
             }
+
+            void handleBatchWithLastIdCompleted(object sender, ulong lastId)
+            {
+                // TODO: should probably aggregate responses and update to highest successful.
+                IndexMeta.UpdateAsync(new IndexMeta
+                {
+                    Index = index,
+                    Alias = Name,
+                    LastId = lastId,
+                    ResetQueueTo = initial.ResetQueueTo,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    Schema = metaSchema
+                });
+            }
+        }
+
+        /// <summary>
+        /// Checks if the indexer should wait for the next pass or continue.
+        /// </summary>
+        /// <returns>true if ready; false, otherwise.</returns>
+        private bool checkIfReady()
+        {
+            if (AppSettings.IsRebuild || IndexMeta.GetByAliasForCurrentVersion(Name).FirstOrDefault() != null)
+                return true;
+
+            Console.WriteLine($"`{Name}` for version {AppSettings.Schema} is not ready...");
+            return false;
         }
 
         /// <summary>
@@ -79,7 +117,7 @@ namespace osu.ElasticIndexer
         /// <param name="resumeFrom">The cursor value to resume from;
         /// use null to resume from the last known value.</param>
         /// <returns>The database reader task.</returns>
-        private Task<long> databaseReaderTask(long resumeFrom)
+        private Task<long> databaseReaderTask(ulong resumeFrom)
         {
             return Task.Factory.StartNew(() =>
                 {
@@ -89,29 +127,33 @@ namespace osu.ElasticIndexer
                     {
                         try
                         {
-                            if (AppSettings.IsUsingQueue)
+                            if (!AppSettings.IsRebuild)
                             {
                                 Console.WriteLine("Reading from queue...");
-                                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+                                var mode = HighScore.GetRulesetId<T>();
                                 var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
                                 foreach (var chunk in chunks)
                                 {
                                     var scoreIds = chunk.Select(x => x.ScoreId).ToList();
-                                    var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds);
-                                    Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores");
+                                    var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds).Where(x => x.ShouldIndex).ToList();
+                                    var removedScores = scoreIds
+                                        .Except(scores.Select(x => x.ScoreId))
+                                        .Select(scoreId => new T { ScoreId = scoreId })
+                                        .ToList();
+                                    Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
 
-                                    dispatcher.Enqueue(scores);
-                                    ScoreProcessQueue.CompleteQueued<T>(scoreIds);
+                                    dispatcher.Enqueue(add: scores, remove: removedScores);
+                                    ScoreProcessQueue.CompleteQueued(chunk);
                                     count += scores.Count;
                                 }
                             }
                             else
                             {
-                                Console.WriteLine("Crawling records...");
-                                var chunks = Model.Chunk<T>("pp is not null", AppSettings.ChunkSize, resumeFrom);
+                                Console.WriteLine($"Rebuild from {resumeFrom}...");
+                                var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
                                 foreach (var chunk in chunks)
                                 {
-                                    dispatcher.Enqueue(chunk);
+                                    dispatcher.Enqueue(chunk.Where(x => x.ShouldIndex).ToList());
                                     count += chunk.Count;
                                     // update resumeFrom in this scope to allow resuming from connection errors.
                                     resumeFrom = chunk.Last().CursorValue;
@@ -137,15 +179,20 @@ namespace osu.ElasticIndexer
         /// <summary>
         /// Attempts to find the matching index or creates a new one.
         /// </summary>
+        /// <param name="name">name of the index alias.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        private string findOrCreateIndex(string name)
+        private (string index, bool aliased) findOrCreateIndex(string name)
         {
             Console.WriteLine();
-            Console.WriteLine();
             Console.WriteLine($"Find or create index for `{name}`...");
-            var metas = IndexMeta.GetByAlias(name).ToList();
             var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
-            string index;
+            var metas = (
+                AppSettings.IsRebuild
+                ? IndexMeta.GetByAlias(name)
+                : IndexMeta.GetByAliasForCurrentVersion(name)
+            ).ToList();
+
+            string index = null;
 
             if (!AppSettings.IsNew)
             {
@@ -157,17 +204,21 @@ namespace osu.ElasticIndexer
                 if (index != null)
                 {
                     Console.WriteLine($"Found matching aliased index `{index}`.");
-                    return index;
+                    return (index, aliased: true);
                 }
 
-                // 2. Index has not been aliased and has tracking information; likely resuming from an incomplete job.
+                // 2. Index has not been aliased and has tracking information;
+                // likely resuming from an incomplete job or waiting to switch over.
                 index = metas.FirstOrDefault()?.Index;
                 if (index != null)
                 {
                     Console.WriteLine($"Found previous index `{index}`.");
-                    return index;
+                    return (index, aliased: false);
                 }
             }
+
+            if (!AppSettings.IsRebuild && index == null)
+                throw new Exception("no existing index found");
 
             // 3. Not aliased and no tracking information; likely starting from scratch
             var suffix = Suffix ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
@@ -179,9 +230,67 @@ namespace osu.ElasticIndexer
             var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
             elasticClient.LowLevel.IndicesCreate<DynamicResponse>(index, json);
 
-            return index;
+            return (index, aliased: false);
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
+        }
+
+        private IndexMeta initialize()
+        {
+            // TODO: all this needs cleaning.
+            var (index, aliased) = findOrCreateIndex(Name);
+
+            if (!AppSettings.IsRebuild && !aliased)
+                updateAlias(Name, index);
+
+            // look for any existing resume data.
+            var indexMeta = IndexMeta.GetByName(index) ?? new IndexMeta
+            {
+                Alias = Name,
+                Index = index,
+            };
+
+            indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
+
+            Console.WriteLine();
+            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{indexMeta.LastId}`");
+
+            if (AppSettings.IsRebuild)
+            {
+                // Save the position the score processing queue should be reset to if rebuilding an index.
+                // If there is already an existing value, the processor is probabaly resuming from a previous run,
+                // so we likely want to preserve that value.
+                if (!indexMeta.ResetQueueTo.HasValue)
+                {
+                    var mode = HighScore.GetRulesetId<T>();
+                    indexMeta.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(indexMeta.Schema))
+                    throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
+
+                if (indexMeta.Schema != AppSettings.Schema)
+                    // A switchover is probably happening, so signal that this mode should be skipped.
+                    throw new VersionMismatchException($"`{Name}` found version {indexMeta.Schema}, expecting {AppSettings.Schema}");
+
+                // process queue reset if any.
+                if (indexMeta.ResetQueueTo.HasValue)
+                {
+                    Console.WriteLine($"Resetting queue_id > {indexMeta.ResetQueueTo}");
+                    ScoreProcessQueue.UnCompleteQueued<T>(indexMeta.ResetQueueTo.Value);
+                    indexMeta.ResetQueueTo = null;
+                }
+            }
+
+            indexMeta.UpdatedAt = DateTimeOffset.UtcNow;
+            IndexMeta.UpdateAsync(indexMeta);
+            IndexMeta.Refresh();
+
+            Console.WriteLine();
+
+            return indexMeta;
         }
 
         private void updateAlias(string alias, string index, bool close = true)

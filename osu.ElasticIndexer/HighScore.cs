@@ -3,28 +3,30 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using Dapper.Contrib.Extensions;
 using Nest;
 
 namespace osu.ElasticIndexer
 {
     [CursorColumn("score_id")]
-    [ElasticsearchType(Name = "high_score", IdProperty = nameof(Id))]
+    [ElasticsearchType(Name = "_doc", IdProperty = nameof(ScoreId))]
     public abstract class HighScore : Model
     {
         [Computed]
         [Ignore]
-        public override long CursorValue => ScoreId;
-
-        // Properties ordered in the order they appear in the table.
+        public override ulong CursorValue => ScoreId;
 
         [Computed]
         [Ignore]
-        public string Id => $"{UserId}-{BeatmapId}-{EnabledMods}";
+        public bool ShouldIndex => Pp.HasValue;
+
+        // Properties ordered in the order they appear in the table.
 
         [Number(NumberType.Long, Name = "score_id")]
-        public uint ScoreId { get; set; }
+        public ulong ScoreId { get; set; }
 
         [Number(NumberType.Long, Name = "beatmap_id")]
         public uint BeatmapId { get; set; }
@@ -73,7 +75,7 @@ namespace osu.ElasticIndexer
         public DateTimeOffset Date { get; set; }
 
         [Number(NumberType.Float, Name = "pp")]
-        public float Pp { get; set; }
+        public float? Pp { get; set; }
 
         [Boolean(Name = "replay")]
         public bool Replay { get; set; }
@@ -130,6 +132,18 @@ namespace osu.ElasticIndexer
             }
 
             return mods.Values.ToList();
+        }
+
+        public static int GetRulesetId<T>() where T : HighScore
+        {
+            return typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
+        }
+
+        public static Type GetTypeFromModeString(string mode)
+        {
+            var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
+
+            return Type.GetType(className, true);
         }
     }
 }

@@ -2,7 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Globalization;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Dapper;
 using MySql.Data.MySqlClient;
@@ -38,13 +39,11 @@ namespace osu.ElasticIndexer
             DefaultTypeMap.MatchNamesWithUnderscores = true;
             IndexMeta.CreateIndex();
 
-            Console.WriteLine($"Using queue: `{AppSettings.IsUsingQueue}`");
+            Console.WriteLine($"Rebuilding index: `{AppSettings.IsRebuild}`");
             if (AppSettings.IsWatching)
                 runWatchLoop();
             else
-            {
-                runIndexing(AppSettings.ResumeFrom);
-            }
+                runIndexing();
 
             if (AppSettings.UseDocker)
             {
@@ -64,13 +63,11 @@ namespace osu.ElasticIndexer
         {
             Console.WriteLine($"Running in watch mode with {AppSettings.PollingInterval}ms poll.");
 
-            // run once with config resuming
-            runIndexing(AppSettings.ResumeFrom);
-
             while (true)
             {
                 // run continuously with automatic resume logic
-                runIndexing(null);
+                runIndexing();
+                AppSettings.IsNew = false;
                 Thread.Sleep(AppSettings.PollingInterval);
             }
         }
@@ -78,26 +75,41 @@ namespace osu.ElasticIndexer
         /// <summary>
         /// Performs a single indexing run for all specified modes.
         /// </summary>
-        /// <param name="resumeFrom">An optional resume point.</param>
-        private static void runIndexing(long? resumeFrom)
+        private static void runIndexing()
         {
+            var mismatched = new HashSet<string>();
             var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 
             foreach (var mode in AppSettings.Modes)
             {
-                var indexer = getIndexerFromModeString(mode);
-                indexer.Suffix = suffix;
-                indexer.ResumeFrom = resumeFrom;
-                indexer.Run();
+                try
+                {
+                    var indexer = getIndexerFromModeString(mode);
+                    indexer.Suffix = suffix;
+                    indexer.ResumeFrom = AppSettings.ResumeFrom;
+                    indexer.Run();
+                }
+                catch (VersionMismatchException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    mismatched.Add(mode);
+                }
+            }
+
+            // A switchover probably happened and this process has nothing to do, so just exit.
+            if (AppSettings.Modes.ToHashSet().SetEquals(mismatched))
+            {
+                Console.Error.WriteLine("All schema versions mismatched, exiting.");
+                Environment.Exit(0);
             }
         }
 
         private static IIndexer getIndexerFromModeString(string mode)
         {
             var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
-            var className = $"{typeof(HighScore).Namespace}.HighScore{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(mode)}";
+            var scoreType = HighScore.GetTypeFromModeString(mode);
 
-            Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(Type.GetType(className, true));
+            Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(scoreType);
 
             var indexer = (IIndexer)Activator.CreateInstance(indexerType);
 
@@ -106,6 +118,7 @@ namespace osu.ElasticIndexer
             {
                 Console.WriteLine($"{args.Count} records took {args.TimeTaken}");
                 if (args.Count > 0) Console.WriteLine($"{args.Count / args.TimeTaken.TotalSeconds} records/s");
+                Console.WriteLine();
             };
 
             return indexer;

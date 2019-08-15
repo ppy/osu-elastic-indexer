@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using MySql.Data.MySqlClient;
@@ -15,31 +14,30 @@ namespace osu.ElasticIndexer
     [Table("score_process_queue")]
     public class ScoreProcessQueue : Model
     {
-        public override long CursorValue => QueueId;
+        public override ulong CursorValue => QueueId;
 
         // These are the only columns we care about at the momemnt.
         public uint QueueId { get; set; }
 
         public ulong ScoreId { get; set; }
 
-        public static void CompleteQueued<T>(List<ulong> scoreIds) where T : HighScore
+        public static void CompleteQueued(List<ScoreProcessQueue> queueItems)
         {
-            if (!scoreIds.Any()) return;
+            if (!queueItems.Any()) return;
+            var queueIds = queueItems.Select(x => x.QueueId);
 
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                var mode = typeof(T).GetCustomAttributes<RulesetIdAttribute>().First().Id;
-
                 dbConnection.Open();
 
-                const string query = "update score_process_queue set status = 2 where score_id in @scoreIds and mode = @mode";
-                dbConnection.Execute(query, new { scoreIds, mode });
+                const string query = "update score_process_queue set status = 2 where queue_id in @queueIds";
+                dbConnection.Execute(query, new { queueIds });
             }
         }
 
         public static List<T> FetchByScoreIds<T>(List<ulong> scoreIds) where T : HighScore
         {
-            var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+            var table = GetTableName<T>();
 
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
@@ -50,6 +48,30 @@ namespace osu.ElasticIndexer
                 Console.WriteLine("{0} {1}", query, parameters);
 
                 return dbConnection.Query<T>(query, parameters).AsList();
+            }
+        }
+
+        public static ulong? GetLastProcessedQueueId(int mode)
+        {
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                dbConnection.Open();
+
+                const string query = "SELECT queue_id FROM score_process_queue WHERE status = 2 AND mode = @mode order by queue_id DESC LIMIT 1";
+                return dbConnection.QuerySingleOrDefault<ulong?>(query, new { mode });
+            }
+        }
+
+        public static void UnCompleteQueued<T>(ulong from) where T : HighScore
+        {
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                var mode = HighScore.GetRulesetId<T>();
+
+                dbConnection.Open();
+
+                const string query = "UPDATE score_process_queue SET status = 1 WHERE queue_id > @from AND mode = @mode";
+                dbConnection.Execute(query, new { from, mode });
             }
         }
     }

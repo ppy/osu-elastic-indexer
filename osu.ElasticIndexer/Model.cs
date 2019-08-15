@@ -14,26 +14,29 @@ namespace osu.ElasticIndexer
     [CursorColumn("id")]
     public abstract class Model
     {
-        public abstract long CursorValue { get; }
+        public abstract ulong CursorValue { get; }
 
-        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, long? resumeFrom = null) where T : Model
+        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, ulong? resumeFrom = null) where T : Model
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                long? lastId = resumeFrom ?? 0;
-                var cursorColumn = typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
-                var table = typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+                ulong? lastId = resumeFrom ?? 0;
+                var cursorColumn = GetCursorColumnName<T>();
+                var table = GetTableName<T>();
 
                 Console.WriteLine($"Starting {table} from {lastId}...");
 
-                // FIXME: this is terrible.
-                var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
-
                 dbConnection.Open();
 
-                var max = dbConnection.QuerySingle<ulong?>($"SELECT MAX({cursorColumn}) FROM {table} WHERE {where}");
+                string maxQuery = $"SELECT MAX({cursorColumn}) FROM {table}";
+                if (!string.IsNullOrWhiteSpace(where))
+                    maxQuery += $" WHERE {where}";
+
+                var max = dbConnection.QuerySingleOrDefault<ulong?>(maxQuery);
                 if (!max.HasValue) yield break;
 
+                // FIXME: this is terrible.
+                var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
                 string query = $"select * from {table} where {cursorColumn} > @lastId and {cursorColumn} <= @max {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
 
                 while (lastId != null)
@@ -48,7 +51,17 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : Model =>
+        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, ulong? resumeFrom = null) where T : Model =>
             Chunk<T>(null, chunkSize, resumeFrom);
+
+        public static string GetCursorColumnName<T>() where T : Model
+        {
+            return typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
+        }
+
+        public static string GetTableName<T>() where T : Model
+        {
+            return typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
+        }
     }
 }

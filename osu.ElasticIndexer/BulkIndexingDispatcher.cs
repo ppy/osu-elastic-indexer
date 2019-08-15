@@ -12,23 +12,23 @@ namespace osu.ElasticIndexer
 {
     internal class BulkIndexingDispatcher<T> where T : HighScore
     {
+        internal event EventHandler<ulong> BatchWithLastIdCompleted;
+
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
 
         // Self-limiting read-ahead buffer to ensure
         // there is always data ready to be dispatched to Elasticsearch.
-        private readonly BlockingCollection<List<T>> readBuffer = new BlockingCollection<List<T>>(AppSettings.BufferSize);
+        private readonly BlockingCollection<DispatcherQueueItem<T>> readBuffer = new BlockingCollection<DispatcherQueueItem<T>>(AppSettings.BufferSize);
 
-        private readonly string alias;
         private readonly string index;
 
-        internal BulkIndexingDispatcher(string alias, string index)
+        internal BulkIndexingDispatcher(string index)
         {
-            this.alias = alias;
             this.index = index;
         }
 
-        internal void Enqueue(List<T> list) => readBuffer.Add(list);
+        internal void Enqueue(List<T> add = null, List<T> remove = null) => readBuffer.Add(new DispatcherQueueItem<T>(add, remove));
         internal void EnqueueEnd() => readBuffer.CompleteAdding();
 
         /// <summary>
@@ -51,7 +51,10 @@ namespace osu.ElasticIndexer
 
                 while (true)
                 {
-                    var bulkDescriptor = new BulkDescriptor().Index(index).IndexMany(chunk);
+                    var bulkDescriptor = new BulkDescriptor()
+                        .Index(index)
+                        .IndexMany(chunk.ItemsToIndex)
+                        .DeleteMany(chunk.ItemsToDelete);
                     var response = elasticClient.Bulk(bulkDescriptor);
 
                     bool retry;
@@ -62,28 +65,17 @@ namespace osu.ElasticIndexer
                     Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
                 }
 
-                if (success && !AppSettings.IsUsingQueue)
-                {
-                    // TODO: should probably aggregate responses and update to highest successful.
-                    IndexMeta.UpdateAsync(new IndexMeta
-                    {
-                        Index = index,
-                        Alias = alias,
-                        LastId = chunk.Last().CursorValue,
-                        UpdatedAt = DateTimeOffset.UtcNow
-                    });
-                }
+                if (success)
+                    BatchWithLastIdCompleted?.Invoke(this, chunk.ItemsToIndex.Last().ScoreId);
             });
-
-            IndexMeta.Refresh();
         }
 
-        private (bool success, bool retry) retryOnResponse(IBulkResponse response, List<T> chunk)
+        private (bool success, bool retry) retryOnResponse(IBulkResponse response, DispatcherQueueItem<T> queued)
         {
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {chunk.Last().CursorValue}");
+                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {queued.ItemsToIndex.Last().CursorValue}");
                 return (success: false, retry: true);
             }
 

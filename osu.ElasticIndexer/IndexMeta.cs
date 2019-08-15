@@ -11,12 +11,12 @@ namespace osu.ElasticIndexer
     [ElasticsearchType(Name = "index_meta", IdProperty = nameof(Index))]
     public class IndexMeta
     {
-        private static readonly ElasticClient client = new ElasticClient(
+        public static readonly ElasticClient CLIENT = new ElasticClient(
             new ConnectionSettings(
                 new Uri(AppSettings.ElasticsearchHost)
             ).DefaultIndex($"{AppSettings.ElasticsearchPrefix}index_meta")
+            .ThrowExceptions()
         );
-
 
         /// <summary>
         /// The actual name of the index.
@@ -32,33 +32,45 @@ namespace osu.ElasticIndexer
         public string Alias { get; set; }
 
         [Number(NumberType.Long, Name = "last_id")]
-        public long LastId { get; set; }
+        public ulong LastId { get; set; }
+
+        [Number(NumberType.Long, Name = "reset_queue_to")]
+        public ulong? ResetQueueTo { get; set; }
 
         [Date(Name = "updated_at")]
         public DateTimeOffset UpdatedAt { get; set; }
 
+        [Text(Name = "schema")]
+        public string Schema { get; set; }
+
         public static ICreateIndexResponse CreateIndex()
         {
-            return client.CreateIndex($"{AppSettings.ElasticsearchPrefix}index_meta", c => c
+            return CLIENT.CreateIndex($"{AppSettings.ElasticsearchPrefix}index_meta", c => c
                 .Settings(s => s.NumberOfShards(1))
                 .Mappings(ms => ms.Map<IndexMeta>(m => m.AutoMap()))
                 .WaitForActiveShards("1")
+                .RequestConfiguration(r => r.ThrowExceptions(false))
             );
+        }
+
+        public static void MarkAsReady(string index)
+        {
+            CLIENT.Update<IndexMeta, object>(index, d => d.Doc(new { AppSettings.Schema }));
         }
 
         public static void Refresh()
         {
-            client.Refresh($"{AppSettings.ElasticsearchPrefix}index_meta");
+            CLIENT.Refresh($"{AppSettings.ElasticsearchPrefix}index_meta");
         }
 
         public static void UpdateAsync(IndexMeta indexMeta)
         {
-            client.IndexDocumentAsync(indexMeta);
+            CLIENT.IndexDocumentAsync(indexMeta);
         }
 
         public static IndexMeta GetByName(string name)
         {
-            var response = client.Search<IndexMeta>(s => s
+            var response = CLIENT.Search<IndexMeta>(s => s
                 .Query(q => q.Ids(d => d.Values(name)))
             );
 
@@ -67,8 +79,21 @@ namespace osu.ElasticIndexer
 
         public static IEnumerable<IndexMeta> GetByAlias(string name)
         {
-            var response = client.Search<IndexMeta>(s => s
+            var response = CLIENT.Search<IndexMeta>(s => s
                 .Query(q => q.Term(d => d.Alias, name))
+                .Sort(sort => sort.Descending(p => p.UpdatedAt))
+            );
+
+            return response.Documents;
+        }
+
+        public static IEnumerable<IndexMeta> GetByAliasForCurrentVersion(string name)
+        {
+            var response = CLIENT.Search<IndexMeta>(s => s
+                .Query(q => q
+                    .Term(t => t.Alias, name) && q
+                    .Term(t => t.Schema, AppSettings.Schema)
+                )
                 .Sort(sort => sort.Descending(p => p.UpdatedAt))
             );
 
