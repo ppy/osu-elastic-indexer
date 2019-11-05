@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
+using StatsdClient;
 
 namespace osu.ElasticIndexer
 {
@@ -120,6 +121,7 @@ namespace osu.ElasticIndexer
         private Task<long> databaseReaderTask(ulong resumeFrom) => Task.Factory.StartNew(() =>
             {
                 long count = 0;
+                var mode = HighScore.GetRulesetId<T>();
 
                 while (true)
                 {
@@ -128,7 +130,6 @@ namespace osu.ElasticIndexer
                         if (!AppSettings.IsRebuild)
                         {
                             Console.WriteLine("Reading from queue...");
-                            var mode = HighScore.GetRulesetId<T>();
                             var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
                             foreach (var chunk in chunks)
                             {
@@ -139,6 +140,9 @@ namespace osu.ElasticIndexer
                                                     .Select(scoreId => new T { ScoreId = scoreId })
                                                     .ToList();
                                 Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
+
+                                DogStatsd.Increment("osu.score_indexing", scores.Count, tags: new[] { $"mode:{mode}", "result:success" });
+                                DogStatsd.Increment("osu.score_indexing", removedScores.Count, tags: new[] { $"mode:{mode}", "result:missing" });
 
                                 dispatcher.Enqueue(add: scores, remove: removedScores);
                                 ScoreProcessQueue.CompleteQueued(chunk);
@@ -151,7 +155,10 @@ namespace osu.ElasticIndexer
                             var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
                             foreach (var chunk in chunks)
                             {
-                                dispatcher.Enqueue(chunk.Where(x => x.ShouldIndex).ToList());
+                                var scores = chunk.Where(x => x.ShouldIndex).ToList();
+
+                                dispatcher.Enqueue(scores);
+                                DogStatsd.Increment("osu.score_indexing", scores.Count, tags: new[] { $"mode:{mode}", "result:success" });
                                 count += chunk.Count;
                                 // update resumeFrom in this scope to allow resuming from connection errors.
                                 resumeFrom = chunk.Last().CursorValue;
