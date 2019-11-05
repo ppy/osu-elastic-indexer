@@ -28,25 +28,25 @@ namespace osu.ElasticIndexer
         {
             if (!checkIfReady()) return;
 
-            var initial = initialize();
-            var index = initial.Index;
+            var indexMeta = getIndexMeta();
+
             var metaSchema = AppSettings.IsPrepMode ? null : AppSettings.Schema;
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
                 Alias = Name,
-                Index = index,
+                Index = indexMeta.Name,
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<T>(index);
+            dispatcher = new BulkIndexingDispatcher<T>(indexMeta.Name);
 
             if (AppSettings.IsRebuild)
                 dispatcher.BatchWithLastIdCompleted += handleBatchWithLastIdCompleted;
 
             try
             {
-                var readerTask = databaseReaderTask(initial.LastId);
+                var readerTask = databaseReaderTask(indexMeta.LastId);
                 dispatcher.Run();
                 readerTask.Wait();
 
@@ -59,9 +59,9 @@ namespace osu.ElasticIndexer
                 // should be done by process waiting for the ready signal.
                 if (AppSettings.IsRebuild)
                     if (AppSettings.IsPrepMode)
-                        IndexMeta.MarkAsReady(index);
+                        IndexMeta.MarkAsReady(indexMeta.Name);
                     else
-                        updateAlias(Name, index);
+                        updateAlias(Name, indexMeta.Name);
 
                 IndexCompleted(this, indexCompletedArgs);
             }
@@ -87,10 +87,10 @@ namespace osu.ElasticIndexer
                 // TODO: should probably aggregate responses and update to highest successful.
                 IndexMeta.UpdateAsync(new IndexMeta
                 {
-                    Index = index,
+                    Name = indexMeta.Name,
                     Alias = Name,
                     LastId = lastId,
-                    ResetQueueTo = initial.ResetQueueTo,
+                    ResetQueueTo = indexMeta.ResetQueueTo,
                     UpdatedAt = DateTimeOffset.UtcNow,
                     Schema = metaSchema
                 });
@@ -193,7 +193,7 @@ namespace osu.ElasticIndexer
             {
                 // TODO: query ES that the index actually exists.
 
-                index = metas.FirstOrDefault(m => aliasedIndices.Contains(m.Index))?.Index;
+                index = metas.FirstOrDefault(m => aliasedIndices.Contains(m.Name))?.Name;
                 // 3 cases are handled:
                 // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
                 if (index != null)
@@ -204,7 +204,7 @@ namespace osu.ElasticIndexer
 
                 // 2. Index has not been aliased and has tracking information;
                 // likely resuming from an incomplete job or waiting to switch over.
-                index = metas.FirstOrDefault()?.Index;
+                index = metas.FirstOrDefault()?.Name;
                 if (index != null)
                 {
                     Console.WriteLine($"Using non-aliased `{index}`.");
@@ -230,7 +230,7 @@ namespace osu.ElasticIndexer
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
-        private IndexMeta initialize()
+        private IndexMeta getIndexMeta()
         {
             // TODO: all this needs cleaning.
             var (index, aliased) = findOrCreateIndex(Name);
@@ -242,7 +242,7 @@ namespace osu.ElasticIndexer
             var indexMeta = IndexMeta.GetByName(index) ?? new IndexMeta
             {
                 Alias = Name,
-                Index = index,
+                Name = index,
             };
 
             indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
