@@ -123,7 +123,6 @@ namespace osu.ElasticIndexer
                 if (args.Count > 0)
                 {
                     Console.WriteLine($"Indexed {args.Count} records in {args.TimeTaken.TotalMilliseconds:F0}ms ({args.Count / args.TimeTaken.TotalSeconds:F0}/s)");
-                    Console.WriteLine();
                 }
             };
 

@@ -180,6 +180,8 @@ namespace osu.ElasticIndexer
         /// <returns>Name of index found or created and any existing alias.</returns>
         private (string index, bool aliased) findOrCreateIndex(string name)
         {
+            Console.WriteLine();
+
             var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
             var metas = (
                 AppSettings.IsRebuild
