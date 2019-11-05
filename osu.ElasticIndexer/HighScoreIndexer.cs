@@ -117,64 +117,61 @@ namespace osu.ElasticIndexer
         /// <param name="resumeFrom">The cursor value to resume from;
         /// use null to resume from the last known value.</param>
         /// <returns>The database reader task.</returns>
-        private Task<long> databaseReaderTask(ulong resumeFrom)
-        {
-            return Task.Factory.StartNew(() =>
+        private Task<long> databaseReaderTask(ulong resumeFrom) => Task.Factory.StartNew(() =>
+            {
+                long count = 0;
+
+                while (true)
                 {
-                    long count = 0;
-
-                    while (true)
+                    try
                     {
-                        try
+                        if (!AppSettings.IsRebuild)
                         {
-                            if (!AppSettings.IsRebuild)
+                            Console.WriteLine("Reading from queue...");
+                            var mode = HighScore.GetRulesetId<T>();
+                            var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
+                            foreach (var chunk in chunks)
                             {
-                                Console.WriteLine("Reading from queue...");
-                                var mode = HighScore.GetRulesetId<T>();
-                                var chunks = Model.Chunk<ScoreProcessQueue>($"status = 1 and mode = {mode}", AppSettings.ChunkSize);
-                                foreach (var chunk in chunks)
-                                {
-                                    var scoreIds = chunk.Select(x => x.ScoreId).ToList();
-                                    var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds).Where(x => x.ShouldIndex).ToList();
-                                    var removedScores = scoreIds
-                                        .Except(scores.Select(x => x.ScoreId))
-                                        .Select(scoreId => new T { ScoreId = scoreId })
-                                        .ToList();
-                                    Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
+                                var scoreIds = chunk.Select(x => x.ScoreId).ToList();
+                                var scores = ScoreProcessQueue.FetchByScoreIds<T>(scoreIds).Where(x => x.ShouldIndex).ToList();
+                                var removedScores = scoreIds
+                                                    .Except(scores.Select(x => x.ScoreId))
+                                                    .Select(scoreId => new T { ScoreId = scoreId })
+                                                    .ToList();
+                                Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
 
-                                    dispatcher.Enqueue(add: scores, remove: removedScores);
-                                    ScoreProcessQueue.CompleteQueued(chunk);
-                                    count += scores.Count;
-                                }
+                                dispatcher.Enqueue(add: scores, remove: removedScores);
+                                ScoreProcessQueue.CompleteQueued(chunk);
+                                count += scores.Count;
                             }
-                            else
-                            {
-                                Console.WriteLine($"Rebuild from {resumeFrom}...");
-                                var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
-                                foreach (var chunk in chunks)
-                                {
-                                    dispatcher.Enqueue(chunk.Where(x => x.ShouldIndex).ToList());
-                                    count += chunk.Count;
-                                    // update resumeFrom in this scope to allow resuming from connection errors.
-                                    resumeFrom = chunk.Last().CursorValue;
-                                }
-                            }
-
-                            break;
                         }
-                        catch (DbException ex)
+                        else
                         {
-                            Console.Error.WriteLine(ex.Message);
-                            Task.Delay(1000).Wait();
+                            Console.WriteLine($"Rebuild from {resumeFrom}...");
+                            var chunks = Model.Chunk<T>(AppSettings.ChunkSize, resumeFrom);
+                            foreach (var chunk in chunks)
+                            {
+                                dispatcher.Enqueue(chunk.Where(x => x.ShouldIndex).ToList());
+                                count += chunk.Count;
+                                // update resumeFrom in this scope to allow resuming from connection errors.
+                                resumeFrom = chunk.Last().CursorValue;
+                            }
                         }
+
+                        break;
                     }
+                    catch (DbException ex)
+                    {
+                        Console.Error.WriteLine(ex.Message);
+                        Task.Delay(1000).Wait();
+                    }
+                }
 
-                    dispatcher.EnqueueEnd();
-                    Console.WriteLine($"Finished reading database {count} records.");
+                dispatcher.EnqueueEnd();
+                Console.WriteLine($"Finished reading database {count} records.");
 
-                    return count;
-                }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
-        }
+                return count;
+            }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
 
         /// <summary>
         /// Attempts to find the matching index or creates a new one.
@@ -183,13 +180,11 @@ namespace osu.ElasticIndexer
         /// <returns>Name of index found or created and any existing alias.</returns>
         private (string index, bool aliased) findOrCreateIndex(string name)
         {
-            Console.WriteLine();
-            Console.WriteLine($"Find or create index for `{name}`...");
             var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
             var metas = (
                 AppSettings.IsRebuild
-                ? IndexMeta.GetByAlias(name)
-                : IndexMeta.GetByAliasForCurrentVersion(name)
+                    ? IndexMeta.GetByAlias(name)
+                    : IndexMeta.GetByAliasForCurrentVersion(name)
             ).ToList();
 
             string index = null;
@@ -203,7 +198,7 @@ namespace osu.ElasticIndexer
                 // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
                 if (index != null)
                 {
-                    Console.WriteLine($"Found matching aliased index `{index}`.");
+                    Console.WriteLine($"Using alias `{index}`.");
                     return (index, aliased: true);
                 }
 
@@ -212,7 +207,7 @@ namespace osu.ElasticIndexer
                 index = metas.FirstOrDefault()?.Index;
                 if (index != null)
                 {
-                    Console.WriteLine($"Found previous index `{index}`.");
+                    Console.WriteLine($"Using non-aliased `{index}`.");
                     return (index, aliased: false);
                 }
             }

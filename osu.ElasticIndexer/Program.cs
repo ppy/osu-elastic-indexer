@@ -68,6 +68,7 @@ namespace osu.ElasticIndexer
                 // run continuously with automatic resume logic
                 runIndexing();
                 AppSettings.IsNew = false;
+                Console.WriteLine($"Sleeping {AppSettings.PollingInterval}..");
                 Thread.Sleep(AppSettings.PollingInterval);
             }
         }
@@ -116,9 +117,11 @@ namespace osu.ElasticIndexer
             indexer.Name = indexName;
             indexer.IndexCompleted += (sender, args) =>
             {
-                Console.WriteLine($"{args.Count} records took {args.TimeTaken}");
-                if (args.Count > 0) Console.WriteLine($"{args.Count / args.TimeTaken.TotalSeconds} records/s");
-                Console.WriteLine();
+                if (args.Count > 0)
+                {
+                    Console.WriteLine($"Indexed {args.Count} records in {args.TimeTaken.TotalMilliseconds:F0}ms ({args.Count / args.TimeTaken.TotalSeconds:F0}/s)");
+                    Console.WriteLine();
+                }
             };
 
             return indexer;

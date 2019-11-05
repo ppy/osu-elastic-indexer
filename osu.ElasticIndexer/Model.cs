@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer
                 var cursorColumn = GetCursorColumnName<T>();
                 var table = GetTableName<T>();
 
-                Console.WriteLine($"Starting {table} from {lastId}...");
+                Console.WriteLine($"Chunking results from {table} ({where})...");
 
                 dbConnection.Open();
 
@@ -42,11 +42,14 @@ namespace osu.ElasticIndexer
                 while (lastId != null)
                 {
                     var parameters = new { lastId, max, chunkSize };
-                    Console.WriteLine("{0} {1}", query, parameters);
                     var queryResult = dbConnection.Query<T>(query, parameters).AsList();
 
                     lastId = queryResult.LastOrDefault()?.CursorValue;
-                    if (lastId.HasValue) yield return queryResult;
+                    if (lastId.HasValue)
+                    {
+                        Console.WriteLine($"Returning {queryResult.Count} results.");
+                        yield return queryResult;
+                    }
                 }
             }
         }
