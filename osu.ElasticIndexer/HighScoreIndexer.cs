@@ -247,9 +247,6 @@ namespace osu.ElasticIndexer
 
             indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
 
-            Console.WriteLine();
-            Console.WriteLine($"{typeof(T)}, index `{index}`, chunkSize `{AppSettings.ChunkSize}`, resume `{indexMeta.LastId}`");
-
             if (AppSettings.IsRebuild)
             {
                 // Save the position the score processing queue should be reset to if rebuilding an index.
@@ -283,8 +280,6 @@ namespace osu.ElasticIndexer
             IndexMeta.UpdateAsync(indexMeta);
             IndexMeta.Refresh();
 
-            Console.WriteLine();
-
             return indexMeta;
         }
 
@@ -299,8 +294,6 @@ namespace osu.ElasticIndexer
                 aliasDescriptor.Remove(d => d.Alias(alias).Index(oldIndex));
 
             aliasDescriptor.Add(d => d.Alias(alias).Index(index));
-
-            Console.WriteLine(elasticClient.Alias(aliasDescriptor));
 
             // cleanup
             if (!close) return;
