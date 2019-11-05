@@ -46,10 +46,7 @@ namespace osu.ElasticIndexer
 
                     lastId = queryResult.LastOrDefault()?.CursorValue;
                     if (lastId.HasValue)
-                    {
-                        Console.WriteLine($"Returning {queryResult.Count} results.");
                         yield return queryResult;
-                    }
                 }
             }
         }

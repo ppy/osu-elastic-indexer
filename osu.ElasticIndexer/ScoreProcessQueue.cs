@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dapper;
@@ -21,20 +20,6 @@ namespace osu.ElasticIndexer
 
         public ulong ScoreId { get; set; }
 
-        public static void CompleteQueued(List<ScoreProcessQueue> queueItems)
-        {
-            if (!queueItems.Any()) return;
-            var queueIds = queueItems.Select(x => x.QueueId);
-
-            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-            {
-                dbConnection.Open();
-
-                const string query = "update score_process_queue set status = 2 where queue_id in @queueIds";
-                dbConnection.Execute(query, new { queueIds });
-            }
-        }
-
         public static List<T> FetchByScoreIds<T>(List<ulong> scoreIds) where T : HighScore
         {
             var table = GetTableName<T>();
@@ -42,12 +27,7 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 dbConnection.Open();
-
-                string query = $"select * from {table} where score_id in @scoreIds";
-                var parameters = new { scoreIds };
-                Console.WriteLine("{0} {1}", query, parameters);
-
-                return dbConnection.Query<T>(query, parameters).AsList();
+                return dbConnection.Query<T>($"select * from {table} where score_id in @scoreIds", new { scoreIds }).AsList();
             }
         }
 
@@ -56,9 +36,19 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 dbConnection.Open();
+                return dbConnection.QuerySingleOrDefault<ulong?>("SELECT queue_id FROM score_process_queue WHERE status = 2 AND mode = @mode order by queue_id DESC LIMIT 1", new { mode });
+            }
+        }
 
-                const string query = "SELECT queue_id FROM score_process_queue WHERE status = 2 AND mode = @mode order by queue_id DESC LIMIT 1";
-                return dbConnection.QuerySingleOrDefault<ulong?>(query, new { mode });
+        public static void CompleteQueued(List<ScoreProcessQueue> queueItems)
+        {
+            if (!queueItems.Any()) return;
+            var queueIds = queueItems.Select(x => x.QueueId);
+
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                dbConnection.Open();
+                dbConnection.Execute("update score_process_queue set status = 2 where queue_id in @queueIds", new { queueIds });
             }
         }
 
@@ -69,9 +59,7 @@ namespace osu.ElasticIndexer
                 var mode = HighScore.GetRulesetId<T>();
 
                 dbConnection.Open();
-
-                const string query = "UPDATE score_process_queue SET status = 1 WHERE queue_id > @from AND mode = @mode";
-                dbConnection.Execute(query, new { from, mode });
+                dbConnection.Execute("UPDATE score_process_queue SET status = 1 WHERE queue_id > @from AND mode = @mode", new { from, mode });
             }
         }
     }
