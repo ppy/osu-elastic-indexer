@@ -20,7 +20,7 @@ namespace osu.ElasticIndexer
         public string Suffix { get; set; }
 
         // use shared instance to avoid socket leakage.
-        private readonly ElasticClient elasticClient = IndexMeta.CLIENT;
+        private readonly ElasticClient elasticClient = IndexMeta.ES_CLIENT;
 
         private BulkIndexingDispatcher<T> dispatcher;
 

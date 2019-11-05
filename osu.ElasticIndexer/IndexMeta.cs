@@ -11,7 +11,7 @@ namespace osu.ElasticIndexer
     [ElasticsearchType(Name = "index_meta", IdProperty = nameof(Index))]
     public class IndexMeta
     {
-        public static readonly ElasticClient CLIENT = new ElasticClient(
+        public static readonly ElasticClient ES_CLIENT = new ElasticClient(
             new ConnectionSettings(
                 new Uri(AppSettings.ElasticsearchHost)
             ).DefaultIndex($"{AppSettings.ElasticsearchPrefix}index_meta")
@@ -45,7 +45,7 @@ namespace osu.ElasticIndexer
 
         public static ICreateIndexResponse CreateIndex()
         {
-            return CLIENT.CreateIndex($"{AppSettings.ElasticsearchPrefix}index_meta", c => c
+            return ES_CLIENT.CreateIndex($"{AppSettings.ElasticsearchPrefix}index_meta", c => c
                 .Settings(s => s.NumberOfShards(1))
                 .Mappings(ms => ms.Map<IndexMeta>(m => m.AutoMap()))
                 .WaitForActiveShards("1")
@@ -55,22 +55,22 @@ namespace osu.ElasticIndexer
 
         public static void MarkAsReady(string index)
         {
-            CLIENT.Update<IndexMeta, object>(index, d => d.Doc(new { AppSettings.Schema }));
+            ES_CLIENT.Update<IndexMeta, object>(index, d => d.Doc(new { AppSettings.Schema }));
         }
 
         public static void Refresh()
         {
-            CLIENT.Refresh($"{AppSettings.ElasticsearchPrefix}index_meta");
+            ES_CLIENT.Refresh($"{AppSettings.ElasticsearchPrefix}index_meta");
         }
 
         public static void UpdateAsync(IndexMeta indexMeta)
         {
-            CLIENT.IndexDocumentAsync(indexMeta);
+            ES_CLIENT.IndexDocumentAsync(indexMeta);
         }
 
         public static IndexMeta GetByName(string name)
         {
-            var response = CLIENT.Search<IndexMeta>(s => s
+            var response = ES_CLIENT.Search<IndexMeta>(s => s
                 .Query(q => q.Ids(d => d.Values(name)))
             );
 
@@ -79,7 +79,7 @@ namespace osu.ElasticIndexer
 
         public static IEnumerable<IndexMeta> GetByAlias(string name)
         {
-            var response = CLIENT.Search<IndexMeta>(s => s
+            var response = ES_CLIENT.Search<IndexMeta>(s => s
                 .Query(q => q.Term(d => d.Alias, name))
                 .Sort(sort => sort.Descending(p => p.UpdatedAt))
             );
@@ -89,7 +89,7 @@ namespace osu.ElasticIndexer
 
         public static IEnumerable<IndexMeta> GetByAliasForCurrentVersion(string name)
         {
-            var response = CLIENT.Search<IndexMeta>(s => s
+            var response = ES_CLIENT.Search<IndexMeta>(s => s
                 .Query(q => q
                     .Term(t => t.Alias, name) && q
                     .Term(t => t.Schema, AppSettings.Schema)
