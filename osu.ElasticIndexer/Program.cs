@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using Dapper;
 using MySql.Data.MySqlClient;
+using StatsdClient;
 
 namespace osu.ElasticIndexer
 {
@@ -14,6 +15,12 @@ namespace osu.ElasticIndexer
     {
         public static void Main()
         {
+            DogStatsd.Configure(new StatsdConfig
+            {
+                StatsdServerName = "127.0.0.1",
+                Prefix = "elasticsearch.scores"
+            });
+
             if (AppSettings.UseDocker)
             {
                 Console.WriteLine("Waiting for database...");
