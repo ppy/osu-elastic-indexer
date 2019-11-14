@@ -141,8 +141,8 @@ namespace osu.ElasticIndexer
                                                     .ToList();
                                 Console.WriteLine($"Got {chunk.Count} items from queue, found {scores.Count} matching scores, {removedScores.Count} missing scores");
 
-                                DogStatsd.Increment("osu.score_indexing", scores.Count, tags: new[] { $"mode:{mode}", "result:success" });
-                                DogStatsd.Increment("osu.score_indexing", removedScores.Count, tags: new[] { $"mode:{mode}", "result:missing" });
+                                DogStatsd.Increment("indexed", scores.Count, tags: new[] { $"mode:{mode}", "result:success" });
+                                DogStatsd.Increment("indexed", removedScores.Count, tags: new[] { $"mode:{mode}", "result:missing" });
 
                                 dispatcher.Enqueue(add: scores, remove: removedScores);
                                 ScoreProcessQueue.CompleteQueued(chunk);
@@ -158,7 +158,7 @@ namespace osu.ElasticIndexer
                                 var scores = chunk.Where(x => x.ShouldIndex).ToList();
 
                                 dispatcher.Enqueue(scores);
-                                DogStatsd.Increment("osu.score_indexing", scores.Count, tags: new[] { $"mode:{mode}", "result:success" });
+                                DogStatsd.Increment("indexed", scores.Count, tags: new[] { $"mode:{mode}", "result:success" });
                                 count += chunk.Count;
                                 // update resumeFrom in this scope to allow resuming from connection errors.
                                 resumeFrom = chunk.Last().CursorValue;
