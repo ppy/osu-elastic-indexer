@@ -5,7 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="dapper" Version="2.0.35" />
-    <PackageReference Include="Dapper.Contrib" Version="2.0.30" />
+    <PackageReference Include="Dapper.Contrib" Version="2.0.35" />
     <PackageReference Include="DogStatsD-CSharp-Client" Version="4.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.3" />
