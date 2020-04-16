@@ -303,6 +303,7 @@ namespace osu.ElasticIndexer
                 aliasDescriptor.Remove(d => d.Alias(alias).Index(oldIndex));
 
             aliasDescriptor.Add(d => d.Alias(alias).Index(index));
+            elasticClient.Alias(aliasDescriptor);
 
             // cleanup
             if (!close) return;
