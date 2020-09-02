@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dapper;
 using Dapper.Contrib.Extensions;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace osu.ElasticIndexer
 {
