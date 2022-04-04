@@ -70,7 +70,7 @@ namespace osu.ElasticIndexer
             });
         }
 
-        private (bool success, bool retry) retryOnResponse(IBulkResponse response, DispatcherQueueItem<T> queued)
+        private (bool success, bool retry) retryOnResponse(BulkResponse response, DispatcherQueueItem<T> queued)
         {
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))

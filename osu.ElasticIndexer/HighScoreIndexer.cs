@@ -232,7 +232,7 @@ namespace osu.ElasticIndexer
             // create by supplying the json file instead of the attributed class because we're not
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
-            elasticClient.LowLevel.IndicesCreate<DynamicResponse>(index, json);
+            elasticClient.LowLevel.Indices.Create<DynamicResponse>(index, json);
 
             return (index, aliased: false);
 
@@ -303,14 +303,14 @@ namespace osu.ElasticIndexer
                 aliasDescriptor.Remove(d => d.Alias(alias).Index(oldIndex));
 
             aliasDescriptor.Add(d => d.Alias(alias).Index(index));
-            elasticClient.Alias(aliasDescriptor);
+            elasticClient.Indices.BulkAlias(aliasDescriptor);
 
             // cleanup
             if (!close) return;
             foreach (var toClose in oldIndices.Where(x => x != index))
             {
                 Console.WriteLine($"Closing {toClose}");
-                elasticClient.CloseIndex(toClose);
+                elasticClient.Indices.Close(toClose);
             }
         }
     }

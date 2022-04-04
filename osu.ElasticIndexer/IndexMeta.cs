@@ -43,11 +43,11 @@ namespace osu.ElasticIndexer
         [Text(Name = "schema")]
         public string Schema { get; set; }
 
-        public static ICreateIndexResponse CreateIndex()
+        public static CreateIndexResponse CreateIndex()
         {
-            return ES_CLIENT.CreateIndex($"{AppSettings.ElasticsearchPrefix}index_meta", c => c
+            return ES_CLIENT.Indices.Create($"{AppSettings.ElasticsearchPrefix}index_meta", c => c
                 .Settings(s => s.NumberOfShards(1))
-                .Mappings(ms => ms.Map<IndexMeta>(m => m.AutoMap()))
+                .Map<IndexMeta>(m => m.AutoMap())
                 .WaitForActiveShards("1")
                 .RequestConfiguration(r => r.ThrowExceptions(false))
             );
@@ -60,7 +60,7 @@ namespace osu.ElasticIndexer
 
         public static void Refresh()
         {
-            ES_CLIENT.Refresh($"{AppSettings.ElasticsearchPrefix}index_meta");
+            ES_CLIENT.Indices.Refresh($"{AppSettings.ElasticsearchPrefix}index_meta");
         }
 
         public static void UpdateAsync(IndexMeta indexMeta)
