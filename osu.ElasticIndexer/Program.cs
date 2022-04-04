@@ -89,7 +89,7 @@ namespace osu.ElasticIndexer
         private static void runIndexing()
         {
             var mismatched = new HashSet<string>();
-            var suffix = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
 
             foreach (var mode in AppSettings.Modes)
             {

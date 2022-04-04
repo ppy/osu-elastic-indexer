@@ -225,7 +225,7 @@ namespace osu.ElasticIndexer
                 throw new Exception("no existing index found");
 
             // 3. Not aliased and no tracking information; likely starting from scratch
-            var suffix = Suffix ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var suffix = Suffix ?? DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
             index = $"{name}_{suffix}";
 
             Console.WriteLine($"Creating `{index}` for `{name}`.");
