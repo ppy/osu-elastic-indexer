@@ -8,7 +8,7 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    [ElasticsearchType(Name = "index_meta", IdProperty = nameof(Name))]
+    [ElasticsearchType(IdProperty = nameof(Name))]
     public class IndexMeta
     {
         public static readonly ElasticClient ES_CLIENT = new ElasticClient(

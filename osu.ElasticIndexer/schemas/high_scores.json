@@ -1,48 +1,46 @@
 {
   "mappings": {
-    "_doc": {
-      "_source": {
-        "enabled": false
+    "_source": {
+      "enabled": false
+    },
+    "dynamic": false,
+    "properties": {
+      "score_id": {
+        "type": "long"
       },
-      "dynamic": false,
-      "properties": {
-        "score_id": {
-          "type": "long"
-        },
-        "beatmap_id": {
-          "type": "long"
-        },
-        "user_id": {
-          "type": "long"
-        },
-        "score": {
-          "type": "long"
-        },
-        "rank": {
-          "type": "keyword"
-        },
-        "enabled_mods": {
-          "type": "keyword"
-        },
-        "date": {
-          "type": "date",
-          "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss"
-        },
-        "pp": {
-          "type": "float"
-        },
-        "perfect": {
-          "type": "boolean"
-        },
-        "replay": {
-          "type": "boolean"
-        },
-        "hidden": {
-          "type": "short"
-        },
-        "country_acronym": {
-          "type": "keyword"
-        }
+      "beatmap_id": {
+        "type": "long"
+      },
+      "user_id": {
+        "type": "long"
+      },
+      "score": {
+        "type": "long"
+      },
+      "rank": {
+        "type": "keyword"
+      },
+      "enabled_mods": {
+        "type": "keyword"
+      },
+      "date": {
+        "type": "date",
+        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss"
+      },
+      "pp": {
+        "type": "float"
+      },
+      "perfect": {
+        "type": "boolean"
+      },
+      "replay": {
+        "type": "boolean"
+      },
+      "hidden": {
+        "type": "short"
+      },
+      "country_acronym": {
+        "type": "keyword"
       }
     }
   },
