@@ -15,6 +15,8 @@ namespace osu.ElasticIndexer
     {
         public static void Main()
         {
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+
             DogStatsd.Configure(new StatsdConfig
             {
                 StatsdServerName = "127.0.0.1",
@@ -43,7 +45,6 @@ namespace osu.ElasticIndexer
                 }
             }
 
-            DefaultTypeMap.MatchNamesWithUnderscores = true;
             IndexMeta.CreateIndex();
 
             Console.WriteLine($"Rebuilding index: `{AppSettings.IsRebuild}`");
@@ -91,28 +92,37 @@ namespace osu.ElasticIndexer
             var mismatched = new HashSet<string>();
             var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
 
-            foreach (var mode in AppSettings.Modes)
+            try
             {
-                try
-                {
-                    var indexer = getIndexerFromModeString(mode);
-                    indexer.Suffix = suffix;
-                    indexer.ResumeFrom = AppSettings.ResumeFrom;
-                    indexer.Run();
-                }
-                catch (VersionMismatchException ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    mismatched.Add(mode);
-                }
+                var indexer = getIndexer();
+                indexer.Suffix = suffix;
+                indexer.ResumeFrom = AppSettings.ResumeFrom;
+                indexer.Run();
             }
-
-            // A switchover probably happened and this process has nothing to do, so just exit.
-            if (AppSettings.Modes.ToHashSet().SetEquals(mismatched))
+            catch (VersionMismatchException ex)
             {
+                Console.Error.WriteLine(ex.Message);
                 Console.Error.WriteLine("All schema versions mismatched, exiting.");
                 Environment.Exit(0);
             }
+        }
+
+        private static IIndexer getIndexer()
+        {
+            var indexName = $"{AppSettings.Prefix}solo_scores";
+
+            var indexer = new SoloScoreIndexer();
+
+            indexer.Name = indexName;
+            indexer.IndexCompleted += (sender, args) =>
+            {
+                if (args.Count > 0)
+                {
+                    Console.WriteLine($"Indexed {args.Count} records in {args.TimeTaken.TotalMilliseconds:F0}ms ({args.Count / args.TimeTaken.TotalSeconds:F0}/s)");
+                }
+            };
+
+            return indexer;
         }
 
         private static IIndexer getIndexerFromModeString(string mode)

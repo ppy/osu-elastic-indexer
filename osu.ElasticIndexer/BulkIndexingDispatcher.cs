@@ -10,7 +10,7 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    internal class BulkIndexingDispatcher<T> where T : HighScore
+    internal class BulkIndexingDispatcher<T> where T : Model
     {
         internal event EventHandler<ulong> BatchWithLastIdCompleted;
 
@@ -66,7 +66,7 @@ namespace osu.ElasticIndexer
                 }
 
                 if (success)
-                    BatchWithLastIdCompleted?.Invoke(this, chunk.ItemsToIndex.Last().ScoreId);
+                    BatchWithLastIdCompleted?.Invoke(this, chunk.ItemsToIndex.Last().CursorValue);
             });
         }
 

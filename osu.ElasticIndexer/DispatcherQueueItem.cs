@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace osu.ElasticIndexer
 {
-    public class DispatcherQueueItem<T> where T : HighScore
+    public class DispatcherQueueItem<T> where T : Model
     {
         public IEnumerable<T> ItemsToDelete { get; private set; }
         public IEnumerable<T> ItemsToIndex { get; private set; }
