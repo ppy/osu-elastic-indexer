@@ -6,7 +6,34 @@ Currently limited to user high scores.
 
 # Requirements
 
-- .NET Core 2.1
+- .NET 6
+
+# Operating modes
+
+The indexer has 2 operating modes,
+- building an index from scratch.
+- processing from a queue.
+
+## Queue processing
+
+In this mode the indexer will continuously wait for new scores to be indexed on a queue.
+
+## (Re)Populating an index
+
+This mode is used to perform a once-off population or rebuild of the scores index.
+
+
+## Scenarios
+
+TODO
+- create new index
+
+      schema=1 rebuild=1 dotnet run
+
+- continuously process new items
+- switching to a new index
+- schema updates
+
 
 # Configuration
 
@@ -54,10 +81,6 @@ Elasticsearch host.
 
 ### `elasticsearch:prefix`
 Assigns a prefix to the indices used.
-
-### `modes`
-Game modes to index in a comma separated list.
-Available modes are `"osu,fruits,mania,taiko"`.
 
 ### `new`
 Forces the indexer to always create a new index.
