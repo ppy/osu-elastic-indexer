@@ -89,7 +89,6 @@ namespace osu.ElasticIndexer
         /// </summary>
         private static void runIndexing()
         {
-            var mismatched = new HashSet<string>();
             var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
 
             try
@@ -112,27 +111,6 @@ namespace osu.ElasticIndexer
             var indexName = $"{AppSettings.Prefix}solo_scores";
 
             var indexer = new SoloScoreIndexer();
-
-            indexer.Name = indexName;
-            indexer.IndexCompleted += (sender, args) =>
-            {
-                if (args.Count > 0)
-                {
-                    Console.WriteLine($"Indexed {args.Count} records in {args.TimeTaken.TotalMilliseconds:F0}ms ({args.Count / args.TimeTaken.TotalSeconds:F0}/s)");
-                }
-            };
-
-            return indexer;
-        }
-
-        private static IIndexer getIndexerFromModeString(string mode)
-        {
-            var indexName = $"{AppSettings.Prefix}high_scores_{mode}";
-            var scoreType = HighScore.GetTypeFromModeString(mode);
-
-            Type indexerType = typeof(HighScoreIndexer<>).MakeGenericType(scoreType);
-
-            var indexer = (IIndexer)Activator.CreateInstance(indexerType);
 
             indexer.Name = indexName;
             indexer.IndexCompleted += (sender, args) =>

@@ -67,7 +67,7 @@ namespace osu.ElasticIndexer
 
             UseDocker = parseBool("docker");
 
-            // assertOptionsCompatible();
+            assertOptionsCompatible();
         }
 
         public static int BufferSize { get; private set; } = 5;

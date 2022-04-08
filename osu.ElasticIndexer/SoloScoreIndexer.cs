@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer
         public string Suffix { get; set; }
 
         // use shared instance to avoid socket leakage.
-        private readonly ElasticClient elasticClient = IndexMeta.ES_CLIENT;
+        private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
 
         private BulkIndexingDispatcher<SoloScore> dispatcher;
 
@@ -256,11 +256,10 @@ namespace osu.ElasticIndexer
                 // Save the position the score processing queue should be reset to if rebuilding an index.
                 // If there is already an existing value, the processor is probabaly resuming from a previous run,
                 // so we likely want to preserve that value.
-                // if (!indexMeta.ResetQueueTo.HasValue)
-                // {
-                //     var mode = HighScore.GetRulesetIdBulkIndexingDispatcher<SoloScore>();
-                //     indexMeta.ResetQueueTo = ScoreProcessQueue.GetLastProcessedQueueId(mode);
-                // }
+                if (!indexMeta.ResetQueueTo.HasValue)
+                {
+                    // TODO: set indexMeta.ResetQueueTo to first unprocessed item.
+                }
             }
             else
             {
@@ -272,12 +271,12 @@ namespace osu.ElasticIndexer
                     throw new VersionMismatchException($"`{Name}` found version {indexMeta.Schema}, expecting {AppSettings.Schema}");
 
                 // process queue reset if any.
-                // if (indexMeta.ResetQueueTo.HasValue)
-                // {
-                //     Console.WriteLine($"Resetting queue_id > {indexMeta.ResetQueueTo}");
-                //     ScoreProcessQueue.UnCompleteQueued<SoloScore>(indexMeta.ResetQueueTo.Value);
-                //     indexMeta.ResetQueueTo = null;
-                // }
+                if (indexMeta.ResetQueueTo.HasValue)
+                {
+                    Console.WriteLine($"Resetting queue_id > {indexMeta.ResetQueueTo}");
+                    // TODO: reset queue to indexMeta.ResetQueueTo.Value
+                    indexMeta.ResetQueueTo = null;
+                }
             }
 
             indexMeta.UpdatedAt = DateTimeOffset.UtcNow;
