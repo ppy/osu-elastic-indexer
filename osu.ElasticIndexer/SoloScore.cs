@@ -88,6 +88,10 @@ namespace osu.ElasticIndexer
             }
         }
 
+        [Computed]
+        [Keyword]
+        public string country_code { get; set; }
+
         private Lazy<Dictionary<string, dynamic>> scoreInfo;
 
         public SoloScore()

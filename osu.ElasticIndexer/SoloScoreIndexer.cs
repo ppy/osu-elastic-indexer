@@ -2,11 +2,14 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Dapper;
 using Elasticsearch.Net;
+using MySqlConnector;
 using Nest;
 using StatsdClient;
 
@@ -131,6 +134,12 @@ namespace osu.ElasticIndexer
                         foreach (var chunk in chunks)
                         {
                             var scores = chunk.Where(x => x.ShouldIndex).ToList();
+                            // TODO: investigate fetching country directly in scores query.
+                            var users = User.FetchUserMappings(scores);
+                            foreach (var score in scores)
+                            {
+                                score.country_code = users[score.UserId].country_acronym;
+                            }
 
                             dispatcher.Enqueue(scores);
                             count += chunk.Count;
@@ -276,6 +285,17 @@ namespace osu.ElasticIndexer
             IndexMeta.Refresh();
 
             return indexMeta;
+        }
+
+        private Dictionary<uint, dynamic> getUsers(IEnumerable<uint> userIds)
+        {
+            // get users
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                dbConnection.Open();
+                return dbConnection.Query<dynamic>($"select user_id, country_acronym from phpbb_users where user_id in @userIds", new { userIds })
+                    .ToDictionary(u => (uint) u.user_id);
+            }
         }
 
         private void updateAlias(string alias, string index, bool close = true)
