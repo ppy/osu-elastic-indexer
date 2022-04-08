@@ -12,8 +12,6 @@ namespace osu.ElasticIndexer
 {
     public class AppSettings
     {
-        public static readonly IImmutableList<string> VALID_MODES = ImmutableList.Create("osu", "mania", "taiko", "fruits");
-
         // shared client without a default index.
         internal static readonly ElasticClient ELASTIC_CLIENT;
 
@@ -47,9 +45,6 @@ namespace osu.ElasticIndexer
 
             if (!string.IsNullOrEmpty(config["polling_interval"]))
                 PollingInterval = int.Parse(config["polling_interval"]);
-
-            var modesStr = config["modes"] ?? string.Empty;
-            Modes = modesStr.Split(',', StringSplitOptions.RemoveEmptyEntries).Intersect(VALID_MODES).ToImmutableArray();
 
             ConnectionString = config.GetConnectionString("osu");
             IsNew = parseBool("new");
