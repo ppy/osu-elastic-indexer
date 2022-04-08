@@ -214,24 +214,12 @@ namespace osu.ElasticIndexer
 
             // create by supplying the json file instead of the attributed class because we're not
             // mapping every field but still want everything for _source.
-            // var json = File.ReadAllText(Path.GetFullPath("schemas/high_scores.json"));
-            // elasticClient.LowLevel.Indices.Create<DynamicResponse>(index, json);
-
-            createIndex(index);
+            var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
+            elasticClient.LowLevel.Indices.Create<DynamicResponse>(index, json);
 
             return (index, aliased: false);
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
-        }
-
-        private CreateIndexResponse createIndex(string name)
-        {
-            return elasticClient.Indices.Create(name, c => c
-                .Settings(s => s.NumberOfShards(1))
-                .Map<SoloScore>(m => m.AutoMap())
-                .WaitForActiveShards("1")
-                .RequestConfiguration(r => r.ThrowExceptions())
-            );
         }
 
         private IndexMeta getIndexMeta()
