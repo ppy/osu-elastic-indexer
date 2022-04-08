@@ -66,6 +66,7 @@ namespace osu.ElasticIndexer
                 }
 
                 if (success)
+                    // FIXME: handle empty list
                     BatchWithLastIdCompleted?.Invoke(this, chunk.ItemsToIndex.Last().CursorValue);
             });
         }

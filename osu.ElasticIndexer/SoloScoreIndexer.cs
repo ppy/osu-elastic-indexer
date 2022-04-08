@@ -130,17 +130,22 @@ namespace osu.ElasticIndexer
                     try
                     {
                         Console.WriteLine($"Rebuild from {resumeFrom}...");
-                        var chunks = Model.Chunk<SoloScore>(AppSettings.ChunkSize, resumeFrom);
+                        var chunks = Model.Chunk<SoloScorePerformance>(AppSettings.ChunkSize, resumeFrom);
                         foreach (var chunk in chunks)
                         {
-                            var scores = chunk.Where(x => x.ShouldIndex).ToList();
+                            var ppLookup = chunk.ToDictionary(x => x.score_id);
+
+                            var scores = SoloScore.FetchByScoreIds(chunk.Select(x => x.score_id).AsList());
                             // TODO: investigate fetching country directly in scores query.
                             var users = User.FetchUserMappings(scores);
                             foreach (var score in scores)
                             {
                                 score.country_code = users[score.UserId].country_acronym;
+                                score.pp = ppLookup[score.Id].pp;
                             }
 
+                            // scores = scores.Where(x => x.ShouldIndex).ToList();
+                            // Console.WriteLine(scores.First());
                             dispatcher.Enqueue(scores);
                             count += chunk.Count;
                             // update resumeFrom in this scope to allow resuming from connection errors.

@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dapper;
 using Dapper.Contrib.Extensions;
+using MySqlConnector;
 using Nest;
 using Newtonsoft.Json;
 
@@ -21,7 +23,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Ignore]
-        public bool ShouldIndex => true;
+        public bool ShouldIndex => pp.HasValue;
 
         // Properties ordered in the order they appear in the table.
 
@@ -52,6 +54,10 @@ namespace osu.ElasticIndexer
         [Computed]
         [Boolean]
         public bool passed { get => scoreInfo.Value["passed"]; }
+
+        [Computed]
+        [Number(NumberType.Float)]
+        public double? pp { get; set; }
 
         [Computed]
         [Number(NumberType.Integer)]
@@ -100,5 +106,16 @@ namespace osu.ElasticIndexer
         }
 
         public override string ToString() => $"score_id: {Id} user_id: {UserId} beatmap_id: {BeatmapId} ruleset_id: {RulesetId}";
+
+        public static List<SoloScore> FetchByScoreIds(List<ulong> scoreIds)
+        {
+            var table = GetTableName<SoloScore>();
+
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                dbConnection.Open();
+                return dbConnection.Query<SoloScore>($"select * from {table} where id in @scoreIds", new { scoreIds }).AsList();
+            }
+        }
     }
 }
