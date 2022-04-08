@@ -1,3 +1,26 @@
+# tl;dr
+
+Index all `solo_scores` with corresponding `solo_scores_performance` entry
+
+    docker build -t ${tagname} -f osu.ElasticIndexer/Dockerfile osu.ElasticIndexer
+
+    docker run -e schema=1 -e rebuild=1 -e "elasticsearch__host=http://host.docker.internal:9200" -e "ConnectionStrings__osu=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname}
+
+
+Index will be alias at `elasticsearch:9200/solo_scores`
+
+Delete indices:
+
+    http delete :9200/index_meta
+    http delete :9200/solo_scores_${timestamp}
+
+or set `action.destructive_requires_name` to `false` on elasticsearch and use
+
+    http delete :9200/solo_scores_*
+
+for fun times >_>
+
+
 # ElasticIndex
 
 Component for loading [osu!](https://osu.ppy.sh) data into Elasticsearch.
