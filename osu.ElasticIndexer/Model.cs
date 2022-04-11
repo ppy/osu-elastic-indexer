@@ -21,9 +21,10 @@ namespace osu.ElasticIndexer
             {
                 ulong? lastId = resumeFrom ?? 0;
 
-                var cursorColumn = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First().CursorColumn;
-                var selects = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First().Query;
-                var maxSelects = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First().Max;
+                var attribute = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First();
+                var cursorColumn = attribute.CursorColumn;
+                var selects = attribute.Query;
+                var maxSelects = attribute.Max;
 
                 Console.WriteLine($"Chunking results from {typeof(T)} ({where})...");
 
