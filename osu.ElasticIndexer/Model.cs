@@ -11,7 +11,6 @@ using MySqlConnector;
 
 namespace osu.ElasticIndexer
 {
-    [CursorColumn("id")]
     public abstract class Model
     {
         public abstract ulong CursorValue { get; }
@@ -21,14 +20,16 @@ namespace osu.ElasticIndexer
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 ulong? lastId = resumeFrom ?? 0;
-                var cursorColumn = GetCursorColumnName<T>();
-                var table = GetTableName<T>();
 
-                Console.WriteLine($"Chunking results from {table} ({where})...");
+                var cursorColumn = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First().CursorColumn;
+                var selects = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First().Query;
+                var maxSelects = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First().Max;
+
+                Console.WriteLine($"Chunking results from {typeof(T)} ({where})...");
 
                 dbConnection.Open();
 
-                string maxQuery = $"SELECT MAX({cursorColumn}) FROM {table}";
+                string maxQuery = $"SELECT {maxSelects}";
                 if (!string.IsNullOrWhiteSpace(where))
                     maxQuery += $" WHERE {where}";
 
@@ -37,7 +38,7 @@ namespace osu.ElasticIndexer
 
                 // FIXME: this is terrible.
                 var additionalWheres = string.IsNullOrWhiteSpace(where) ? "" : $"AND {where}";
-                string query = $"select * from {table} where {cursorColumn} > @lastId and {cursorColumn} <= @max {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
+                string query = $"select {selects} where {cursorColumn} > @lastId and {cursorColumn} <= @max {additionalWheres} order by {cursorColumn} asc limit @chunkSize;";
 
                 while (lastId != null)
                 {
@@ -53,15 +54,5 @@ namespace osu.ElasticIndexer
 
         public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, ulong? resumeFrom = null) where T : Model =>
             Chunk<T>(null, chunkSize, resumeFrom);
-
-        public static string GetCursorColumnName<T>() where T : Model
-        {
-            return typeof(T).GetCustomAttributes<CursorColumnAttribute>().First().Name;
-        }
-
-        public static string GetTableName<T>() where T : Model
-        {
-            return typeof(T).GetCustomAttributes<TableAttribute>().First().Name;
-        }
     }
 }

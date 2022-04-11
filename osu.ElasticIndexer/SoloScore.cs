@@ -12,8 +12,12 @@ using Newtonsoft.Json;
 
 namespace osu.ElasticIndexer
 {
-    [CursorColumn("id")]
     [ElasticsearchType(IdProperty = nameof(Id))]
+    [ChunkOn(
+        Query = "s.*, p.pp from solo_scores s left join solo_scores_performance p on s.id = p.score_id",
+        CursorColumn = "s.id",
+        Max = "MAX(id) FROM solo_scores"
+    )]
     [Table("solo_scores")]
     public class SoloScore : Model
     {
@@ -55,7 +59,6 @@ namespace osu.ElasticIndexer
         [Boolean]
         public bool passed { get => scoreInfo.Value["passed"]; }
 
-        [Computed]
         [Number(NumberType.Float)]
         public double? pp { get; set; }
 
@@ -107,15 +110,15 @@ namespace osu.ElasticIndexer
 
         public override string ToString() => $"score_id: {Id} user_id: {UserId} beatmap_id: {BeatmapId} ruleset_id: {RulesetId}";
 
-        public static List<SoloScore> FetchByScoreIds(List<ulong> scoreIds)
-        {
-            var table = GetTableName<SoloScore>();
+        // public static List<SoloScore> FetchByScoreIds(List<ulong> scoreIds)
+        // {
+        //     var table = GetTableName<SoloScore>();
 
-            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-            {
-                dbConnection.Open();
-                return dbConnection.Query<SoloScore>($"select * from {table} where id in @scoreIds", new { scoreIds }).AsList();
-            }
-        }
+        //     using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+        //     {
+        //         dbConnection.Open();
+        //         return dbConnection.Query<SoloScore>($"select * from {table} where id in @scoreIds", new { scoreIds }).AsList();
+        //     }
+        // }
     }
 }

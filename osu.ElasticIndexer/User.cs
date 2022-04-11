@@ -15,7 +15,6 @@ namespace osu.ElasticIndexer
     /// <summary>
     /// User mapping model that contains only the properties needed for the indexer.
     /// </summary>
-    [CursorColumn("user_id")]
     [Table("phpbb_users")]
     public class User : Model
     {

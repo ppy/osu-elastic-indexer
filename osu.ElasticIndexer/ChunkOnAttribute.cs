@@ -9,10 +9,12 @@ namespace osu.ElasticIndexer
     /// Attributes which column to use as the cursor column.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class CursorColumnAttribute : Attribute
+    public class ChunkOnAttribute : Attribute
     {
-        public string Name { get; }
+        public string CursorColumn { get; set; }
 
-        public CursorColumnAttribute(string name) => Name = name;
+        public string Max { get; set; }
+
+        public string Query { get; set; }
     }
 }
