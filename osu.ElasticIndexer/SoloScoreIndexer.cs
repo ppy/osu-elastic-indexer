@@ -196,19 +196,18 @@ namespace osu.ElasticIndexer
             Console.WriteLine();
 
             var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
-            var metas = (
-                AppSettings.IsRebuild
-                    ? IndexMeta.GetByAlias(name)
-                    : IndexMeta.GetByAliasForCurrentVersion(name)
-            ).ToList();
+            // Get indices matching pattern with correct schema version.
+            var indices = elasticClient.Indices.Get($"{name}_*").Indices;
+            var indexNames = new List<string>();
+            foreach (var (indexName, indexState) in indices)
+                if ((string) indexState.Mappings.Meta["schema"] == AppSettings.Schema)
+                    indexNames.Add(indexName.Name);
 
             string index = null;
 
             if (!AppSettings.IsNew)
             {
-                // TODO: query ES that the index actually exists.
-
-                index = metas.FirstOrDefault(m => aliasedIndices.Contains(m.Name))?.Name;
+                index = indexNames.FirstOrDefault(name => aliasedIndices.Contains(name));
                 // 3 cases are handled:
                 // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
                 if (index != null)
@@ -219,7 +218,8 @@ namespace osu.ElasticIndexer
 
                 // 2. Index has not been aliased and has tracking information;
                 // likely resuming from an incomplete job or waiting to switch over.
-                index = metas.FirstOrDefault()?.Name;
+                // TODO: throw if there's more than one? or take lastest one.
+                index = indexNames.FirstOrDefault();
                 if (index != null)
                 {
                     Console.WriteLine($"Using non-aliased `{index}`.");
@@ -233,6 +233,7 @@ namespace osu.ElasticIndexer
             // 3. Not aliased and no tracking information; likely starting from scratch
             var suffix = Suffix ?? DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
             index = $"{name}_{suffix}";
+            metadata.RealName = index;
 
             Console.WriteLine($"Creating `{index}` for `{name}`.");
 
@@ -240,11 +241,7 @@ namespace osu.ElasticIndexer
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
             elasticClient.LowLevel.Indices.Create<DynamicResponse>(index, json);
-            // TODO: include schema version when creating index
-            // elasticClient.Map<T>(mappings => mappings
-            //     .Meta(m => m.Add("schema", AppSettings.Schema))
-            //     .Index(index)
-            // );
+            saveMetadata();
 
             return (index, aliased: false);
 
@@ -316,6 +313,7 @@ namespace osu.ElasticIndexer
 
         private void updateAlias(string alias, string index, bool close = true)
         {
+            // TODO: updating alias should mark the index as ready since it's switching over.
             Console.WriteLine($"Updating `{alias}` alias to `{index}`...");
 
             var aliasDescriptor = new BulkAliasDescriptor();
