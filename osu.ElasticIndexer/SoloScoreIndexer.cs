@@ -45,13 +45,7 @@ namespace osu.ElasticIndexer
         {
             if (!checkIfReady()) return;
 
-            var indexMeta = getIndexMeta();
-
-            var metaSchema = AppSettings.IsPrepMode ? null : AppSettings.Schema;
-            // TODO: get existing version from previous metadata; or do validation?
-            metadata.Schema = AppSettings.Schema;
-            metadata.RealName = indexMeta.Name;
-            metadata.LastId = indexMeta.LastId;
+            getIndexMeta();
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
@@ -74,13 +68,10 @@ namespace osu.ElasticIndexer
                 indexCompletedArgs.Count = readerTask.Result;
                 indexCompletedArgs.CompletedAt = DateTime.Now;
 
-                IndexMeta.Refresh();
-
                 // when preparing for schema changes, the alias update
                 // should be done by process waiting for the ready signal.
                 if (AppSettings.IsRebuild)
                     if (AppSettings.IsPrepMode) {
-                        IndexMeta.MarkAsReady(metadata.RealName);
                         metadata.Ready = true;
                         saveMetadata();
                     }
@@ -108,18 +99,8 @@ namespace osu.ElasticIndexer
 
             void handleBatchWithLastIdCompleted(object sender, ulong lastId)
             {
-                // TODO: should probably aggregate responses and update to highest successful.
-                IndexMeta.UpdateAsync(new IndexMeta
-                {
-                    Name = metadata.RealName,
-                    Alias = Name,
-                    LastId = lastId,
-                    ResetQueueTo = indexMeta.ResetQueueTo,
-                    UpdatedAt = DateTimeOffset.UtcNow,
-                    Schema = metaSchema
-                });
                 metadata.LastId = lastId;
-                metadata.UpdatedAt = DateTimeOffset.UtcNow;
+                // metadata.UpdatedAt = DateTimeOffset.UtcNow;
                 saveMetadata();
             }
         }
@@ -213,6 +194,7 @@ namespace osu.ElasticIndexer
                 if (index != null)
                 {
                     Console.WriteLine($"Using alias `{index}`.");
+                    metadata.RealName = index;
                     return (index, aliased: true);
                 }
 
@@ -223,6 +205,7 @@ namespace osu.ElasticIndexer
                 if (index != null)
                 {
                     Console.WriteLine($"Using non-aliased `{index}`.");
+                    metadata.RealName = index;
                     return (index, aliased: false);
                 }
             }
@@ -241,6 +224,7 @@ namespace osu.ElasticIndexer
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
             elasticClient.LowLevel.Indices.Create<DynamicResponse>(index, json);
+            metadata.Schema = AppSettings.Schema;
             saveMetadata();
 
             return (index, aliased: false);
@@ -248,7 +232,7 @@ namespace osu.ElasticIndexer
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
-        private IndexMeta getIndexMeta()
+        private void getIndexMeta()
         {
             // TODO: all this needs cleaning.
             var (index, aliased) = findOrCreateIndex(Name);
@@ -256,48 +240,40 @@ namespace osu.ElasticIndexer
             if (!AppSettings.IsRebuild && !aliased)
                 updateAlias(Name, index);
 
-            // look for any existing resume data.
-            var indexMeta = IndexMeta.GetByName(index) ?? new IndexMeta
-            {
-                Alias = Name,
-                Name = index,
-            };
+            metadata.LastId = ResumeFrom ?? metadata.LastId;
+            metadata.RealName = index;
 
-            indexMeta.LastId = ResumeFrom ?? indexMeta.LastId;
+            if (metadata.Schema != AppSettings.Schema)
+                // A switchover is probably happening, so signal that this mode should be skipped.
+                throw new VersionMismatchException($"`{Name}` found version {metadata.Schema}, expecting {AppSettings.Schema}");
 
             if (AppSettings.IsRebuild)
             {
                 // Save the position the score processing queue should be reset to if rebuilding an index.
                 // If there is already an existing value, the processor is probabaly resuming from a previous run,
                 // so we likely want to preserve that value.
-                if (!indexMeta.ResetQueueTo.HasValue)
+                if (!metadata.ResetQueueTo.HasValue)
                 {
-                    // TODO: set indexMeta.ResetQueueTo to first unprocessed item.
+                    // TODO: set ResetQueueTo to first unprocessed item.
                 }
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(indexMeta.Schema))
-                    throw new Exception("FATAL ERROR: attempting to process queue without a known version.");
-
-                if (indexMeta.Schema != AppSettings.Schema)
-                    // A switchover is probably happening, so signal that this mode should be skipped.
-                    throw new VersionMismatchException($"`{Name}` found version {indexMeta.Schema}, expecting {AppSettings.Schema}");
-
                 // process queue reset if any.
-                if (indexMeta.ResetQueueTo.HasValue)
+                if (metadata.ResetQueueTo.HasValue)
                 {
-                    Console.WriteLine($"Resetting queue_id > {indexMeta.ResetQueueTo}");
-                    // TODO: reset queue to indexMeta.ResetQueueTo.Value
-                    indexMeta.ResetQueueTo = null;
+                    Console.WriteLine($"Resetting queue_id > {metadata.ResetQueueTo}");
+                    // TODO: reset queue to metadata.ResetQueueTo.Value
+                    metadata.ResetQueueTo = null;
                 }
             }
+        }
 
-            indexMeta.UpdatedAt = DateTimeOffset.UtcNow;
-            IndexMeta.UpdateAsync(indexMeta);
-            IndexMeta.Refresh();
-
-            return indexMeta;
+        private List<KeyValuePair<IndexName, IndexState>> getIndicesForCurrentVersion(string name)
+        {
+            return elasticClient.Indices.Get($"{name}_*").Indices
+                .Where(entry => (string) entry.Value.Mappings.Meta["schema"] == AppSettings.Schema)
+                .ToList();
         }
 
         private Dictionary<uint, dynamic> getUsers(IEnumerable<uint> userIds)
@@ -342,7 +318,7 @@ namespace osu.ElasticIndexer
                     .Add("reset_queue_to", metadata.ResetQueueTo)
                     .Add("schema", metadata.Schema)
                     .Add("ready", metadata.Ready)
-                    .Add("updated_at", metadata.UpdatedAt)
+                    .Add("updated_at", DateTimeOffset.UtcNow)
             ).Index(metadata.RealName));
         }
     }
