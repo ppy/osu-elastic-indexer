@@ -17,6 +17,16 @@ namespace osu.ElasticIndexer
 {
     public class SoloScoreIndexer : IIndexer
     {
+        struct Metadata
+        {
+            public ulong LastId { get; set; }
+            public string RealName { get; set; }
+            public ulong? ResetQueueTo { get; set; }
+            public string Schema { get; set; }
+            public DateTimeOffset? UpdatedAt { get; set; }
+            public bool Ready { get; set; }
+        }
+
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
         public string Name { get; set; }
@@ -28,6 +38,9 @@ namespace osu.ElasticIndexer
 
         private BulkIndexingDispatcher<SoloScore> dispatcher;
 
+        // metadata
+        private Metadata metadata = new Metadata();
+
         public void Run()
         {
             if (!checkIfReady()) return;
@@ -35,22 +48,26 @@ namespace osu.ElasticIndexer
             var indexMeta = getIndexMeta();
 
             var metaSchema = AppSettings.IsPrepMode ? null : AppSettings.Schema;
+            // TODO: get existing version from previous metadata; or do validation?
+            metadata.Schema = AppSettings.Schema;
+            metadata.RealName = indexMeta.Name;
+            metadata.LastId = indexMeta.LastId;
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
                 Alias = Name,
-                Index = indexMeta.Name,
+                Index = metadata.RealName,
                 StartedAt = DateTime.Now
             };
 
-            dispatcher = new BulkIndexingDispatcher<SoloScore>(indexMeta.Name);
+            dispatcher = new BulkIndexingDispatcher<SoloScore>(metadata.RealName);
 
             if (AppSettings.IsRebuild)
                 dispatcher.BatchWithLastIdCompleted += handleBatchWithLastIdCompleted;
 
             try
             {
-                var readerTask = databaseReaderTask(indexMeta.LastId);
+                var readerTask = databaseReaderTask(metadata.LastId);
                 dispatcher.Run();
                 readerTask.Wait();
 
@@ -62,10 +79,13 @@ namespace osu.ElasticIndexer
                 // when preparing for schema changes, the alias update
                 // should be done by process waiting for the ready signal.
                 if (AppSettings.IsRebuild)
-                    if (AppSettings.IsPrepMode)
-                        IndexMeta.MarkAsReady(indexMeta.Name);
+                    if (AppSettings.IsPrepMode) {
+                        IndexMeta.MarkAsReady(metadata.RealName);
+                        metadata.Ready = true;
+                        saveMetadata();
+                    }
                     else
-                        updateAlias(Name, indexMeta.Name);
+                        updateAlias(Name, metadata.RealName);
 
                 IndexCompleted(this, indexCompletedArgs);
             }
@@ -91,13 +111,16 @@ namespace osu.ElasticIndexer
                 // TODO: should probably aggregate responses and update to highest successful.
                 IndexMeta.UpdateAsync(new IndexMeta
                 {
-                    Name = indexMeta.Name,
+                    Name = metadata.RealName,
                     Alias = Name,
                     LastId = lastId,
                     ResetQueueTo = indexMeta.ResetQueueTo,
                     UpdatedAt = DateTimeOffset.UtcNow,
                     Schema = metaSchema
                 });
+                metadata.LastId = lastId;
+                metadata.UpdatedAt = DateTimeOffset.UtcNow;
+                saveMetadata();
             }
         }
 
@@ -217,6 +240,11 @@ namespace osu.ElasticIndexer
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
             elasticClient.LowLevel.Indices.Create<DynamicResponse>(index, json);
+            // TODO: include schema version when creating index
+            // elasticClient.Map<T>(mappings => mappings
+            //     .Meta(m => m.Add("schema", AppSettings.Schema))
+            //     .Index(index)
+            // );
 
             return (index, aliased: false);
 
@@ -306,6 +334,18 @@ namespace osu.ElasticIndexer
                 Console.WriteLine($"Closing {toClose}");
                 elasticClient.Indices.Close(toClose);
             }
+        }
+
+        private void saveMetadata()
+        {
+            elasticClient.Map<SoloScoreIndexer>(mappings => mappings.Meta(
+                m => m
+                    .Add("last_id", metadata.LastId)
+                    .Add("reset_queue_to", metadata.ResetQueueTo)
+                    .Add("schema", metadata.Schema)
+                    .Add("ready", metadata.Ready)
+                    .Add("updated_at", metadata.UpdatedAt)
+            ).Index(metadata.RealName));
         }
     }
 }
