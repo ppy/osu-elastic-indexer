@@ -27,7 +27,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Ignore]
-        public bool ShouldIndex => pp.HasValue;
+        public bool ShouldIndex => preserve;
 
         // Properties ordered in the order they appear in the table.
 
@@ -61,6 +61,8 @@ namespace osu.ElasticIndexer
 
         [Number(NumberType.Float)]
         public double? pp { get; set; }
+
+        public bool preserve { get; set; }
 
         [Computed]
         [Number(NumberType.Integer)]
