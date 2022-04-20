@@ -219,7 +219,7 @@ namespace osu.ElasticIndexer
                 // 2. Index has not been aliased and has tracking information;
                 // likely resuming from an incomplete job or waiting to switch over.
                 // TODO: throw if there's more than one? or take lastest one.
-                (indexName, indexState) = indices.First(entry => entry.Value.Aliases.ContainsKey(name));
+                (indexName, indexState) = indices.First();
                 Console.WriteLine($"Using non-aliased `{indexName}`.");
                 metadata.RealName = indexName.Name;
                 metadata.UpdateWith(indexState);
