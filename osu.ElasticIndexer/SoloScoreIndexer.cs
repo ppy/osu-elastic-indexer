@@ -20,12 +20,32 @@ namespace osu.ElasticIndexer
     {
         class Metadata
         {
+            public bool IsAliased { get; set; }
+
             public long LastId { get; set; }
             public string RealName { get; set; }
             public long? ResetQueueTo { get; set; }
             public bool Ready { get; set; }
             public string Schema { get; set; }
             public DateTimeOffset? UpdatedAt { get; set; }
+
+            public Metadata(string indexName, string schema)
+            {
+                RealName = indexName;
+                Schema = schema;
+            }
+
+            public Metadata(IndexName indexName, IndexState indexState)
+            {
+                RealName = indexName.Name;
+
+                var meta = indexState.Mappings.Meta;
+                LastId = Convert.ToInt64(meta["last_id"]);
+                ResetQueueTo = meta.ContainsKey("reset_queue_to") ? Convert.ToInt64(meta["reset_queue_to"]) : null;
+                Schema = (string) meta["schema"];
+                Ready = (bool) meta["ready"];
+                UpdatedAt = meta.ContainsKey("updated_at") ? DateTimeOffset.Parse((string) meta["updated_at"]) : null;
+            }
 
             public void Save()
             {
@@ -39,7 +59,8 @@ namespace osu.ElasticIndexer
                 ).Index(RealName));
             }
 
-            public void UpdateWith(IndexState indexState)
+            // TODO: should probably create whole object
+            private void UpdateWith(IndexState indexState)
             {
                 var meta = indexState.Mappings.Meta;
                 LastId = Convert.ToInt64(meta["last_id"]);
@@ -61,14 +82,15 @@ namespace osu.ElasticIndexer
 
         private BulkIndexingDispatcher<SoloScore> dispatcher;
 
-        // metadata
-        private Metadata metadata = new Metadata();
+        private Metadata metadata;
 
         public void Run()
         {
             if (!checkIfReady()) return;
 
-            getIndexMeta();
+            this.metadata = findOrCreateIndex(Name);
+
+            checkIndexState();
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
@@ -195,25 +217,22 @@ namespace osu.ElasticIndexer
         /// </summary>
         /// <param name="name">name of the index alias.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        private (Metadata metadata, bool aliased) findOrCreateIndex(string name)
+        private Metadata findOrCreateIndex(string name)
         {
             Console.WriteLine();
 
-            var metadata = new Metadata();
             var indices = getIndicesForCurrentVersion(name);
 
             if (indices.Count > 0 && !AppSettings.IsNew)
             {
-                var (indexName, indexState) = indices.FirstOrDefault(entry => entry.Value.Aliases.ContainsKey(name));
                 // 3 cases are handled:
                 // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
+                var (indexName, indexState) = indices.FirstOrDefault(entry => entry.Value.Aliases.ContainsKey(name));
                 if (indexName != null)
                 {
                     Console.WriteLine($"Using aliased `{indexName}`.");
-                    metadata.UpdateWith(indexState);
-                    metadata.RealName = indexName.Name;
 
-                    return (metadata, aliased: true);
+                    return new Metadata(indexName, indexState) { IsAliased = true };
                 }
 
                 // 2. Index has not been aliased and has tracking information;
@@ -221,14 +240,12 @@ namespace osu.ElasticIndexer
                 // TODO: throw if there's more than one? or take lastest one.
                 (indexName, indexState) = indices.First();
                 Console.WriteLine($"Using non-aliased `{indexName}`.");
-                metadata.RealName = indexName.Name;
-                metadata.UpdateWith(indexState);
 
-                return (metadata, aliased: false);
+                return new Metadata(indexName, indexState);
             }
 
-            // if (!AppSettings.IsRebuild && indexName == null)
-            //     throw new Exception("no existing index found");
+            if (indices.Count == 0 && AppSettings.IsWatching)
+                throw new Exception("no existing index found");
 
             // 3. Not aliased and no tracking information; likely starting from scratch
             var suffix = Suffix ?? DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
@@ -239,27 +256,23 @@ namespace osu.ElasticIndexer
             // create by supplying the json file instead of the attributed class because we're not
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
-            var response = elasticClient.LowLevel.Indices.Create<DynamicResponse>(
+            elasticClient.LowLevel.Indices.Create<DynamicResponse>(
                 index,
                 json,
                 new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
             );
-            metadata.RealName = index;
-            metadata.Schema = AppSettings.Schema;
+            var metadata = new Metadata(index, AppSettings.Schema);
             metadata.Save();
 
-            return (metadata, aliased: false);
+            return metadata;
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
-        private void getIndexMeta()
+        private void checkIndexState()
         {
             // TODO: all this needs cleaning.
-            var (metadata, aliased) = findOrCreateIndex(Name);
-            this.metadata = metadata;
-
-            if (!AppSettings.IsRebuild && !aliased)
+            if (!AppSettings.IsRebuild && !metadata.IsAliased)
                 updateAlias(Name, metadata.RealName);
 
             metadata.LastId = ResumeFrom ?? metadata.LastId;
