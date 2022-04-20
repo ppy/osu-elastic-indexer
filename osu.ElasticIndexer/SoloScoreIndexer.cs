@@ -20,9 +20,9 @@ namespace osu.ElasticIndexer
     {
         class Metadata
         {
-            public ulong LastId { get; set; }
+            public long LastId { get; set; }
             public string RealName { get; set; }
-            public ulong? ResetQueueTo { get; set; }
+            public long? ResetQueueTo { get; set; }
             public bool Ready { get; set; }
             public string Schema { get; set; }
             public DateTimeOffset? UpdatedAt { get; set; }
@@ -43,8 +43,8 @@ namespace osu.ElasticIndexer
             {
                 var meta = indexState.Mappings.Meta;
                 // TODO: maybe don't accept ulong - values greater than long get converted to double here
-                LastId = Convert.ToUInt64(meta["last_id"]);
-                ResetQueueTo = meta["reset_queue_to"] != null ? Convert.ToUInt64(meta["reset_queue_to"]) : null;
+                LastId = Convert.ToInt64(meta["last_id"]);
+                ResetQueueTo = meta["reset_queue_to"] != null ? Convert.ToInt64(meta["reset_queue_to"]) : null;
                 Schema = (string) meta["schema"];
                 Ready = (bool) meta["ready"];
                 UpdatedAt = meta["updated_at"] != null ? DateTimeOffset.Parse((string) meta["updated_at"]) : null;
@@ -54,7 +54,7 @@ namespace osu.ElasticIndexer
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
         public string Name { get; set; }
-        public ulong? ResumeFrom { get; set; }
+        public long? ResumeFrom { get; set; }
         public string Suffix { get; set; }
 
         // use shared instance to avoid socket leakage.
@@ -121,7 +121,7 @@ namespace osu.ElasticIndexer
                 return true;
             }
 
-            void handleBatchWithLastIdCompleted(object sender, ulong lastId)
+            void handleBatchWithLastIdCompleted(object sender, long lastId)
             {
                 metadata.LastId = lastId;
                 // metadata.UpdatedAt = DateTimeOffset.UtcNow;
@@ -149,7 +149,7 @@ namespace osu.ElasticIndexer
         /// <param name="resumeFrom">The cursor value to resume from;
         /// use null to resume from the last known value.</param>
         /// <returns>The database reader task.</returns>
-        private Task<long> databaseReaderTask(ulong resumeFrom) => Task.Factory.StartNew(() =>
+        private Task<long> databaseReaderTask(long resumeFrom) => Task.Factory.StartNew(() =>
             {
                 long count = 0;
 

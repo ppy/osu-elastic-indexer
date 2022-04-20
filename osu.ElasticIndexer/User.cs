@@ -19,7 +19,7 @@ namespace osu.ElasticIndexer
     public class User : Model
     {
         [Computed]
-        public override ulong CursorValue => user_id;
+        public override long CursorValue => user_id;
 
         [Computed]
         public bool ShouldIndex => true;

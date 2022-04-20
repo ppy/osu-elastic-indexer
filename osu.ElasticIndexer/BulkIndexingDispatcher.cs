@@ -12,7 +12,7 @@ namespace osu.ElasticIndexer
 {
     internal class BulkIndexingDispatcher<T> where T : Model
     {
-        internal event EventHandler<ulong> BatchWithLastIdCompleted;
+        internal event EventHandler<long> BatchWithLastIdCompleted;
 
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;

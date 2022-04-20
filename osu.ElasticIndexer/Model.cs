@@ -13,13 +13,13 @@ namespace osu.ElasticIndexer
 {
     public abstract class Model
     {
-        public abstract ulong CursorValue { get; }
+        public abstract long CursorValue { get; }
 
-        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, ulong? resumeFrom = null) where T : Model
+        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, long? resumeFrom = null) where T : Model
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
-                ulong? lastId = resumeFrom ?? 0;
+                long? lastId = resumeFrom ?? 0;
 
                 var attribute = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First();
                 var cursorColumn = attribute.CursorColumn;
@@ -34,7 +34,7 @@ namespace osu.ElasticIndexer
                 if (!string.IsNullOrWhiteSpace(where))
                     maxQuery += $" WHERE {where}";
 
-                var max = dbConnection.QuerySingleOrDefault<ulong?>(maxQuery);
+                var max = dbConnection.QuerySingleOrDefault<long?>(maxQuery);
                 if (!max.HasValue) yield break;
 
                 // FIXME: this is terrible.
@@ -53,7 +53,7 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, ulong? resumeFrom = null) where T : Model =>
+        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : Model =>
             Chunk<T>(null, chunkSize, resumeFrom);
     }
 }

@@ -23,7 +23,7 @@ namespace osu.ElasticIndexer
     {
         [Computed]
         [Ignore]
-        public override ulong CursorValue => Id;
+        public override long CursorValue => Id;
 
         [Computed]
         [Ignore]
@@ -31,8 +31,8 @@ namespace osu.ElasticIndexer
 
         // Properties ordered in the order they appear in the table.
 
-        [Number(NumberType.UnsignedLong, Name = "id")]
-        public ulong Id { get; set; }
+        [Number(NumberType.Long, Name = "id")]
+        public long Id { get; set; }
 
         [Number(NumberType.Long, Name = "beatmap_id")]
         public uint BeatmapId { get; set; }

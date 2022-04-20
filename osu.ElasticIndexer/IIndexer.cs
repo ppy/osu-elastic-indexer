@@ -17,7 +17,7 @@ namespace osu.ElasticIndexer
         /// <summary>
         /// The ID from which to resume indexing from. If null, the most recent ID is used.
         /// </summary>
-        ulong? ResumeFrom { get; set; }
+        long? ResumeFrom { get; set; }
 
         /// <summary>
         /// The index suffix (generally a timestamp string).
