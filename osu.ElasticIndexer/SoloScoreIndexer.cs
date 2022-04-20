@@ -42,12 +42,11 @@ namespace osu.ElasticIndexer
             public void UpdateWith(IndexState indexState)
             {
                 var meta = indexState.Mappings.Meta;
-                // TODO: maybe don't accept ulong - values greater than long get converted to double here
                 LastId = Convert.ToInt64(meta["last_id"]);
-                ResetQueueTo = meta["reset_queue_to"] != null ? Convert.ToInt64(meta["reset_queue_to"]) : null;
+                ResetQueueTo = meta.ContainsKey("reset_queue_to") ? Convert.ToInt64(meta["reset_queue_to"]) : null;
                 Schema = (string) meta["schema"];
                 Ready = (bool) meta["ready"];
-                UpdatedAt = meta["updated_at"] != null ? DateTimeOffset.Parse((string) meta["updated_at"]) : null;
+                UpdatedAt = meta.ContainsKey("updated_at") ? DateTimeOffset.Parse((string) meta["updated_at"]) : null;
             }
         }
 
