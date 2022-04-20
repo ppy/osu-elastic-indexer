@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Elasticsearch.Net;
+using Elasticsearch.Net.Specification.IndicesApi;
 using MySqlConnector;
 using Nest;
 using StatsdClient;
@@ -17,14 +18,37 @@ namespace osu.ElasticIndexer
 {
     public class SoloScoreIndexer : IIndexer
     {
-        struct Metadata
+        class Metadata
         {
             public ulong LastId { get; set; }
             public string RealName { get; set; }
             public ulong? ResetQueueTo { get; set; }
+            public bool Ready { get; set; }
             public string Schema { get; set; }
             public DateTimeOffset? UpdatedAt { get; set; }
-            public bool Ready { get; set; }
+
+            public void Save()
+            {
+                AppSettings.ELASTIC_CLIENT.Map<SoloScoreIndexer>(mappings => mappings.Meta(
+                    m => m
+                        .Add("last_id", LastId)
+                        .Add("reset_queue_to", ResetQueueTo)
+                        .Add("schema", Schema)
+                        .Add("ready", Ready)
+                        .Add("updated_at", DateTimeOffset.UtcNow)
+                ).Index(RealName));
+            }
+
+            public void UpdateWith(IndexState indexState)
+            {
+                var meta = indexState.Mappings.Meta;
+                // TODO: maybe don't accept ulong - values greater than long get converted to double here
+                LastId = Convert.ToUInt64(meta["last_id"]);
+                ResetQueueTo = meta["reset_queue_to"] != null ? Convert.ToUInt64(meta["reset_queue_to"]) : null;
+                Schema = (string) meta["schema"];
+                Ready = (bool) meta["ready"];
+                UpdatedAt = meta["updated_at"] != null ? DateTimeOffset.Parse((string) meta["updated_at"]) : null;
+            }
         }
 
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
@@ -73,7 +97,7 @@ namespace osu.ElasticIndexer
                 if (AppSettings.IsRebuild)
                     if (AppSettings.IsPrepMode) {
                         metadata.Ready = true;
-                        saveMetadata();
+                        metadata.Save();
                     }
                     else
                         updateAlias(Name, metadata.RealName);
@@ -101,7 +125,7 @@ namespace osu.ElasticIndexer
             {
                 metadata.LastId = lastId;
                 // metadata.UpdatedAt = DateTimeOffset.UtcNow;
-                saveMetadata();
+                metadata.Save();
             }
         }
 
@@ -111,7 +135,7 @@ namespace osu.ElasticIndexer
         /// <returns>true if ready; false, otherwise.</returns>
         private bool checkIfReady()
         {
-            if (AppSettings.IsRebuild || IndexMeta.GetByAliasForCurrentVersion(Name).FirstOrDefault() != null)
+            if (AppSettings.IsRebuild || getIndicesForCurrentVersion(Name).Count > 0)
                 return true;
 
             Console.WriteLine($"`{Name}` for version {AppSettings.Schema} is not ready...");
@@ -172,62 +196,60 @@ namespace osu.ElasticIndexer
         /// </summary>
         /// <param name="name">name of the index alias.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        private (string index, bool aliased) findOrCreateIndex(string name)
+        private (Metadata metadata, bool aliased) findOrCreateIndex(string name)
         {
             Console.WriteLine();
 
-            var aliasedIndices = elasticClient.GetIndicesPointingToAlias(name);
-            // Get indices matching pattern with correct schema version.
-            var indices = elasticClient.Indices.Get($"{name}_*").Indices;
-            var indexNames = new List<string>();
-            foreach (var (indexName, indexState) in indices)
-                if ((string) indexState.Mappings.Meta["schema"] == AppSettings.Schema)
-                    indexNames.Add(indexName.Name);
+            var metadata = new Metadata();
+            var indices = getIndicesForCurrentVersion(name);
 
-            string index = null;
-
-            if (!AppSettings.IsNew)
+            if (indices.Count > 0 && !AppSettings.IsNew)
             {
-                index = indexNames.FirstOrDefault(name => aliasedIndices.Contains(name));
+                var (indexName, indexState) = indices.FirstOrDefault(entry => entry.Value.Aliases.ContainsKey(name));
                 // 3 cases are handled:
                 // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
-                if (index != null)
+                if (indexName != null)
                 {
-                    Console.WriteLine($"Using alias `{index}`.");
-                    metadata.RealName = index;
-                    return (index, aliased: true);
+                    Console.WriteLine($"Using aliased `{indexName}`.");
+                    metadata.UpdateWith(indexState);
+                    metadata.RealName = indexName.Name;
+
+                    return (metadata, aliased: true);
                 }
 
                 // 2. Index has not been aliased and has tracking information;
                 // likely resuming from an incomplete job or waiting to switch over.
                 // TODO: throw if there's more than one? or take lastest one.
-                index = indexNames.FirstOrDefault();
-                if (index != null)
-                {
-                    Console.WriteLine($"Using non-aliased `{index}`.");
-                    metadata.RealName = index;
-                    return (index, aliased: false);
-                }
+                (indexName, indexState) = indices.First(entry => entry.Value.Aliases.ContainsKey(name));
+                Console.WriteLine($"Using non-aliased `{indexName}`.");
+                metadata.RealName = indexName.Name;
+                metadata.UpdateWith(indexState);
+
+                return (metadata, aliased: false);
             }
 
-            if (!AppSettings.IsRebuild && index == null)
-                throw new Exception("no existing index found");
+            // if (!AppSettings.IsRebuild && indexName == null)
+            //     throw new Exception("no existing index found");
 
             // 3. Not aliased and no tracking information; likely starting from scratch
             var suffix = Suffix ?? DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
-            index = $"{name}_{suffix}";
-            metadata.RealName = index;
+            var index = $"{name}_{suffix}";
 
             Console.WriteLine($"Creating `{index}` for `{name}`.");
 
             // create by supplying the json file instead of the attributed class because we're not
             // mapping every field but still want everything for _source.
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
-            elasticClient.LowLevel.Indices.Create<DynamicResponse>(index, json);
+            var response = elasticClient.LowLevel.Indices.Create<DynamicResponse>(
+                index,
+                json,
+                new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
+            );
+            metadata.RealName = index;
             metadata.Schema = AppSettings.Schema;
-            saveMetadata();
+            metadata.Save();
 
-            return (index, aliased: false);
+            return (metadata, aliased: false);
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
@@ -235,13 +257,13 @@ namespace osu.ElasticIndexer
         private void getIndexMeta()
         {
             // TODO: all this needs cleaning.
-            var (index, aliased) = findOrCreateIndex(Name);
+            var (metadata, aliased) = findOrCreateIndex(Name);
+            this.metadata = metadata;
 
             if (!AppSettings.IsRebuild && !aliased)
-                updateAlias(Name, index);
+                updateAlias(Name, metadata.RealName);
 
             metadata.LastId = ResumeFrom ?? metadata.LastId;
-            metadata.RealName = index;
 
             if (metadata.Schema != AppSettings.Schema)
                 // A switchover is probably happening, so signal that this mode should be skipped.
@@ -272,7 +294,7 @@ namespace osu.ElasticIndexer
         private List<KeyValuePair<IndexName, IndexState>> getIndicesForCurrentVersion(string name)
         {
             return elasticClient.Indices.Get($"{name}_*").Indices
-                .Where(entry => (string) entry.Value.Mappings.Meta["schema"] == AppSettings.Schema)
+                .Where(entry => (string) entry.Value.Mappings.Meta?["schema"] == AppSettings.Schema)
                 .ToList();
         }
 
@@ -308,18 +330,6 @@ namespace osu.ElasticIndexer
                 Console.WriteLine($"Closing {toClose}");
                 elasticClient.Indices.Close(toClose);
             }
-        }
-
-        private void saveMetadata()
-        {
-            elasticClient.Map<SoloScoreIndexer>(mappings => mappings.Meta(
-                m => m
-                    .Add("last_id", metadata.LastId)
-                    .Add("reset_queue_to", metadata.ResetQueueTo)
-                    .Add("schema", metadata.Schema)
-                    .Add("ready", metadata.Ready)
-                    .Add("updated_at", DateTimeOffset.UtcNow)
-            ).Index(metadata.RealName));
         }
     }
 }

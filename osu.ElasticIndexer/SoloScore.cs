@@ -111,16 +111,5 @@ namespace osu.ElasticIndexer
         }
 
         public override string ToString() => $"score_id: {Id} user_id: {UserId} beatmap_id: {BeatmapId} ruleset_id: {RulesetId}";
-
-        // public static List<SoloScore> FetchByScoreIds(List<ulong> scoreIds)
-        // {
-        //     var table = GetTableName<SoloScore>();
-
-        //     using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-        //     {
-        //         dbConnection.Open();
-        //         return dbConnection.Query<SoloScore>($"select * from {table} where id in @scoreIds", new { scoreIds }).AsList();
-        //     }
-        // }
     }
 }

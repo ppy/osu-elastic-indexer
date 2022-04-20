@@ -45,8 +45,6 @@ namespace osu.ElasticIndexer
                 }
             }
 
-            IndexMeta.CreateIndex();
-
             Console.WriteLine($"Rebuilding index: `{AppSettings.IsRebuild}`");
             if (AppSettings.IsWatching)
                 runWatchLoop();
