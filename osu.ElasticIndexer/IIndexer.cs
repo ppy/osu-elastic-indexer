@@ -19,11 +19,6 @@ namespace osu.ElasticIndexer
         /// </summary>
         long? ResumeFrom { get; set; }
 
-        /// <summary>
-        /// The index suffix (generally a timestamp string).
-        /// </summary>
-        string Suffix { get; set; }
-
         void Run();
     }
 }

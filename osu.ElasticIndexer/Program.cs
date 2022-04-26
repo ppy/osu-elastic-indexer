@@ -87,14 +87,9 @@ namespace osu.ElasticIndexer
         /// </summary>
         private static void runIndexing()
         {
-            var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
-
             try
             {
-                var indexer = getIndexer();
-                indexer.Suffix = suffix;
-                indexer.ResumeFrom = AppSettings.ResumeFrom;
-                indexer.Run();
+                getIndexer().Run();
             }
             catch (VersionMismatchException ex)
             {
@@ -104,13 +99,14 @@ namespace osu.ElasticIndexer
             }
         }
 
-        private static IIndexer getIndexer()
+        private static SoloScoreIndexer getIndexer()
         {
             var indexName = $"{AppSettings.Prefix}solo_scores";
 
             var indexer = new SoloScoreIndexer();
-
             indexer.Name = indexName;
+            indexer.ResumeFrom = AppSettings.ResumeFrom;
+
             indexer.IndexCompleted += (sender, args) =>
             {
                 if (args.Count > 0)

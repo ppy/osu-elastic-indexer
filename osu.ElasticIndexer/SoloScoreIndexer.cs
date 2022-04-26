@@ -75,7 +75,6 @@ namespace osu.ElasticIndexer
 
         public string Name { get; set; }
         public long? ResumeFrom { get; set; }
-        public string Suffix { get; set; }
 
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;

@@ -50,7 +50,6 @@ namespace osu.ElasticIndexer
             IsNew = parseBool("new");
             IsPrepMode = parseBool("prep");
             IsRebuild = IsPrepMode || parseBool("rebuild");
-            IsWatching = parseBool("watch");
 
             Prefix = config["elasticsearch:prefix"];
             Schema = config["schema"];
@@ -86,7 +85,7 @@ namespace osu.ElasticIndexer
 
         public static bool IsRebuild { get; private set; }
 
-        public static bool IsWatching { get; private set; }
+        public static bool IsWatching => !IsRebuild;
 
         public static ImmutableArray<string> Modes { get; private set; }
 
@@ -102,14 +101,11 @@ namespace osu.ElasticIndexer
 
         private static void assertOptionsCompatible()
         {
-            if (IsRebuild && IsWatching)
-                throw new Exception("watch mode cannot be used with index rebuilding.");
+            if (string.IsNullOrWhiteSpace(Schema))
+                throw new Exception("A schema version is required.");
 
             if (!IsRebuild)
             {
-                if (string.IsNullOrWhiteSpace(Schema))
-                    throw new Exception("queue processing requires a schema version to be specified.");
-
                 if (IsNew)
                     throw new Exception("creating a new index is not supported with queue processing.");
             }
@@ -118,9 +114,6 @@ namespace osu.ElasticIndexer
             {
                 if (!IsRebuild)
                     throw new Exception("prep mode is only valid while rebuilding.");
-
-                if (string.IsNullOrWhiteSpace(Schema))
-                    throw new Exception("rebuilding in prep mode requires a schema version.");
 
                 if (ResumeFrom.HasValue)
                     throw new Exception("resume_from cannot be used in this mode.");
