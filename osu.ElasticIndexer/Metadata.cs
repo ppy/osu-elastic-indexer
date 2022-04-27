@@ -19,8 +19,8 @@ namespace osu.ElasticIndexer
         public long LastId { get; set; }
         public string RealName { get; set; }
         public long? ResetQueueTo { get; set; }
-        public bool Ready { get; set; }
         public string Schema { get; set; }
+        public string State { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
 
         public Metadata(string indexName, string schema)
@@ -43,7 +43,7 @@ namespace osu.ElasticIndexer
                     .Add("last_id", LastId)
                     .Add("reset_queue_to", ResetQueueTo)
                     .Add("schema", Schema)
-                    .Add("ready", Ready)
+                    .Add("state", State)
                     .Add("updated_at", DateTimeOffset.UtcNow)
             ).Index(RealName));
         }
@@ -55,7 +55,7 @@ namespace osu.ElasticIndexer
             LastId = Convert.ToInt64(meta["last_id"]);
             ResetQueueTo = meta.ContainsKey("reset_queue_to") ? Convert.ToInt64(meta["reset_queue_to"]) : null;
             Schema = (string) meta["schema"];
-            Ready = (bool) meta["ready"];
+            State = (string) meta["state"];
             UpdatedAt = meta.ContainsKey("updated_at") ? DateTimeOffset.Parse((string) meta["updated_at"]) : null;
         }
     }

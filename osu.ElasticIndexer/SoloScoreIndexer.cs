@@ -28,11 +28,21 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
-            if (!checkIfReady()) return;
+            this.metadata = IndexHelper.LoadIndexState(Name);
+            if (this.metadata == null)
+            {
+                Console.WriteLine($"No metadata found for `{Name}` for version {AppSettings.Schema}...");
+                return;
+            }
 
-            this.metadata = IndexHelper.FindOrCreateIndex(Name);
-
-            checkIndexState();
+            if (AppSettings.IsWatching)
+            {
+                if (this.metadata.State == "waiting_for_switchover")
+                {
+                    Console.WriteLine($"Switching `{Name}` to {this.metadata.RealName}.");
+                    return;
+                }
+            }
 
             var indexCompletedArgs = new IndexCompletedArgs
             {
@@ -48,27 +58,36 @@ namespace osu.ElasticIndexer
 
             try
             {
-                var readerTask = databaseReaderTask(metadata.LastId);
                 dispatcher.Run();
-                readerTask.Wait();
 
-                indexCompletedArgs.Count = readerTask.Result;
-                indexCompletedArgs.CompletedAt = DateTime.Now;
+                if (AppSettings.IsWatching)
+                {
+                    // read from queue
+                }
+                else
+                {
+                    var readerTask = databaseReaderTask(metadata.LastId);
+                    readerTask.Wait();
 
-                // when preparing for schema changes, the alias update
-                // should be done by process waiting for the ready signal.
-                if (AppSettings.IsRebuild)
-                    if (AppSettings.IsPrepMode) {
-                        metadata.Ready = true;
+                    indexCompletedArgs.Count = readerTask.Result;
+                    indexCompletedArgs.CompletedAt = DateTime.Now;
+
+                    // when preparing for schema changes, the alias update
+                    // should be done by process waiting for the ready signal.
+                    if (AppSettings.IsPrepMode)
+                    {
+                        metadata.State = "waiting_for_switchover";
                         metadata.Save();
                     }
-                    else
-                        IndexHelper.UpdateAlias(Name, metadata.RealName);
+                }
 
                 IndexCompleted(this, indexCompletedArgs);
+
+
             }
             catch (AggregateException ae)
             {
+                Console.WriteLine(ae);
                 ae.Handle(handleAggregateException);
             }
 
@@ -87,7 +106,6 @@ namespace osu.ElasticIndexer
             void handleBatchWithLastIdCompleted(object sender, long lastId)
             {
                 metadata.LastId = lastId;
-                // metadata.UpdatedAt = DateTimeOffset.UtcNow;
                 metadata.Save();
             }
         }
@@ -153,50 +171,5 @@ namespace osu.ElasticIndexer
 
                 return count;
             }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
-
-        private void checkIndexState()
-        {
-            // TODO: all this needs cleaning.
-            if (!AppSettings.IsRebuild && !metadata.IsAliased)
-                IndexHelper.UpdateAlias(Name, metadata.RealName);
-
-            metadata.LastId = ResumeFrom ?? metadata.LastId;
-
-            if (metadata.Schema != AppSettings.Schema)
-                // A switchover is probably happening, so signal that this mode should be skipped.
-                throw new VersionMismatchException($"`{Name}` found version {metadata.Schema}, expecting {AppSettings.Schema}");
-
-            if (AppSettings.IsRebuild)
-            {
-                // Save the position the score processing queue should be reset to if rebuilding an index.
-                // If there is already an existing value, the processor is probabaly resuming from a previous run,
-                // so we likely want to preserve that value.
-                if (!metadata.ResetQueueTo.HasValue)
-                {
-                    // TODO: set ResetQueueTo to first unprocessed item.
-                }
-            }
-            else
-            {
-                // process queue reset if any.
-                if (metadata.ResetQueueTo.HasValue)
-                {
-                    Console.WriteLine($"Resetting queue_id > {metadata.ResetQueueTo}");
-                    // TODO: reset queue to metadata.ResetQueueTo.Value
-                    metadata.ResetQueueTo = null;
-                }
-            }
-        }
-
-        private Dictionary<uint, dynamic> getUsers(IEnumerable<uint> userIds)
-        {
-            // get users
-            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
-            {
-                dbConnection.Open();
-                return dbConnection.Query<dynamic>($"select user_id, country_acronym from phpbb_users where user_id in @userIds", new { userIds })
-                    .ToDictionary(u => (uint) u.user_id);
-            }
-        }
     }
 }

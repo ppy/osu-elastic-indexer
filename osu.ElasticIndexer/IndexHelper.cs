@@ -13,6 +13,76 @@ namespace osu.ElasticIndexer
 {
     public class IndexHelper
     {
+        public static Metadata LoadIndexState(string name)
+        {
+            // load index states
+            var indices = IndexHelper.GetIndices(name);
+            var aliasedIndices = AppSettings.ELASTIC_CLIENT.GetIndicesPointingToAlias(name);
+            var matchingSchemas = indices.Where(entry => (string) entry.Value.Mappings.Meta?["schema"] == AppSettings.Schema).ToList();
+
+            IndexName indexName;
+            IndexState indexState;
+
+            if (AppSettings.IsWatching)
+            {
+                // should switch over?
+                // schema is ready, alias to new index and resume.
+                // find index with waiting_for_switchover
+                // update alias
+                // set state to current
+                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string) entry.Value.Mappings.Meta?["state"] != "new");
+                if (indexName != null)
+                {
+                    Console.WriteLine("found waiting");
+                    var metadata = new Metadata(indexName, indexState);
+                    // TODO: mark previous index as outdated
+                    // FIXME: can't switch over here because it still needs to catch up
+                    // UpdateAlias(name, indexName.Name);
+                    // metadata.IsAliased = true;
+                    // metadata.State = "current";
+                    // metadata.Save();
+
+                    return metadata;
+                }
+
+                // switched over?
+                // alias pointing to index with different schema.
+                // yes - mark index as outdated, exit
+
+                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string) entry.Value.Mappings.Meta?["state"] == "current");
+                if (indexName != null)
+                {
+                    return new Metadata(indexName, indexState);
+                }
+
+
+                // waiting for switch over?
+                // no indices with current schema that are ready.
+                // yes - exit
+            }
+            else
+            {
+                //
+                if (AppSettings.IsNew)
+                {
+                    return createIndex(name);
+                }
+
+                // preparing index; set state to building
+                // TODO: convenience mode to set alias after building (useful for dev)
+                // TODO: rebuild existing index
+                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string) entry.Value.Mappings.Meta?["state"] == "new");
+                if (indexName != null)
+                {
+                    return new Metadata(indexName, indexState);
+                }
+
+                return createIndex(name);
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Attempts to find the matching index or creates a new one.
         /// </summary>
@@ -54,25 +124,23 @@ namespace osu.ElasticIndexer
 
             Console.WriteLine($"Creating `{index}` for `{name}`.");
 
-            // create by supplying the json file instead of the attributed class because we're not
-            // mapping every field but still want everything for _source.
-            var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
-            AppSettings.ELASTIC_CLIENT.LowLevel.Indices.Create<DynamicResponse>(
-                index,
-                json,
-                new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
-            );
-            var metadata = new Metadata(index, AppSettings.Schema);
-            metadata.Save();
+            var metadata = createIndex(name);
 
             return metadata;
 
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
+
+
+        public static IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)
+        {
+            return AppSettings.ELASTIC_CLIENT.Indices.Get($"{name}_*").Indices;
+        }
+
         public static List<KeyValuePair<IndexName, IndexState>> GetIndicesForCurrentVersion(string name)
         {
-            return AppSettings.ELASTIC_CLIENT.Indices.Get($"{name}_*").Indices
+            return GetIndices(name)
                 .Where(entry => (string) entry.Value.Mappings.Meta?["schema"] == AppSettings.Schema)
                 .ToList();
         }
@@ -98,6 +166,26 @@ namespace osu.ElasticIndexer
                 Console.WriteLine($"Closing {toClose}");
                 AppSettings.ELASTIC_CLIENT.Indices.Close(toClose);
             }
+        }
+
+        private static Metadata createIndex(string name)
+        {
+            var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
+            var index = $"{name}_{suffix}";
+
+            Console.WriteLine($"Creating `{index}` for `{name}`.");
+
+            var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
+            AppSettings.ELASTIC_CLIENT.LowLevel.Indices.Create<DynamicResponse>(
+                index,
+                json,
+                new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
+            );
+            var metadata = new Metadata(index, AppSettings.Schema);
+            metadata.State = "new";
+            metadata.Save();
+
+            return metadata;
         }
     }
 }
