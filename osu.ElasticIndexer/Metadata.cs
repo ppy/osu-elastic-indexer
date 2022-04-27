@@ -33,12 +33,7 @@ namespace osu.ElasticIndexer
         {
             RealName = indexName.Name;
 
-            var meta = indexState.Mappings.Meta;
-            LastId = Convert.ToInt64(meta["last_id"]);
-            ResetQueueTo = meta.ContainsKey("reset_queue_to") ? Convert.ToInt64(meta["reset_queue_to"]) : null;
-            Schema = (string) meta["schema"];
-            Ready = (bool) meta["ready"];
-            UpdatedAt = meta.ContainsKey("updated_at") ? DateTimeOffset.Parse((string) meta["updated_at"]) : null;
+            this.UpdateWith(indexState);
         }
 
         public void Save()
