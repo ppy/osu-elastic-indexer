@@ -58,15 +58,17 @@ namespace osu.ElasticIndexer
 
             try
             {
-                dispatcher.Run();
-
                 if (AppSettings.IsWatching)
                 {
                     // read from queue
+
+                    dispatcher.Run();
                 }
                 else
                 {
+                    // FIXME: dispacher currently has to run after reader starts
                     var readerTask = databaseReaderTask(metadata.LastId);
+                    dispatcher.Run();
                     readerTask.Wait();
 
                     indexCompletedArgs.Count = readerTask.Result;
