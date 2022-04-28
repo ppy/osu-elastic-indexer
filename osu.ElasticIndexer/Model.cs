@@ -9,13 +9,15 @@ using Dapper;
 using Dapper.Contrib.Extensions;
 using MySqlConnector;
 
+#nullable enable
+
 namespace osu.ElasticIndexer
 {
     public abstract class Model
     {
         public abstract long CursorValue { get; }
 
-        public static IEnumerable<List<T>> Chunk<T>(string where, int chunkSize = 10000, long? resumeFrom = null) where T : Model
+        public static IEnumerable<List<T>> Chunk<T>(string? where, int chunkSize = 10000, long? resumeFrom = null) where T : Model
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {

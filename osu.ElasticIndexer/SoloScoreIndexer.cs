@@ -28,8 +28,8 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
-            this.metadata = IndexHelper.LoadIndexState(Name);
-            if (this.metadata == null)
+            metadata = IndexHelper.LoadIndexState(Name);
+            if (metadata == null)
             {
                 Console.WriteLine($"No metadata found for `{Name}` for version {AppSettings.Schema}...");
                 return;
@@ -39,8 +39,8 @@ namespace osu.ElasticIndexer
             {
                 if (this.metadata.State == "waiting_for_switchover")
                 {
-                    Console.WriteLine($"Switching `{Name}` to {this.metadata.RealName}.");
-                    return;
+                    Console.WriteLine($"Switching `{Name}` to {metadata.RealName}.");
+                    // return;
                 }
             }
 
@@ -61,8 +61,13 @@ namespace osu.ElasticIndexer
                 if (AppSettings.IsWatching)
                 {
                     // read from queue
+                    var queueTask = Task.Factory.StartNew(() =>
+                        {
+                            new Processor<SoloScore>(dispatcher).Run();
+                        });
 
                     dispatcher.Run();
+                    queueTask.Wait();
                 }
                 else
                 {
@@ -84,8 +89,6 @@ namespace osu.ElasticIndexer
                 }
 
                 IndexCompleted(this, indexCompletedArgs);
-
-
             }
             catch (AggregateException ae)
             {

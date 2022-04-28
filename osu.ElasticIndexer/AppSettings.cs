@@ -23,6 +23,7 @@ namespace osu.ElasticIndexer
 
         static AppSettings()
         {
+            Environment.SetEnvironmentVariable("REDIS_HOST", Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost");
             var env = Environment.GetEnvironmentVariable("APP_ENV") ?? "development";
             config = new ConfigurationBuilder()
                      .SetBasePath(Directory.GetCurrentDirectory())
