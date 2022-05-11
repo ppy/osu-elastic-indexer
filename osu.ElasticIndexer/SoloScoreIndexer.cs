@@ -2,12 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
 using System.Threading.Tasks;
-using Dapper;
-using MySqlConnector;
 using Nest;
 
 namespace osu.ElasticIndexer
@@ -53,40 +48,19 @@ namespace osu.ElasticIndexer
 
             dispatcher = new BulkIndexingDispatcher<SoloScore>(metadata.RealName);
 
-            if (AppSettings.IsRebuild)
-                dispatcher.BatchWithLastIdCompleted += handleBatchWithLastIdCompleted;
-
             try
             {
-                if (AppSettings.IsWatching)
-                {
-                    // read from queue
-                    var queueTask = Task.Factory.StartNew(() =>
-                        {
-                            new Processor<SoloScore>(dispatcher).Run();
-                        });
+                // TODO: dispatcher should be the separate task?
+                // or fix 0 length queue buffer on start?
 
-                    dispatcher.Run();
-                    queueTask.Wait();
-                }
-                else
-                {
-                    // FIXME: dispacher currently has to run after reader starts
-                    var readerTask = databaseReaderTask(metadata.LastId);
-                    dispatcher.Run();
-                    readerTask.Wait();
-
-                    indexCompletedArgs.Count = readerTask.Result;
-                    indexCompletedArgs.CompletedAt = DateTime.Now;
-
-                    // when preparing for schema changes, the alias update
-                    // should be done by process waiting for the ready signal.
-                    if (AppSettings.IsPrepMode)
+                // read from queue
+                var queueTask = Task.Factory.StartNew(() =>
                     {
-                        metadata.State = "waiting_for_switchover";
-                        metadata.Save();
-                    }
-                }
+                        new Processor<SoloScore>(dispatcher).Run();
+                    });
+
+                dispatcher.Run();
+                queueTask.Wait();
 
                 IndexCompleted(this, indexCompletedArgs);
             }
@@ -107,12 +81,6 @@ namespace osu.ElasticIndexer
 
                 return true;
             }
-
-            void handleBatchWithLastIdCompleted(object sender, long lastId)
-            {
-                metadata.LastId = lastId;
-                metadata.Save();
-            }
         }
 
         /// <summary>
@@ -127,54 +95,5 @@ namespace osu.ElasticIndexer
             Console.WriteLine($"`{Name}` for version {AppSettings.Schema} is not ready...");
             return false;
         }
-
-        /// <summary>
-        /// Self contained database reader task. Reads the database by cursoring through records
-        /// and adding chunks into readBuffer.
-        /// </summary>
-        /// <param name="resumeFrom">The cursor value to resume from;
-        /// use null to resume from the last known value.</param>
-        /// <returns>The database reader task.</returns>
-        private Task<long> databaseReaderTask(long resumeFrom) => Task.Factory.StartNew(() =>
-            {
-                long count = 0;
-
-                while (true)
-                {
-                    try
-                    {
-                        Console.WriteLine($"Rebuild from {resumeFrom}...");
-                        var chunks = Model.Chunk<SoloScore>(AppSettings.ChunkSize, resumeFrom);
-                        foreach (var chunk in chunks)
-                        {
-                            // var scores = SoloScore.FetchByScoreIds(chunk.Select(x => x.score_id).AsList());
-                            var scores = chunk.Where(x => x.ShouldIndex).AsList();
-                            // TODO: investigate fetching country directly in scores query.
-                            var users = User.FetchUserMappings(scores);
-                            foreach (var score in scores)
-                            {
-                                score.country_code = users[score.UserId].country_acronym;
-                            }
-
-                            dispatcher.Enqueue(scores);
-                            count += chunk.Count;
-                            // update resumeFrom in this scope to allow resuming from connection errors.
-                            resumeFrom = chunk.Last().CursorValue;
-                        }
-
-                        break;
-                    }
-                    catch (DbException ex)
-                    {
-                        Console.Error.WriteLine(ex.Message);
-                        Task.Delay(1000).Wait();
-                    }
-                }
-
-                dispatcher.EnqueueEnd();
-                Console.WriteLine($"Finished reading database {count} records.");
-
-                return count;
-            }, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
     }
 }
