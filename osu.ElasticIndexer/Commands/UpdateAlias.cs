@@ -7,8 +7,6 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-#nullable enable
-
 namespace osu.ElasticIndexer.Commands
 {
     [Command("alias", Description = "Updates alias to the latest index of a given version")]

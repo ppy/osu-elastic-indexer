@@ -12,7 +12,7 @@ namespace osu.ElasticIndexer
 {
     internal class BulkIndexingDispatcher<T> where T : Model
     {
-        internal event EventHandler<long> BatchWithLastIdCompleted;
+        internal event EventHandler<long>? BatchWithLastIdCompleted;
 
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer
             this.index = index;
         }
 
-        internal void Enqueue(List<T> add = null, List<T> remove = null) => readBuffer.Add(new DispatcherQueueItem<T>(add, remove));
+        internal void Enqueue(List<T>? add = null, List<T>? remove = null) => readBuffer.Add(new DispatcherQueueItem<T>(add, remove));
         internal void EnqueueEnd() => readBuffer.CompleteAdding();
 
         /// <summary>

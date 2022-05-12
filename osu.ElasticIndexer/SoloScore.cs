@@ -49,7 +49,7 @@ namespace osu.ElasticIndexer
         public DateTimeOffset UpdatedAt { get; set; }
 
         [Ignore]
-        public string Data { get; set; }
+        public string Data { get; set; } = String.Empty;
 
         [Computed]
         [Number(NumberType.Integer)]
@@ -101,13 +101,15 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Keyword]
-        public string country_code { get; set; }
+        public string country_code { get; set; } = "";
 
         private Lazy<Dictionary<string, dynamic>> scoreInfo;
 
         public SoloScore()
         {
-             scoreInfo = new Lazy<Dictionary<string, dynamic>>(() => JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(Data));
+            scoreInfo = new Lazy<Dictionary<string, dynamic>>(() =>
+                JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(Data) ?? new Dictionary<string, dynamic>()
+            );
         }
 
         public override string ToString() => $"score_id: {Id} user_id: {UserId} beatmap_id: {BeatmapId} ruleset_id: {RulesetId}";

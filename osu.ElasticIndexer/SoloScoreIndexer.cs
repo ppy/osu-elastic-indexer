@@ -11,15 +11,16 @@ namespace osu.ElasticIndexer
     {
         public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
 
-        public string Name { get; set; }
+        // TODO: maybe have a fixed name?
+        public string Name { get; set; } = IndexHelper.INDEX_NAME;
         public long? ResumeFrom { get; set; }
 
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
 
-        private BulkIndexingDispatcher<SoloScore> dispatcher;
+        private BulkIndexingDispatcher<SoloScore>? dispatcher;
 
-        private Metadata metadata;
+        private Metadata? metadata;
 
         public void Run()
         {

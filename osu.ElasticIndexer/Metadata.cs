@@ -19,8 +19,8 @@ namespace osu.ElasticIndexer
         public long LastId { get; set; }
         public string RealName { get; set; }
         public long? ResetQueueTo { get; set; }
-        public string Schema { get; set; }
-        public string State { get; set; }
+        public string Schema { get; set; } = "";
+        public string State { get; set; } = "";
         public DateTimeOffset? UpdatedAt { get; set; }
 
         public Metadata(string indexName, string schema)

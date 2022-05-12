@@ -9,8 +9,6 @@ using Elasticsearch.Net;
 using Elasticsearch.Net.Specification.IndicesApi;
 using Nest;
 
-#nullable enable
-
 namespace osu.ElasticIndexer
 {
     public class IndexHelper

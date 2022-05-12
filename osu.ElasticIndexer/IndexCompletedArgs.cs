@@ -7,10 +7,10 @@ namespace osu.ElasticIndexer
 {
     public class IndexCompletedArgs
     {
-        public string Alias { get; set; }
+        public string? Alias { get; set; }
         public DateTime CompletedAt { get; set; }
         public long Count { get; set; }
-        public string Index { get; set; }
+        public string? Index { get; set; }
         public DateTime StartedAt { get; set; }
 
         public TimeSpan TimeTaken => CompletedAt - StartedAt;

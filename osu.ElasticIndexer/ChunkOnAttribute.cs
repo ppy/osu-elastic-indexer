@@ -11,10 +11,10 @@ namespace osu.ElasticIndexer
     [AttributeUsage(AttributeTargets.Class)]
     public class ChunkOnAttribute : Attribute
     {
-        public string CursorColumn { get; set; }
+        public string? CursorColumn { get; set; }
 
-        public string Max { get; set; }
+        public string? Max { get; set; }
 
-        public string Query { get; set; }
+        public string? Query { get; set; }
     }
 }

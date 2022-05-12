@@ -10,7 +10,7 @@ namespace osu.ElasticIndexer
     {
         public static readonly string QueueName = $"score-index-{AppSettings.Schema}";
 
-        private readonly BulkIndexingDispatcher<T> dispatcher;
+        private readonly BulkIndexingDispatcher<T>? dispatcher;
 
         internal Processor() : base(new QueueConfiguration { InputQueueName = QueueName })
         {
@@ -23,6 +23,10 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResult(ScoreItem item)
         {
+            // FIXME: error or have fake dispatcher when not needed.
+            if (dispatcher == null)
+                return;
+
             var add = new List<T>();
             var remove = new List<T>();
             var score = item.Score;

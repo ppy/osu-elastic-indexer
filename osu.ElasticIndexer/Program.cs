@@ -6,8 +6,6 @@ using McMaster.Extensions.CommandLineUtils;
 using osu.ElasticIndexer.Commands;
 using StatsdClient;
 
-#nullable enable
-
 namespace osu.ElasticIndexer
 {
     [Command]

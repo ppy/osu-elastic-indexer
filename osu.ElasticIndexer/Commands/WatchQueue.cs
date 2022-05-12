@@ -5,8 +5,6 @@ using System;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-#nullable enable
-
 namespace osu.ElasticIndexer.Commands
 {
     [Command("queue", Description = "Watches queue and dispatches scores for indexing")]

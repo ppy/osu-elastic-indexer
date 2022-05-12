@@ -9,8 +9,6 @@ using Dapper;
 using Dapper.Contrib.Extensions;
 using MySqlConnector;
 
-#nullable enable
-
 namespace osu.ElasticIndexer
 {
     public abstract class Model
