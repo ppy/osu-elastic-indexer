@@ -8,12 +8,15 @@ namespace osu.ElasticIndexer
 {
     public class Processor<T> : QueueProcessor<ScoreItem> where T : Model
     {
-        public static readonly string QueueName = $"score-index-{AppSettings.Schema}";
+        private static readonly string queueName = $"score-index-{AppSettings.Schema}";
+
+        public string QueueName { get; private set; }
 
         private readonly BulkIndexingDispatcher<T>? dispatcher;
 
-        internal Processor() : base(new QueueConfiguration { InputQueueName = QueueName })
+        internal Processor() : base(new QueueConfiguration { InputQueueName = queueName })
         {
+            QueueName = queueName;
         }
 
         internal Processor(BulkIndexingDispatcher<T> dispatcher) : this()

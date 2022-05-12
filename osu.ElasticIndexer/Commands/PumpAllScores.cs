@@ -8,10 +8,8 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("all", Description = "Pumps scores through the queue for processing")]
-    public class PumpAllScores
+    public class PumpAllScores : ProcessorCommandBase
     {
-        protected readonly Processor<SoloScore> Queue = new Processor<SoloScore>();
-
         [Option("--delay", Description = "Delay in milliseconds between reading chunks")]
         public int Delay { get; set; }
 
@@ -28,7 +26,7 @@ namespace osu.ElasticIndexer.Commands
                 }
 
                 Console.WriteLine($"Pushing {scores.Count} scores");
-                Queue.PushToQueue(new ScoreItem(scores));
+                Processor.PushToQueue(new ScoreItem(scores));
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);

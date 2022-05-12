@@ -9,6 +9,7 @@ using StatsdClient;
 namespace osu.ElasticIndexer
 {
     [Command]
+    [Subcommand(typeof(ClearQueue))]
     [Subcommand(typeof(PumpAllScores))]
     [Subcommand(typeof(PumpFakeScores))]
     [Subcommand(typeof(UpdateAlias))]

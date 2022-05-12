@@ -8,10 +8,8 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
-    public class WatchQueue
+    public class WatchQueue : ProcessorCommandBase
     {
-        protected readonly Processor<SoloScore> Queue = new Processor<SoloScore>();
-
         public int OnExecute(CancellationToken token)
         {
             runIndexing();

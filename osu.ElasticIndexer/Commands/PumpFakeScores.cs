@@ -9,10 +9,8 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("fake", Description = "Pumps fake scores through the queue")]
-    public class PumpFakeScores
+    public class PumpFakeScores : ProcessorCommandBase
     {
-        protected readonly Processor<SoloScore> Queue = new Processor<SoloScore>();
-
         [Option("--delay", Description = "Delay in milliseconds between generating chunks")]
         public int Delay { get; set; }
 
@@ -63,8 +61,8 @@ namespace osu.ElasticIndexer.Commands
 
                 if (chunk.Count >= AppSettings.ChunkSize)
                 {
-                    Console.WriteLine($"pushing {chunk.Count} fake scores to {Processor<SoloScore>.QueueName}, id: {counter}");
-                    Queue.PushToQueue(new ScoreItem(chunk));
+                    Console.WriteLine($"pushing {chunk.Count} fake scores to {Processor.QueueName}, id: {counter}");
+                    Processor.PushToQueue(new ScoreItem(chunk));
                     chunk = new List<SoloScore>(AppSettings.ChunkSize);
 
                     if (Delay > 0)
