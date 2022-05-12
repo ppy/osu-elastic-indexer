@@ -1,7 +1,9 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer
@@ -12,24 +14,24 @@ namespace osu.ElasticIndexer
 
         public string QueueName { get; private set; }
 
-        private readonly BulkIndexingDispatcher<SoloScore>? dispatcher;
+        private readonly BulkIndexingDispatcher<SoloScore> dispatcher;
 
-        internal Processor() : base(new QueueConfiguration { InputQueueName = queueName })
+        internal Processor(BulkIndexingDispatcher<SoloScore> dispatcher) : base(new QueueConfiguration { InputQueueName = queueName })
         {
+            this.dispatcher = dispatcher;
             QueueName = queueName;
         }
 
-        internal Processor(BulkIndexingDispatcher<SoloScore> dispatcher) : this()
+        public new void Run(CancellationToken cancellation = default)
         {
-            this.dispatcher = dispatcher;
+            if (dispatcher == null)
+                throw new Exception("ProcessResult not supported without a dispatcher.");
+
+            base.Run(cancellation);
         }
 
         protected override void ProcessResult(ScoreItem item)
         {
-            // FIXME: error or have fake dispatcher when not needed.
-            if (dispatcher == null)
-                return;
-
             var add = new List<SoloScore>();
             var remove = new List<SoloScore>();
             var scores = item.Scores;

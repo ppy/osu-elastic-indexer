@@ -8,7 +8,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
-    public class WatchQueue : ProcessorCommandBase
+    public class WatchQueue
     {
         public int OnExecute(CancellationToken token)
         {

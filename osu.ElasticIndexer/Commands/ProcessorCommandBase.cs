@@ -5,6 +5,6 @@ namespace osu.ElasticIndexer.Commands
 {
     public abstract class ProcessorCommandBase
     {
-        protected readonly Processor Processor = new Processor();
+        protected readonly UnrunnableProcessor Processor = new UnrunnableProcessor();
     }
 }
