@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
-            metadata = IndexHelper.LoadIndexState(Name);
+            metadata = IndexHelper.FindOrCreateIndex(Name);
             if (metadata == null)
             {
                 Console.WriteLine($"No metadata found for `{Name}` for version {AppSettings.Schema}...");
