@@ -1,3 +1,4 @@
+using System.Threading;
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
@@ -42,17 +43,26 @@ namespace osu.ElasticIndexer
 
             try
             {
+                // TODO: processor needs to check if index is closed instead of spinning
+
                 // TODO: dispatcher should be the separate task?
                 // or fix 0 length queue buffer on start?
 
                 // read from queue
+                var cts = new CancellationTokenSource();
                 var queueTask = Task.Factory.StartNew(() =>
                     {
-                        new Processor<SoloScore>(dispatcher).Run();
+                        new Processor<SoloScore>(dispatcher).Run(cts.Token);
                     });
 
+                // Run() should block.
                 dispatcher.Run();
+                // something caused the dispatcher to bail out, e.g. index closed.
+                Console.WriteLine("stopping indexer...");
+                cts.Cancel();
+                // FIXME: better shutdown (currently queue processer throws exception).
                 queueTask.Wait();
+                Console.WriteLine("indexer stopped.");
 
                 IndexCompleted(this, indexCompletedArgs);
             }
