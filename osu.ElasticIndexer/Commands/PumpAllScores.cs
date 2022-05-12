@@ -7,7 +7,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 #nullable enable
 
-namespace osu.ElasticIndexer
+namespace osu.ElasticIndexer.Commands
 {
     [Command("all", Description = "Pumps scores through the queue for reprocessing")]
     public class PumpAllScores

@@ -3,13 +3,11 @@
 
 using System;
 using System.Threading;
-using Dapper;
 using McMaster.Extensions.CommandLineUtils;
-using MySqlConnector;
 
 #nullable enable
 
-namespace osu.ElasticIndexer
+namespace osu.ElasticIndexer.Commands
 {
     [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
     public class WatchQueue

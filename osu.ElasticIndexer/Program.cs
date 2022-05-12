@@ -3,6 +3,7 @@
 
 using Dapper;
 using McMaster.Extensions.CommandLineUtils;
+using osu.ElasticIndexer.Commands;
 using StatsdClient;
 
 #nullable enable
