@@ -31,15 +31,6 @@ namespace osu.ElasticIndexer
                 return;
             }
 
-            if (AppSettings.IsWatching)
-            {
-                if (this.metadata.State == "waiting_for_switchover")
-                {
-                    Console.WriteLine($"Switching `{Name}` to {metadata.RealName}.");
-                    // return;
-                }
-            }
-
             var indexCompletedArgs = new IndexCompletedArgs
             {
                 Alias = Name,
@@ -82,19 +73,6 @@ namespace osu.ElasticIndexer
 
                 return true;
             }
-        }
-
-        /// <summary>
-        /// Checks if the indexer should wait for the next pass or continue.
-        /// </summary>
-        /// <returns>true if ready; false, otherwise.</returns>
-        private bool checkIfReady()
-        {
-            if (AppSettings.IsRebuild || IndexHelper.GetIndicesForCurrentVersion(Name).Count > 0)
-                return true;
-
-            Console.WriteLine($"`{Name}` for version {AppSettings.Schema} is not ready...");
-            return false;
         }
     }
 }

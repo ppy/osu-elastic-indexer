@@ -41,7 +41,6 @@ namespace osu.ElasticIndexer.Commands
 
             var indexer = new SoloScoreIndexer();
             indexer.Name = indexName;
-            indexer.ResumeFrom = AppSettings.ResumeFrom;
 
             indexer.IndexCompleted += (sender, args) =>
             {
