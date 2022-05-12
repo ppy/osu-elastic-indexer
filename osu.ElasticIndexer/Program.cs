@@ -10,6 +10,7 @@ namespace osu.ElasticIndexer
 {
     [Command]
     [Subcommand(typeof(PumpAllScores))]
+    [Subcommand(typeof(PumpFakeScores))]
     [Subcommand(typeof(UpdateAlias))]
     [Subcommand(typeof(WatchQueue))]
     public class Program

@@ -42,14 +42,6 @@ namespace osu.ElasticIndexer.Commands
             var indexer = new SoloScoreIndexer();
             indexer.Name = indexName;
 
-            indexer.IndexCompleted += (sender, args) =>
-            {
-                if (args.Count > 0)
-                {
-                    Console.WriteLine($"Indexed {args.Count} records in {args.TimeTaken.TotalMilliseconds:F0}ms ({args.Count / args.TimeTaken.TotalSeconds:F0}/s)");
-                }
-            };
-
             return indexer;
         }
     }

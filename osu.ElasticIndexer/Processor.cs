@@ -29,14 +29,17 @@ namespace osu.ElasticIndexer
 
             var add = new List<T>();
             var remove = new List<T>();
-            var score = item.Score;
+            var scores = item.Scores;
 
-            // TODO: batching
-            // FIXME: remove as T hack
-            if (score.ShouldIndex)
-                add.Add(score as T);
-            else
-                remove.Add(score as T);
+            foreach (var score in scores)
+            {
+                // TODO: have should index handled at reader?
+                // FIXME: remove as T hack
+                if (score.ShouldIndex)
+                    add.Add(score as T);
+                else
+                    remove.Add(score as T);
+            }
 
             dispatcher.Enqueue(add, remove);
         }

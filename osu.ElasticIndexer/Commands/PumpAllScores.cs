@@ -7,7 +7,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("all", Description = "Pumps scores through the queue for reprocessing")]
+    [Command("all", Description = "Pumps scores through the queue for processing")]
     public class PumpAllScores
     {
         protected readonly Processor<SoloScore> Queue = new Processor<SoloScore>();
@@ -24,10 +24,11 @@ namespace osu.ElasticIndexer.Commands
                 foreach (var score in scores)
                 {
                     score.country_code = users[score.UserId].country_acronym;
-                    Queue.PushToQueue(new ScoreItem(score));
-
-                    Console.WriteLine($"Pumping {score}");
+                    Console.WriteLine($"Adding {score}");
                 }
+
+                Console.WriteLine($"Pushing {scores.Count} scores");
+                Queue.PushToQueue(new ScoreItem(scores));
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);
