@@ -9,16 +9,20 @@ using Elasticsearch.Net;
 using Elasticsearch.Net.Specification.IndicesApi;
 using Nest;
 
+#nullable enable
+
 namespace osu.ElasticIndexer
 {
     public class IndexHelper
     {
-        public static Metadata LoadIndexState(string name)
+        public static readonly string INDEX_NAME = $"{AppSettings.Prefix}solo_scores";
+
+        public static Metadata? LoadIndexState(string name)
         {
             // load index states
             var indices = IndexHelper.GetIndices(name);
             var aliasedIndices = AppSettings.ELASTIC_CLIENT.GetIndicesPointingToAlias(name);
-            var matchingSchemas = indices.Where(entry => (string) entry.Value.Mappings.Meta?["schema"] == AppSettings.Schema).ToList();
+            var matchingSchemas = indices.Where(entry => (string?) entry.Value.Mappings.Meta?["schema"] == AppSettings.Schema).ToList();
 
             IndexName indexName;
             IndexState indexState;
@@ -30,7 +34,7 @@ namespace osu.ElasticIndexer
                 // find index with waiting_for_switchover
                 // update alias
                 // set state to current
-                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string) entry.Value.Mappings.Meta?["state"] != "new");
+                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string?) entry.Value.Mappings.Meta?["state"] != "new");
                 if (indexName != null)
                 {
                     Console.WriteLine("found waiting");
@@ -49,7 +53,7 @@ namespace osu.ElasticIndexer
                 // alias pointing to index with different schema.
                 // yes - mark index as outdated, exit
 
-                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string) entry.Value.Mappings.Meta?["state"] == "current");
+                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string?) entry.Value.Mappings.Meta?["state"] == "current");
                 if (indexName != null)
                 {
                     return new Metadata(indexName, indexState);
@@ -71,7 +75,7 @@ namespace osu.ElasticIndexer
                 // preparing index; set state to building
                 // TODO: convenience mode to set alias after building (useful for dev)
                 // TODO: rebuild existing index
-                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string) entry.Value.Mappings.Meta?["state"] == "new");
+                (indexName, indexState) = matchingSchemas.FirstOrDefault(entry => (string?) entry.Value.Mappings.Meta?["state"] == "new");
                 if (indexName != null)
                 {
                     return new Metadata(indexName, indexState);
@@ -94,7 +98,7 @@ namespace osu.ElasticIndexer
 
             var indices = IndexHelper.GetIndicesForCurrentVersion(name);
 
-            if (indices.Count > 0 && !AppSettings.IsNew)
+            if (indices.Count > 0)
             {
                 // 3 cases are handled:
                 // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
@@ -115,15 +119,6 @@ namespace osu.ElasticIndexer
                 return new Metadata(indexName, indexState);
             }
 
-            if (indices.Count == 0 && AppSettings.IsWatching)
-                throw new Exception("no existing index found");
-
-            // 3. Not aliased and no tracking information; likely starting from scratch
-            var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
-            var index = $"{name}_{suffix}";
-
-            Console.WriteLine($"Creating `{index}` for `{name}`.");
-
             var metadata = createIndex(name);
 
             return metadata;
@@ -138,11 +133,16 @@ namespace osu.ElasticIndexer
             return AppSettings.ELASTIC_CLIENT.Indices.Get($"{name}_*").Indices;
         }
 
-        public static List<KeyValuePair<IndexName, IndexState>> GetIndicesForCurrentVersion(string name)
+        public static List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
         {
             return GetIndices(name)
-                .Where(entry => (string) entry.Value.Mappings.Meta?["schema"] == AppSettings.Schema)
+                .Where(entry => (string?) entry.Value.Mappings.Meta?["schema"] == schema)
                 .ToList();
+        }
+
+        public static List<KeyValuePair<IndexName, IndexState>> GetIndicesForCurrentVersion(string name)
+        {
+            return GetIndicesForVersion(name, AppSettings.Schema);
         }
 
         public static void UpdateAlias(string alias, string index, bool close = true)

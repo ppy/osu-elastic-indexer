@@ -41,7 +41,7 @@ namespace osu.ElasticIndexer
 
         private static SoloScoreIndexer getIndexer()
         {
-            var indexName = $"{AppSettings.Prefix}solo_scores";
+            var indexName = IndexHelper.INDEX_NAME;
 
             var indexer = new SoloScoreIndexer();
             indexer.Name = indexName;
