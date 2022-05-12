@@ -18,65 +18,8 @@ namespace osu.ElasticIndexer
 
         public int OnExecute(CancellationToken token)
         {
-            if (AppSettings.UseDocker)
-            {
-                Console.WriteLine("Waiting for database...");
-
-                while (true)
-                {
-                    try
-                    {
-                        using (var conn = new MySqlConnection(AppSettings.ConnectionString))
-                        {
-                            if (conn.QuerySingle<int>("SELECT `count` FROM `osu_counts` WHERE `name` = 'docker_db_step'") >= 3)
-                                break;
-                        }
-                    }
-                    catch
-                    {
-                    }
-
-                    Thread.Sleep(1000);
-                }
-            }
-
-            Console.WriteLine($"Rebuilding index: `{AppSettings.IsRebuild}`");
-            if (AppSettings.IsWatching)
-                runWatchLoop();
-            else
-                runIndexing();
-
-            if (AppSettings.UseDocker)
-            {
-                using (var conn = new MySqlConnection(AppSettings.ConnectionString))
-                {
-                    conn.Execute("INSERT INTO `osu_counts` (`name`, `count`) VALUES (@Name, @Count) ON DUPLICATE KEY UPDATE `count` = @Count", new
-                    {
-                        Name = "docker_db_step",
-                        Count = 4
-                    });
-                }
-            }
-
+            runIndexing();
             return 0;
-        }
-
-        // ReSharper disable once FunctionNeverReturns
-        private static void runWatchLoop()
-        {
-            Console.WriteLine($"Running in watch mode with {AppSettings.PollingInterval}ms poll.");
-
-            while (true)
-            {
-                // run continuously with automatic resume logic
-                runIndexing();
-                AppSettings.IsNew = false;
-
-                Console.WriteLine($"Sleeping {AppSettings.PollingInterval}..");
-                Console.WriteLine();
-
-                Thread.Sleep(AppSettings.PollingInterval);
-            }
         }
 
         /// <summary>
