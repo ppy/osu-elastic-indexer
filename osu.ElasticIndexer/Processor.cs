@@ -6,20 +6,20 @@ using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer
 {
-    public class Processor<T> : QueueProcessor<ScoreItem> where T : Model
+    public class Processor : QueueProcessor<ScoreItem>
     {
         private static readonly string queueName = $"score-index-{AppSettings.Schema}";
 
         public string QueueName { get; private set; }
 
-        private readonly BulkIndexingDispatcher<T>? dispatcher;
+        private readonly BulkIndexingDispatcher<SoloScore>? dispatcher;
 
         internal Processor() : base(new QueueConfiguration { InputQueueName = queueName })
         {
             QueueName = queueName;
         }
 
-        internal Processor(BulkIndexingDispatcher<T> dispatcher) : this()
+        internal Processor(BulkIndexingDispatcher<SoloScore> dispatcher) : this()
         {
             this.dispatcher = dispatcher;
         }
@@ -30,18 +30,17 @@ namespace osu.ElasticIndexer
             if (dispatcher == null)
                 return;
 
-            var add = new List<T>();
-            var remove = new List<T>();
+            var add = new List<SoloScore>();
+            var remove = new List<SoloScore>();
             var scores = item.Scores;
 
             foreach (var score in scores)
             {
                 // TODO: have should index handled at reader?
-                // FIXME: remove as T hack
                 if (score.ShouldIndex)
-                    add.Add(score as T);
+                    add.Add(score);
                 else
-                    remove.Add(score as T);
+                    remove.Add(score);
             }
 
             dispatcher.Enqueue(add, remove);

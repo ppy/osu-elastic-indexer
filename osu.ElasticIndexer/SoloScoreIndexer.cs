@@ -43,7 +43,7 @@ namespace osu.ElasticIndexer
                 var cts = new CancellationTokenSource();
                 var queueTask = Task.Factory.StartNew(() =>
                     {
-                        new Processor<SoloScore>(dispatcher).Run(cts.Token);
+                        new Processor(dispatcher).Run(cts.Token);
                     });
 
                 // Run() should block.
