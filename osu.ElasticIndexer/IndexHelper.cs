@@ -54,8 +54,6 @@ namespace osu.ElasticIndexer
             // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
-
-
         public static IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)
         {
             return AppSettings.ELASTIC_CLIENT.Indices.Get($"{name}_*").Indices;
