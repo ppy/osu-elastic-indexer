@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Dapper;
-using Dapper.Contrib.Extensions;
 using MySqlConnector;
 
 namespace osu.ElasticIndexer

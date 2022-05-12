@@ -1,17 +1,15 @@
-using System.Threading;
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class SoloScoreIndexer : IIndexer
+    public class SoloScoreIndexer
     {
-        public event EventHandler<IndexCompletedArgs> IndexCompleted = delegate { };
-
         // TODO: maybe have a fixed name?
         public string Name { get; set; } = IndexHelper.INDEX_NAME;
         public long? ResumeFrom { get; set; }
@@ -31,13 +29,6 @@ namespace osu.ElasticIndexer
                 Console.WriteLine($"No metadata found for `{Name}` for version {AppSettings.Schema}...");
                 return;
             }
-
-            var indexCompletedArgs = new IndexCompletedArgs
-            {
-                Alias = Name,
-                Index = metadata.RealName,
-                StartedAt = DateTime.Now
-            };
 
             dispatcher = new BulkIndexingDispatcher<SoloScore>(metadata.RealName);
 
@@ -63,8 +54,6 @@ namespace osu.ElasticIndexer
                 // FIXME: better shutdown (currently queue processer throws exception).
                 queueTask.Wait();
                 Console.WriteLine("indexer stopped.");
-
-                IndexCompleted(this, indexCompletedArgs);
             }
             catch (AggregateException ae)
             {
