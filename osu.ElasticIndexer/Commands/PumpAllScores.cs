@@ -22,11 +22,9 @@ namespace osu.ElasticIndexer.Commands
                 foreach (var score in scores)
                 {
                     score.country_code = users[score.UserId].country_acronym;
-                    Console.WriteLine($"Adding {score}");
+                    Console.WriteLine($"Pushing {score}");
+                    Processor.PushToQueue(new ScoreItem(score));
                 }
-
-                Console.WriteLine($"Pushing {scores.Count} scores");
-                Processor.PushToQueue(new ScoreItem(scores));
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);

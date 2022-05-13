@@ -15,25 +15,24 @@ namespace osu.ElasticIndexer
 
         private readonly BulkIndexingDispatcher<SoloScore> dispatcher;
 
-        internal Processor(BulkIndexingDispatcher<SoloScore> dispatcher) : base(new QueueConfiguration { InputQueueName = queueName })
+        internal Processor(BulkIndexingDispatcher<SoloScore> dispatcher) : base(new QueueConfiguration { InputQueueName = queueName, BatchSize = AppSettings.ChunkSize })
         {
             this.dispatcher = dispatcher;
             QueueName = queueName;
         }
 
-        protected override void ProcessResult(ScoreItem item)
+        protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
             var add = new List<SoloScore>();
             var remove = new List<SoloScore>();
-            var scores = item.Scores;
 
-            foreach (var score in scores)
+            foreach (var item in items)
             {
                 // TODO: have should index handled at reader?
-                if (score.ShouldIndex)
-                    add.Add(score);
+                if (item.Score.ShouldIndex)
+                    add.Add(item.Score);
                 else
-                    remove.Add(score);
+                    remove.Add(item.Score);
             }
 
             dispatcher.Enqueue(add, remove);

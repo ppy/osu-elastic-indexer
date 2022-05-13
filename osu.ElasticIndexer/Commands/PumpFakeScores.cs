@@ -18,11 +18,9 @@ namespace osu.ElasticIndexer.Commands
         {
             long counter = 0;
 
-            var chunk = new List<SoloScore>(AppSettings.ChunkSize);
-
             while (!cancellationToken.IsCancellationRequested)
             {
-                chunk.Add(
+                var score =
                     new SoloScore()
                     {
                         // TODO: better random data
@@ -56,18 +54,15 @@ namespace osu.ElasticIndexer.Commands
                         }",
                         Id = ++counter,
                         preserve = true
-                    }
-                );
+                    };
 
-                if (chunk.Count >= AppSettings.ChunkSize)
-                {
-                    Console.WriteLine($"pushing {chunk.Count} fake scores to {Processor.QueueName}, id: {counter}");
-                    Processor.PushToQueue(new ScoreItem(chunk));
-                    chunk = new List<SoloScore>(AppSettings.ChunkSize);
+                Processor.PushToQueue(new ScoreItem(score));
 
-                    if (Delay > 0)
-                        Thread.Sleep(Delay);
-                }
+                if (counter % 1000 == 0)
+                    Console.WriteLine($"pushed to {Processor.QueueName}, current id: {counter}");
+
+                if (Delay > 0)
+                    Thread.Sleep(Delay);
             }
 
             return 0;
