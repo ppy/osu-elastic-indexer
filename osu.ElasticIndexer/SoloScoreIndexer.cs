@@ -24,14 +24,13 @@ namespace osu.ElasticIndexer
 
         public void Run()
         {
-            checkSchema();
-
             metadata = IndexHelper.FindOrCreateIndex(Name);
             if (metadata == null)
             {
                 Console.WriteLine($"No metadata found for `{Name}` for version {AppSettings.Schema}...");
                 return;
             }
+            checkSchema();
 
             dispatcher = new BulkIndexingDispatcher<SoloScore>(metadata.RealName);
 
@@ -100,6 +99,7 @@ namespace osu.ElasticIndexer
             {
                 Console.WriteLine($"Schema switched to current: {schema}");
                 previousSchema = schema;
+                IndexHelper.UpdateAlias(Name, metadata!.RealName);
                 return;
             }
 
