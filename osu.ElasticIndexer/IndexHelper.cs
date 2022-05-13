@@ -24,12 +24,13 @@ namespace osu.ElasticIndexer
         {
             Console.WriteLine();
 
-            var indices = IndexHelper.GetIndicesForCurrentVersion(name);
+            var indices = GetIndicesForVersion(name, AppSettings.Schema);
 
+            // 3 cases are handled:
             if (indices.Count > 0)
             {
-                // 3 cases are handled:
-                // 1. Index was already aliased and has tracking information; likely resuming from a completed job.
+
+                // 1. Index was already aliased; likely resuming from a completed job.
                 var (indexName, indexState) = indices.FirstOrDefault(entry => entry.Value.Aliases.ContainsKey(name));
                 if (indexName != null)
                 {
@@ -47,11 +48,10 @@ namespace osu.ElasticIndexer
                 return new Metadata(indexName, indexState);
             }
 
+            // 3. no existing index
             var metadata = createIndex(name);
 
             return metadata;
-
-            // TODO: cases not covered should throw an Exception (aliased but not tracked, etc).
         }
 
         public static IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)
@@ -64,11 +64,6 @@ namespace osu.ElasticIndexer
             return GetIndices(name)
                 .Where(entry => (string?) entry.Value.Mappings.Meta?["schema"] == schema)
                 .ToList();
-        }
-
-        public static List<KeyValuePair<IndexName, IndexState>> GetIndicesForCurrentVersion(string name)
-        {
-            return GetIndicesForVersion(name, AppSettings.Schema);
         }
 
         public static void UpdateAlias(string alias, string index, bool close = true)

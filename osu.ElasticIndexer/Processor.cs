@@ -22,16 +22,12 @@ namespace osu.ElasticIndexer
             QueueName = queueName;
         }
 
-        public new void Run(CancellationToken cancellation = default)
-        {
-            if (dispatcher == null)
-                throw new Exception("ProcessResult not supported without a dispatcher.");
-
-            base.Run(cancellation);
-        }
-
         protected override void ProcessResult(ScoreItem item)
         {
+            // TODO: set on a timer or something so it doesn't hit redis every run (also quits evenif queue is empty)
+            if (!checkSchema())
+                Environment.Exit(0); // TODO: use cancellation
+
             var add = new List<SoloScore>();
             var remove = new List<SoloScore>();
             var scores = item.Scores;
@@ -46,6 +42,16 @@ namespace osu.ElasticIndexer
             }
 
             dispatcher.Enqueue(add, remove);
+        }
+
+        private bool checkSchema()
+        {
+            var schema = Helpers.GetSchemaVersion();
+            var matches = schema == AppSettings.Schema;
+            if (!matches)
+                Console.WriteLine($"Expecting schema {AppSettings.Schema}, got {schema}");
+
+            return matches;
         }
     }
 }

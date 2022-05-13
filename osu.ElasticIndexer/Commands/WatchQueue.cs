@@ -12,14 +12,34 @@ namespace osu.ElasticIndexer.Commands
     {
         public int OnExecute(CancellationToken token)
         {
+            boot();
             runIndexing();
             return 0;
+        }
+
+        private void boot()
+        {
+            var schema = Helpers.GetSchemaVersion();
+
+            if (string.IsNullOrEmpty(schema))
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"No existing schema version set, setting to {AppSettings.Schema}");
+                Console.ResetColor();
+                Helpers.SetSchemaVersion(AppSettings.Schema);
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Running queue with schema version {AppSettings.Schema}");
+                Console.ResetColor();
+            }
         }
 
         /// <summary>
         /// Performs a single indexing run for all specified modes.
         /// </summary>
-        private static void runIndexing()
+        private void runIndexing()
         {
             try
             {
@@ -33,7 +53,7 @@ namespace osu.ElasticIndexer.Commands
             }
         }
 
-        private static SoloScoreIndexer getIndexer()
+        private SoloScoreIndexer getIndexer()
         {
             var indexName = IndexHelper.INDEX_NAME;
 

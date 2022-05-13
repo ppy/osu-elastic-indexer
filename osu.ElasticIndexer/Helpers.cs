@@ -1,11 +1,6 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using Dapper;
-using McMaster.Extensions.CommandLineUtils;
-using osu.ElasticIndexer.Commands;
-using StatsdClient;
-
 namespace osu.ElasticIndexer
 {
     public class Helpers
