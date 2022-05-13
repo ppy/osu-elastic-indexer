@@ -41,26 +41,12 @@ namespace osu.ElasticIndexer.Commands
         /// </summary>
         private void runIndexing()
         {
-            try
+            using (var indexer = new SoloScoreIndexer())
             {
-                getIndexer().Run();
+                var indexName = IndexHelper.INDEX_NAME;
+                indexer.Name = indexName;
+                indexer.Run();
             }
-            catch (VersionMismatchException ex)
-            {
-                Console.Error.WriteLine(ex.Message);
-                Console.Error.WriteLine("All schema versions mismatched, exiting.");
-                Environment.Exit(0);
-            }
-        }
-
-        private SoloScoreIndexer getIndexer()
-        {
-            var indexName = IndexHelper.INDEX_NAME;
-
-            var indexer = new SoloScoreIndexer();
-            indexer.Name = indexName;
-
-            return indexer;
         }
     }
 }

@@ -8,7 +8,7 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class SoloScoreIndexer
+    public class SoloScoreIndexer : IDisposable
     {
         // TODO: maybe have a fixed name?
         public string Name { get; set; } = IndexHelper.INDEX_NAME;
@@ -17,12 +17,15 @@ namespace osu.ElasticIndexer
         // use shared instance to avoid socket leakage.
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
 
+        private CancellationTokenSource cts = new CancellationTokenSource();
         private BulkIndexingDispatcher<SoloScore>? dispatcher;
-
         private Metadata? metadata;
+        private string? previousSchema;
 
         public void Run()
         {
+            checkSchema();
+
             metadata = IndexHelper.FindOrCreateIndex(Name);
             if (metadata == null)
             {
@@ -39,21 +42,22 @@ namespace osu.ElasticIndexer
                 // TODO: dispatcher should be the separate task?
                 // or fix 0 length queue buffer on start?
 
-                // read from queue
-                var cts = new CancellationTokenSource();
-                var queueTask = Task.Factory.StartNew(() =>
-                    {
-                        new Processor(dispatcher).Run(cts.Token);
-                    });
+                using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
+                {
+                    var queueTask = Task.Factory.StartNew(() =>
+                        {
+                            new Processor(dispatcher).Run(cts.Token);
+                        });
 
-                // Run() should block.
-                dispatcher.Run();
-                // something caused the dispatcher to bail out, e.g. index closed.
-                Console.WriteLine("stopping indexer...");
-                cts.Cancel();
-                // FIXME: better shutdown (currently queue processer throws exception).
-                queueTask.Wait();
-                Console.WriteLine("indexer stopped.");
+                    // Run() should block.
+                    dispatcher.Run();
+                    // something caused the dispatcher to bail out, e.g. index closed.
+                    Console.WriteLine("stopping indexer...");
+                    stop();
+                    // FIXME: better shutdown (currently queue processer throws exception).
+                    queueTask.Wait();
+                    Console.WriteLine("indexer stopped.");
+                }
             }
             catch (AggregateException ae)
             {
@@ -72,6 +76,45 @@ namespace osu.ElasticIndexer
 
                 return true;
             }
+        }
+
+        private void checkSchema()
+        {
+            var schema = Helpers.GetSchemaVersion();
+            // first run
+            if (previousSchema == null)
+            {
+                // TODO: maybe include index check if it's out of date?
+                previousSchema = schema;
+                return;
+            }
+
+            // no change
+            if (previousSchema == schema)
+            {
+                return;
+            }
+
+            // schema has changed to the current one
+            if (previousSchema != schema && schema == AppSettings.Schema)
+            {
+                Console.WriteLine($"Schema switched to current: {schema}");
+                previousSchema = schema;
+                return;
+            }
+
+            Console.WriteLine($"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
+            stop();
+        }
+
+        private void stop()
+        {
+            cts.Cancel();
+        }
+
+        public void Dispose()
+        {
+            cts.Dispose();
         }
     }
 }

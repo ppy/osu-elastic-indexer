@@ -14,7 +14,6 @@ namespace osu.ElasticIndexer
         public string QueueName { get; private set; }
 
         private readonly BulkIndexingDispatcher<SoloScore> dispatcher;
-        private string? previousSchema;
 
         internal Processor(BulkIndexingDispatcher<SoloScore> dispatcher) : base(new QueueConfiguration { InputQueueName = queueName })
         {
@@ -24,10 +23,6 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResult(ScoreItem item)
         {
-            // TODO: set on a timer or something so it doesn't hit redis every run (also quits evenif queue is empty)
-            if (!checkSchema())
-                Environment.Exit(0); // TODO: use cancellation
-
             var add = new List<SoloScore>();
             var remove = new List<SoloScore>();
             var scores = item.Scores;
@@ -42,42 +37,6 @@ namespace osu.ElasticIndexer
             }
 
             dispatcher.Enqueue(add, remove);
-        }
-
-        private bool checkSchema()
-        {
-            var schema = Helpers.GetSchemaVersion();
-            // first run
-            if (previousSchema == null)
-            {
-                // TODO: maybe include index check if it's out of date?
-                previousSchema = schema;
-                return true;
-            }
-
-            // no change
-            if (previousSchema == schema)
-            {
-                return true;
-            }
-
-            // schema has changed to the current one
-            if (previousSchema != schema && schema == AppSettings.Schema)
-            {
-                Console.WriteLine($"Schema switched to current: {schema}");
-                previousSchema = schema;
-                return true;
-            }
-
-            Console.WriteLine($"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
-            stop();
-
-            return false;
-        }
-
-        private void stop()
-        {
-
         }
     }
 }
