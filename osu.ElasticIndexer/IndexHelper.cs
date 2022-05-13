@@ -49,9 +49,7 @@ namespace osu.ElasticIndexer
             }
 
             // 3. no existing index
-            var metadata = createIndex(name);
-
-            return metadata;
+            return createIndex(name);
         }
 
         public static IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)

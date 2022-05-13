@@ -25,11 +25,7 @@ namespace osu.ElasticIndexer
         public void Run()
         {
             metadata = IndexHelper.FindOrCreateIndex(Name);
-            if (metadata == null)
-            {
-                Console.WriteLine($"No metadata found for `{Name}` for version {AppSettings.Schema}...");
-                return;
-            }
+
             checkSchema();
 
             dispatcher = new BulkIndexingDispatcher<SoloScore>(metadata.RealName);
