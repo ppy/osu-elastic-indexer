@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer
@@ -15,6 +14,7 @@ namespace osu.ElasticIndexer
         public string QueueName { get; private set; }
 
         private readonly BulkIndexingDispatcher<SoloScore> dispatcher;
+        private string? previousSchema;
 
         internal Processor(BulkIndexingDispatcher<SoloScore> dispatcher) : base(new QueueConfiguration { InputQueueName = queueName })
         {
@@ -47,11 +47,37 @@ namespace osu.ElasticIndexer
         private bool checkSchema()
         {
             var schema = Helpers.GetSchemaVersion();
-            var matches = schema == AppSettings.Schema;
-            if (!matches)
-                Console.WriteLine($"Expecting schema {AppSettings.Schema}, got {schema}");
+            // first run
+            if (previousSchema == null)
+            {
+                // TODO: maybe include index check if it's out of date?
+                previousSchema = schema;
+                return true;
+            }
 
-            return matches;
+            // no change
+            if (previousSchema == schema)
+            {
+                return true;
+            }
+
+            // schema has changed to the current one
+            if (previousSchema != schema && schema == AppSettings.Schema)
+            {
+                Console.WriteLine($"Schema switched to current: {schema}");
+                previousSchema = schema;
+                return true;
+            }
+
+            Console.WriteLine($"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
+            stop();
+
+            return false;
+        }
+
+        private void stop()
+        {
+
         }
     }
 }
