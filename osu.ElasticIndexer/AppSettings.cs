@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Nest;
+using StackExchange.Redis;
 
 namespace osu.ElasticIndexer
 {
@@ -14,6 +15,9 @@ namespace osu.ElasticIndexer
     {
         // shared client without a default index.
         internal static readonly ElasticClient ELASTIC_CLIENT;
+
+        // TODO: should share with queue processor
+        internal static readonly ConnectionMultiplexer Redis;
 
         private static readonly IConfigurationRoot config;
 
@@ -23,7 +27,6 @@ namespace osu.ElasticIndexer
 
         static AppSettings()
         {
-            Environment.SetEnvironmentVariable("REDIS_HOST", Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost");
             var env = Environment.GetEnvironmentVariable("APP_ENV") ?? "development";
             config = new ConfigurationBuilder()
                      .SetBasePath(Directory.GetCurrentDirectory())
@@ -31,6 +34,9 @@ namespace osu.ElasticIndexer
                      .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
                      .AddEnvironmentVariables()
                      .Build();
+
+            // TOOD: set from config
+            Environment.SetEnvironmentVariable("REDIS_HOST", Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost");
 
             if (!string.IsNullOrEmpty(config["concurrency"]))
                 Concurrency = int.Parse(config["concurrency"]);
@@ -50,7 +56,7 @@ namespace osu.ElasticIndexer
             ElasticsearchPrefix = config["elasticsearch:prefix"];
 
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
-
+            Redis = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_HOST"));
             assertOptionsCompatible();
         }
 
@@ -75,8 +81,8 @@ namespace osu.ElasticIndexer
 
         private static void assertOptionsCompatible()
         {
-            if (string.IsNullOrWhiteSpace(Schema))
-                throw new Exception("A schema version is required.");
+            // if (string.IsNullOrWhiteSpace(Schema))
+            //     throw new Exception("A schema version is required.");
         }
 
         private static bool parseBool(string key)
