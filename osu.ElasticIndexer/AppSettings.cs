@@ -35,8 +35,9 @@ namespace osu.ElasticIndexer
                      .AddEnvironmentVariables()
                      .Build();
 
-            // TOOD: set from config
-            Environment.SetEnvironmentVariable("REDIS_HOST", Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost");
+            // set env variable for queue processor.
+            Environment.SetEnvironmentVariable("REDIS_HOST", config["redis:host"] ?? "redis");
+
 
             if (!string.IsNullOrEmpty(config["concurrency"]))
                 Concurrency = int.Parse(config["concurrency"]);
