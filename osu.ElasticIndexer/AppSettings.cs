@@ -19,8 +19,6 @@ namespace osu.ElasticIndexer
         // TODO: should share with queue processor
         internal static readonly ConnectionMultiplexer Redis;
 
-        private static readonly IConfigurationRoot config;
-
         private AppSettings()
         {
         }
@@ -28,22 +26,18 @@ namespace osu.ElasticIndexer
         static AppSettings()
         {
             var env = Environment.GetEnvironmentVariable("APP_ENV") ?? "development";
-            config = new ConfigurationBuilder()
-                     .SetBasePath(Directory.GetCurrentDirectory())
-                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                     .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
-                     .AddEnvironmentVariables()
-                     .Build();
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .Build();
 
             // set env variable for queue processor.
             Environment.SetEnvironmentVariable("REDIS_HOST", config["redis:host"] ?? "redis");
 
-
-            if (!string.IsNullOrEmpty(config["concurrency"]))
-                Concurrency = int.Parse(config["concurrency"]);
-
-            if (!string.IsNullOrEmpty(config["chunk_size"]))
-                ChunkSize = int.Parse(config["chunk_size"]);
+            if (!string.IsNullOrEmpty(config["batch_size"]))
+                BatchSize = int.Parse(config["batch_size"]);
 
             if (!string.IsNullOrEmpty(config["buffer_size"]))
                 BufferSize = int.Parse(config["buffer_size"]);
@@ -65,9 +59,7 @@ namespace osu.ElasticIndexer
         // same value as elasticsearch-net
         public static TimeSpan BulkAllBackOffTimeDefault = TimeSpan.FromMinutes(1);
 
-        public static int ChunkSize { get; private set; } = 10000;
-
-        public static int Concurrency { get; private set; } = 4;
+        public static int BatchSize { get; private set; } = 10000;
 
         public static string ConnectionString { get; private set; }
 
@@ -78,10 +70,5 @@ namespace osu.ElasticIndexer
         public static string Prefix { get; private set; }
 
         public static string Schema { get; private set; }
-
-        private static bool parseBool(string key)
-        {
-            return new[] { "1", "true" }.Contains((config[key] ?? string.Empty).ToLowerInvariant());
-        }
     }
 }

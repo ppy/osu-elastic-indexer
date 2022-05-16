@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken cancellationToken)
         {
-            var chunks = Model.Chunk<SoloScore>(AppSettings.ChunkSize);
+            var chunks = Model.Chunk<SoloScore>(AppSettings.BatchSize);
             foreach (var scores in chunks)
             {
                 var users = User.FetchUserMappings(scores);

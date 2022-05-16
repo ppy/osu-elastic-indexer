@@ -20,9 +20,9 @@ namespace osu.ElasticIndexer
 
         internal Processor(string index) : base(new QueueConfiguration {
             InputQueueName = queueName,
-            BatchSize = AppSettings.ChunkSize,
-            ErrorThreshold = AppSettings.ChunkSize * 2, // needs to be larger than BatchSize to handle ES busy errors.
-            MaxInFlightItems = AppSettings.ChunkSize * AppSettings.BufferSize
+            BatchSize = AppSettings.BatchSize,
+            ErrorThreshold = AppSettings.BatchSize * 2, // needs to be larger than BatchSize to handle ES busy errors.
+            MaxInFlightItems = AppSettings.BatchSize * AppSettings.BufferSize
         })
         {
             this.index = index;
