@@ -18,7 +18,7 @@ namespace osu.ElasticIndexer
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
 
         private CancellationTokenSource cts = new CancellationTokenSource();
-        private BulkIndexingDispatcher<SoloScore>? dispatcher;
+        private BulkIndexingDispatcher? dispatcher;
         private Metadata? metadata;
         private string? previousSchema;
 
@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer
 
             checkSchema();
 
-            dispatcher = new BulkIndexingDispatcher<SoloScore>(metadata.RealName);
+            dispatcher = new BulkIndexingDispatcher(metadata.RealName);
 
             try
             {
@@ -41,7 +41,7 @@ namespace osu.ElasticIndexer
                             dispatcher.Run();
                         });
 
-                    new Processor(dispatcher).Run(cts.Token);
+                    new Processor(dispatcher, metadata.RealName).Run(cts.Token);
 
                     dispatcherTask.Wait();
                     Console.WriteLine("indexer stopped.");

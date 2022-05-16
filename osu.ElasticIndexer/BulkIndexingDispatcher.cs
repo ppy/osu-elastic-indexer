@@ -5,12 +5,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Nest;
 
 namespace osu.ElasticIndexer
 {
-    internal class BulkIndexingDispatcher<T> where T : Model
+    internal class BulkIndexingDispatcher
     {
         internal event EventHandler<long>? BatchWithLastIdCompleted;
 
@@ -19,7 +20,7 @@ namespace osu.ElasticIndexer
 
         // Self-limiting read-ahead buffer to ensure
         // there is always data ready to be dispatched to Elasticsearch.
-        private readonly BlockingCollection<DispatcherQueueItem<T>> readBuffer = new BlockingCollection<DispatcherQueueItem<T>>(AppSettings.BufferSize);
+        private readonly BlockingCollection<DispatcherQueueItem<ScoreItem>> readBuffer = new BlockingCollection<DispatcherQueueItem<ScoreItem>>(2);
 
         private readonly string index;
 
@@ -28,7 +29,7 @@ namespace osu.ElasticIndexer
             this.index = index;
         }
 
-        internal void Enqueue(List<T>? add = null, List<T>? remove = null) => readBuffer.Add(new DispatcherQueueItem<T>(add, remove));
+        internal void Enqueue(List<ScoreItem>? add = null, List<ScoreItem>? remove = null) => readBuffer.Add(new DispatcherQueueItem<ScoreItem>(add, remove));
         internal void EnqueueEnd() => readBuffer.CompleteAdding();
 
         /// <summary>
@@ -37,6 +38,7 @@ namespace osu.ElasticIndexer
         /// </summary>
         internal void Run()
         {
+            new Timer(_ => Console.WriteLine(readBuffer.Count), null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
             // custom partitioner and options to prevent Parallel.ForEach from going out of control.
             var partitioner = Partitioner.Create(
                 readBuffer.GetConsumingEnumerable(),
@@ -49,8 +51,9 @@ namespace osu.ElasticIndexer
             {
                 bool success;
 
-                while (true)
-                {
+                // while (true)
+                // {
+                    Console.WriteLine(chunk.ItemsToIndex.First().Score.Id);
                     var bulkDescriptor = new BulkDescriptor()
                         .Index(index)
                         .IndexMany(chunk.ItemsToIndex)
@@ -59,25 +62,38 @@ namespace osu.ElasticIndexer
 
                     bool retry;
                     (success, retry) = retryOnResponse(response, chunk);
+                    // break;
+                    // if (!retry) break;
 
-                    if (!retry) break;
+                    // Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
+                // }
 
-                    Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
-                }
-
-                if (success)
-                    // FIXME: handle empty list
-                    BatchWithLastIdCompleted?.Invoke(this, chunk.ItemsToIndex.Last().CursorValue);
+                // if (success)
+                //     // FIXME: handle empty list
+                //     BatchWithLastIdCompleted?.Invoke(this, chunk.ItemsToIndex.Last().CursorValue);
             });
         }
 
-        private (bool success, bool retry) retryOnResponse(BulkResponse response, DispatcherQueueItem<T> queued)
+        private (bool success, bool retry) retryOnResponse(BulkResponse response, DispatcherQueueItem<ScoreItem> queued)
         {
+            Console.WriteLine(response.ItemsWithErrors.First().Id);
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {queued.ItemsToIndex.Last().CursorValue}");
+                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {queued.ItemsToIndex.Last().Score.Id}");
+                // foreach (var items in queued.ItemsToIndex)
+                // {
+                //     items.Failed = true;
+                // }
+
+                // foreach (var items in queued.ItemsToDelete)
+                // {
+                //     items.Failed = true;
+                // }
+
+
                 return (success: false, retry: true);
+
             }
 
             // Index was closed, possibly because it was switched. Flag for bailout.
