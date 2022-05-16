@@ -34,23 +34,16 @@ namespace osu.ElasticIndexer
             {
                 // TODO: processor needs to check if index is closed instead of spinning
 
-                // TODO: dispatcher should be the separate task?
-                // or fix 0 length queue buffer on start?
-
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
                 {
-                    var queueTask = Task.Factory.StartNew(() =>
+                    var dispatcherTask = Task.Factory.StartNew(() =>
                         {
-                            new Processor(dispatcher).Run(cts.Token);
+                            dispatcher.Run();
                         });
 
-                    // Run() should block.
-                    dispatcher.Run();
-                    // something caused the dispatcher to bail out, e.g. index closed.
-                    Console.WriteLine("stopping indexer...");
-                    stop();
-                    // FIXME: better shutdown (currently queue processer throws exception).
-                    queueTask.Wait();
+                    new Processor(dispatcher).Run(cts.Token);
+
+                    dispatcherTask.Wait();
                     Console.WriteLine("indexer stopped.");
                 }
             }
@@ -100,12 +93,13 @@ namespace osu.ElasticIndexer
             }
 
             Console.WriteLine($"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
-            stop();
+            Stop();
         }
 
-        private void stop()
+        public void Stop()
         {
             cts.Cancel();
+            dispatcher?.EnqueueEnd();
         }
 
         public void Dispose()

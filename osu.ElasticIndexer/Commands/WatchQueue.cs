@@ -43,6 +43,8 @@ namespace osu.ElasticIndexer.Commands
         {
             using (var indexer = new SoloScoreIndexer())
             {
+                Console.CancelKeyPress += (object? sender, ConsoleCancelEventArgs args) => indexer.Stop();
+
                 var indexName = IndexHelper.INDEX_NAME;
                 indexer.Name = indexName;
                 indexer.Run();
