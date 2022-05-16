@@ -58,7 +58,6 @@ namespace osu.ElasticIndexer
 
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
             Redis = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_HOST"));
-            assertOptionsCompatible();
         }
 
         public static int BufferSize { get; private set; } = 5;
@@ -79,12 +78,6 @@ namespace osu.ElasticIndexer
         public static string Prefix { get; private set; }
 
         public static string Schema { get; private set; }
-
-        private static void assertOptionsCompatible()
-        {
-            // if (string.IsNullOrWhiteSpace(Schema))
-            //     throw new Exception("A schema version is required.");
-        }
 
         private static bool parseBool(string key)
         {
