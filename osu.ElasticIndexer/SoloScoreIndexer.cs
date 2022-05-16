@@ -3,7 +3,6 @@
 
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Nest;
 
 namespace osu.ElasticIndexer
@@ -18,7 +17,6 @@ namespace osu.ElasticIndexer
         private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
 
         private CancellationTokenSource cts = new CancellationTokenSource();
-        private BulkIndexingDispatcher? dispatcher;
         private Metadata? metadata;
         private string? previousSchema;
 
@@ -28,42 +26,12 @@ namespace osu.ElasticIndexer
 
             checkSchema();
 
-            dispatcher = new BulkIndexingDispatcher(metadata.RealName);
-
-            try
+            using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
             {
-                // TODO: processor needs to check if index is closed instead of spinning
-
-                using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
-                {
-                    var dispatcherTask = Task.Factory.StartNew(() =>
-                        {
-                            dispatcher.Run();
-                        });
-
-                    new Processor(dispatcher, metadata.RealName).Run(cts.Token);
-
-                    dispatcherTask.Wait();
-                    Console.WriteLine("indexer stopped.");
-                }
-            }
-            catch (AggregateException ae)
-            {
-                Console.WriteLine(ae);
-                ae.Handle(handleAggregateException);
+                new Processor(metadata.RealName).Run(cts.Token);
             }
 
-            // Local function exception handler.
-            bool handleAggregateException(Exception ex)
-            {
-                if (!(ex is InvalidOperationException)) return false;
-
-                Console.Error.WriteLine(ex.Message);
-                if (ex.InnerException != null)
-                    Console.Error.WriteLine(ex.InnerException.Message);
-
-                return true;
-            }
+            Console.WriteLine("Indexer stopped.");
         }
 
         private void checkSchema()
@@ -99,7 +67,6 @@ namespace osu.ElasticIndexer
         public void Stop()
         {
             cts.Cancel();
-            dispatcher?.EnqueueEnd();
         }
 
         public void Dispose()

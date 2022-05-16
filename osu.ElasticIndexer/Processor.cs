@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Nest;
 using osu.Server.QueueProcessor;
 
@@ -15,48 +16,43 @@ namespace osu.ElasticIndexer
 
         public string QueueName { get; private set; }
 
-        private readonly BulkIndexingDispatcher dispatcher;
         private readonly string index;
 
-        internal Processor(BulkIndexingDispatcher dispatcher, string index) : base(new QueueConfiguration { InputQueueName = queueName, BatchSize = AppSettings.ChunkSize, ErrorThreshold = 10000 })
+        internal Processor(string index) : base(new QueueConfiguration {
+            InputQueueName = queueName,
+            BatchSize = AppSettings.ChunkSize,
+            ErrorThreshold = AppSettings.ChunkSize * 2, // needs to be larger than BatchSize to handle ES busy errors.
+            MaxInFlightItems = AppSettings.ChunkSize * AppSettings.BufferSize
+        })
         {
             this.index = index;
-            this.dispatcher = dispatcher;
             QueueName = queueName;
         }
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            Console.WriteLine($"{items.First().Score.Id} {items.Where(x => x.Failed).Count()}");
             var add = new List<SoloScore>();
             var remove = new List<SoloScore>();
 
             foreach (var item in items)
             {
-                // TODO: have should index handled at reader?
                 if (item.Score.ShouldIndex)
                     add.Add(item.Score);
                 else
                     remove.Add(item.Score);
             }
 
-
-            Console.WriteLine(add.First().Id);
             var bulkDescriptor = new BulkDescriptor()
                 .Index(index)
                 .IndexMany(add)
                 .DeleteMany(remove);
             var response = AppSettings.ELASTIC_CLIENT.Bulk(bulkDescriptor);
 
-            bool success;
-            bool retry;
-            (success, retry) = retryOnResponse(response, items);
-            // dispatcher.Enqueue(add, remove);
+            handleResponse(response, items);
         }
 
-        private (bool success, bool retry) retryOnResponse(BulkResponse response, IEnumerable<ScoreItem> items)
+        private void handleResponse(BulkResponse response, IEnumerable<ScoreItem> items)
         {
-            Console.WriteLine(response.ItemsWithErrors.First().Id);
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
@@ -66,11 +62,25 @@ namespace osu.ElasticIndexer
                     item.Failed = true;
                 }
 
-                return (success: false, retry: true);
-
+                // TODO: need a better way to tell queue to slow down (this delays requeuing and also exiting).
+                Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
+                return;
             }
-            // TODO: other errors should do some kind of notification.
-            return (success: true, retry: false);
+
+            // Index was closed, possibly because it was switched. Flag for bailout.
+            if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
+            {
+                Console.Error.WriteLine($"{index} was closed.");
+                // requeue in case it was an accident.
+                foreach (var item in items)
+                {
+                    item.Failed = true;
+                }
+                // TODO: stop
+                return;
+            }
+
+            // TODO: item errors?
         }
     }
 }

@@ -13,5 +13,7 @@ namespace osu.ElasticIndexer
         {
             Score = score;
         }
+
+        public override string ToString() => $"ScoreItem id: {Score.Id}";
     }
 }
