@@ -51,7 +51,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int? build_id { get => (int?) scoreInfo.Value.GetValueOrDefault("build_id"); }
+        public int? build_id { get => (int?)scoreInfo.Value.GetValueOrDefault("build_id"); }
 
         [Computed]
         [Boolean]
@@ -64,7 +64,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int total_score { get => (int) scoreInfo.Value["total_score"]; }
+        public int total_score { get => (int)scoreInfo.Value["total_score"]; }
 
         [Computed]
         [Number(NumberType.Float)]
@@ -72,7 +72,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int max_combo { get => (int) scoreInfo.Value["max_combo"]; }
+        public int max_combo { get => (int)scoreInfo.Value["max_combo"]; }
 
         [Computed]
         [Keyword]
@@ -93,7 +93,7 @@ namespace osu.ElasticIndexer
             get
             {
                 List<dynamic> mods = scoreInfo.Value["mods"].ToObject<List<dynamic>>();
-                return mods.Select(mod => (string) mod["acronym"]).ToList();
+                return mods.Select(mod => (string)mod["acronym"]).ToList();
             }
         }
 

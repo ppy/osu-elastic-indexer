@@ -11,7 +11,8 @@ namespace osu.ElasticIndexer
         public IEnumerable<T> ItemsToDelete { get; private set; }
         public IEnumerable<T> ItemsToIndex { get; private set; }
 
-        public DispatcherQueueItem(IEnumerable<T>? add, IEnumerable<T>? remove) {
+        public DispatcherQueueItem(IEnumerable<T>? add, IEnumerable<T>? remove)
+        {
             ItemsToIndex = add ?? Enumerable.Empty<T>();
             ItemsToDelete = remove ?? Enumerable.Empty<T>();
         }

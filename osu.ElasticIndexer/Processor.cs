@@ -18,7 +18,8 @@ namespace osu.ElasticIndexer
 
         private readonly string index;
 
-        internal Processor(string index) : base(new QueueConfiguration {
+        internal Processor(string index) : base(new QueueConfiguration
+        {
             InputQueueName = queueName,
             BatchSize = AppSettings.BatchSize,
             ErrorThreshold = AppSettings.BatchSize * 2, // needs to be larger than BatchSize to handle ES busy errors.

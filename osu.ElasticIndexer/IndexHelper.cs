@@ -60,7 +60,7 @@ namespace osu.ElasticIndexer
         public static List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
         {
             return GetIndices(name)
-                .Where(entry => (string?) entry.Value.Mappings.Meta?["schema"] == schema)
+                .Where(entry => (string?)entry.Value.Mappings.Meta?["schema"] == schema)
                 .ToList();
         }
 

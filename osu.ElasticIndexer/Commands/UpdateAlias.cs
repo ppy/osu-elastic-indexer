@@ -18,13 +18,15 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken token)
         {
-            if (string.IsNullOrWhiteSpace(Schema)) {
+            if (string.IsNullOrWhiteSpace(Schema))
+            {
                 Console.WriteLine("A schema version is required.");
                 return 1;
             }
 
             var indexStates = IndexHelper.GetIndicesForVersion(IndexHelper.INDEX_NAME, Schema);
-            if (indexStates.Count == 0) {
+            if (indexStates.Count == 0)
+            {
                 Console.WriteLine("No matching indices found.");
                 return 1;
             }
