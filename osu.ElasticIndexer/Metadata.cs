@@ -27,7 +27,7 @@ namespace osu.ElasticIndexer
         {
             RealName = indexName.Name;
 
-            this.UpdateWith(indexState);
+            UpdateWith(indexState);
         }
 
         public void Save()

@@ -9,13 +9,13 @@ namespace osu.ElasticIndexer
 {
     public class UnrunnableProcessor : QueueProcessor<ScoreItem>
     {
-        private static readonly string queueName = $"score-index-{AppSettings.Schema}";
+        private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
         public string QueueName { get; private set; }
 
-        internal UnrunnableProcessor() : base(new QueueConfiguration { InputQueueName = queueName })
+        internal UnrunnableProcessor() : base(new QueueConfiguration { InputQueueName = queue_name })
         {
-            QueueName = queueName;
+            QueueName = queue_name;
         }
 
         public new void Run(CancellationToken cancellation = default)

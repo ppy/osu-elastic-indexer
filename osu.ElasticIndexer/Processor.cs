@@ -12,7 +12,7 @@ namespace osu.ElasticIndexer
 {
     public class Processor : QueueProcessor<ScoreItem>
     {
-        private static readonly string queueName = $"score-index-{AppSettings.Schema}";
+        private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
         public string QueueName { get; private set; }
 
@@ -20,14 +20,14 @@ namespace osu.ElasticIndexer
 
         internal Processor(string index) : base(new QueueConfiguration
         {
-            InputQueueName = queueName,
+            InputQueueName = queue_name,
             BatchSize = AppSettings.BatchSize,
             ErrorThreshold = AppSettings.BatchSize * 2, // needs to be larger than BatchSize to handle ES busy errors.
             MaxInFlightItems = AppSettings.BatchSize * AppSettings.BufferSize
         })
         {
             this.index = index;
-            QueueName = queueName;
+            QueueName = queue_name;
         }
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)

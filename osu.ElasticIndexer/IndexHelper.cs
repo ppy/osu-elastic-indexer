@@ -100,8 +100,10 @@ namespace osu.ElasticIndexer
                 json,
                 new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
             );
-            var metadata = new Metadata(index, AppSettings.Schema);
-            metadata.State = "new";
+            var metadata = new Metadata(index, AppSettings.Schema)
+            {
+                State = "new"
+            };
             metadata.Save();
 
             return metadata;
