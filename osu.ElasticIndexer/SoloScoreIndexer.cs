@@ -3,35 +3,35 @@
 
 using System;
 using System.Threading;
-using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class SoloScoreIndexer : IDisposable
+    public class SoloScoreIndexer
     {
         // TODO: maybe have a fixed name?
         public string Name { get; set; } = IndexHelper.INDEX_NAME;
-        public long? ResumeFrom { get; set; }
-
-        // use shared instance to avoid socket leakage.
-        private readonly ElasticClient elasticClient = AppSettings.ELASTIC_CLIENT;
-
-        private CancellationTokenSource cts = new CancellationTokenSource();
+        private CancellationTokenSource? cts;
         private Metadata? metadata;
         private string? previousSchema;
 
-        public void Run()
+        public void Run(CancellationToken token)
         {
-            metadata = IndexHelper.FindOrCreateIndex(Name);
+            using (cts = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+                metadata = IndexHelper.FindOrCreateIndex(Name);
 
-            checkSchema();
+                checkSchema();
 
-            using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
-            {
-                new Processor(metadata.RealName).Run(cts.Token);
+                using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
+                    new Processor(metadata.RealName).Run(cts.Token);
             }
+        }
 
-            Console.WriteLine("Indexer stopped.");
+        public void Stop()
+        {
+            if (cts == null || cts.IsCancellationRequested)
+                return;
+
+            cts.Cancel();
         }
 
         private void checkSchema()
@@ -47,31 +47,23 @@ namespace osu.ElasticIndexer
 
             // no change
             if (previousSchema == schema)
-            {
                 return;
-            }
 
             // schema has changed to the current one
             if (previousSchema != schema && schema == AppSettings.Schema)
             {
+                Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine($"Schema switched to current: {schema}");
+                Console.ResetColor();
                 previousSchema = schema;
                 IndexHelper.UpdateAlias(Name, metadata!.RealName);
                 return;
             }
 
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine($"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
+            Console.ResetColor();
             Stop();
-        }
-
-        public void Stop()
-        {
-            cts.Cancel();
-        }
-
-        public void Dispose()
-        {
-            cts.Dispose();
         }
     }
 }

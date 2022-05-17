@@ -13,7 +13,7 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute(CancellationToken token)
         {
             boot();
-            runIndexing();
+            new SoloScoreIndexer() { Name = IndexHelper.INDEX_NAME }.Run(token);
             return 0;
         }
 
@@ -33,21 +33,6 @@ namespace osu.ElasticIndexer.Commands
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"Running queue with schema version {AppSettings.Schema}");
                 Console.ResetColor();
-            }
-        }
-
-        /// <summary>
-        /// Performs a single indexing run for all specified modes.
-        /// </summary>
-        private void runIndexing()
-        {
-            using (var indexer = new SoloScoreIndexer())
-            {
-                Console.CancelKeyPress += (object? sender, ConsoleCancelEventArgs args) => indexer.Stop();
-
-                var indexName = IndexHelper.INDEX_NAME;
-                indexer.Name = indexName;
-                indexer.Run();
             }
         }
     }
