@@ -12,6 +12,8 @@ namespace osu.ElasticIndexer.Commands
     [Command("alias", Description = "Updates alias to the latest index of a given version")]
     public class UpdateAlias
     {
+        private readonly Client client = new Client();
+
         [Required]
         [Option("--schema", Description = "Required. The schema version")]
         public string Schema { get; set; } = string.Empty;
@@ -24,7 +26,7 @@ namespace osu.ElasticIndexer.Commands
                 return 1;
             }
 
-            var indexStates = IndexHelper.GetIndicesForVersion(IndexHelper.INDEX_NAME, Schema);
+            var indexStates = client.GetIndicesForVersion(client.IndexName, Schema);
             if (indexStates.Count == 0)
             {
                 Console.WriteLine("No matching indices found.");
@@ -33,7 +35,7 @@ namespace osu.ElasticIndexer.Commands
 
             // TODO: should check if completed?
             var indexName = indexStates.OrderByDescending(x => x.Key).First().Key.Name;
-            IndexHelper.UpdateAlias(IndexHelper.INDEX_NAME, indexName);
+            client.UpdateAlias(client.IndexName, indexName);
 
             return 0;
         }

@@ -11,9 +11,11 @@ namespace osu.ElasticIndexer.Commands
     [Command("cleanup", Description = "Deletes closed indices")]
     public class CleanupIndices : ProcessorCommandBase
     {
+        private readonly Client client = new Client();
+
         public int OnExecute(CancellationToken token)
         {
-            var response = AppSettings.ELASTIC_CLIENT.Cat.Indices(x => x.Index($"{IndexHelper.INDEX_NAME}_*"));
+            var response = client.ElasticClient.Cat.Indices(x => x.Index($"{client.IndexName}_*"));
             var closed = response.Records.Where(record => record.Status == "close");
 
             if (!closed.Any())
@@ -39,7 +41,7 @@ namespace osu.ElasticIndexer.Commands
             foreach (var record in closed)
             {
                 Console.WriteLine($"deleting {record.Index}...");
-                AppSettings.ELASTIC_CLIENT.Indices.Delete(record.Index);
+                client.ElasticClient.Indices.Delete(record.Index);
             }
             Console.WriteLine("done.");
 

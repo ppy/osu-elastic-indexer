@@ -11,16 +11,18 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class IndexHelper
+    public class Client
     {
-        public static readonly string INDEX_NAME = $"{AppSettings.Prefix}solo_scores";
+        // shared client without a default index.
+        public readonly ElasticClient ElasticClient = new ElasticClient(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)));
+        public readonly string IndexName = $"{AppSettings.Prefix}solo_scores";
 
         /// <summary>
         /// Attempts to find the matching index or creates a new one.
         /// </summary>
         /// <param name="name">name of the index alias.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        public static Metadata FindOrCreateIndex(string name)
+        public Metadata FindOrCreateIndex(string name)
         {
             Console.WriteLine();
 
@@ -52,42 +54,42 @@ namespace osu.ElasticIndexer
             return createIndex(name);
         }
 
-        public static IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)
+        public IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)
         {
-            return AppSettings.ELASTIC_CLIENT.Indices.Get($"{name}_*").Indices;
+            return ElasticClient.Indices.Get($"{name}_*").Indices;
         }
 
-        public static List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
+        public List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
         {
             return GetIndices(name)
                 .Where(entry => (string?)entry.Value.Mappings.Meta?["schema"] == schema)
                 .ToList();
         }
 
-        public static void UpdateAlias(string alias, string index, bool close = true)
+        public void UpdateAlias(string alias, string index, bool close = true)
         {
             // TODO: updating alias should mark the index as ready since it's switching over.
             ConsoleColor.Yellow.WriteLine($"Updating `{alias}` alias to `{index}`...");
 
             var aliasDescriptor = new BulkAliasDescriptor();
-            var oldIndices = AppSettings.ELASTIC_CLIENT.GetIndicesPointingToAlias(alias);
+            var oldIndices = ElasticClient.GetIndicesPointingToAlias(alias);
 
             foreach (var oldIndex in oldIndices)
                 aliasDescriptor.Remove(d => d.Alias(alias).Index(oldIndex));
 
             aliasDescriptor.Add(d => d.Alias(alias).Index(index));
-            AppSettings.ELASTIC_CLIENT.Indices.BulkAlias(aliasDescriptor);
+            ElasticClient.Indices.BulkAlias(aliasDescriptor);
 
             // cleanup
             if (!close) return;
             foreach (var toClose in oldIndices.Where(x => x != index))
             {
                 ConsoleColor.Yellow.WriteLine($"Closing {toClose}");
-                AppSettings.ELASTIC_CLIENT.Indices.Close(toClose);
+                ElasticClient.Indices.Close(toClose);
             }
         }
 
-        private static Metadata createIndex(string name)
+        private Metadata createIndex(string name)
         {
             var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
             var index = $"{name}_{suffix}";
@@ -95,7 +97,7 @@ namespace osu.ElasticIndexer
             ConsoleColor.Cyan.WriteLine($"Creating `{index}` for `{name}`.");
 
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
-            AppSettings.ELASTIC_CLIENT.LowLevel.Indices.Create<DynamicResponse>(
+            ElasticClient.LowLevel.Indices.Create<DynamicResponse>(
                 index,
                 json,
                 new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
@@ -104,7 +106,7 @@ namespace osu.ElasticIndexer
             {
                 State = "new"
             };
-            metadata.Save();
+            metadata.Save(ElasticClient);
 
             return metadata;
         }

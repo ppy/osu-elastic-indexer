@@ -13,7 +13,7 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute(CancellationToken token)
         {
             boot();
-            new SoloScoreIndexer() { Name = IndexHelper.INDEX_NAME }.Run(token);
+            new SoloScoreIndexer().Run(token);
             return 0;
         }
 

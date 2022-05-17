@@ -8,8 +8,7 @@ namespace osu.ElasticIndexer
 {
     public class SoloScoreIndexer
     {
-        // TODO: maybe have a fixed name?
-        public string Name { get; set; } = IndexHelper.INDEX_NAME;
+        private readonly Client client = new Client();
         private CancellationTokenSource? cts;
         private Metadata? metadata;
         private string? previousSchema;
@@ -17,12 +16,12 @@ namespace osu.ElasticIndexer
         public void Run(CancellationToken token)
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token)) {
-                metadata = IndexHelper.FindOrCreateIndex(Name);
+                metadata = client.FindOrCreateIndex(client.IndexName);
 
                 checkSchema();
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
-                    new Processor(metadata.RealName).Run(cts.Token);
+                    new Processor(metadata.RealName, client).Run(cts.Token);
             }
         }
 
@@ -54,7 +53,7 @@ namespace osu.ElasticIndexer
             {
                 ConsoleColor.Yellow.WriteLine($"Schema switched to current: {schema}");
                 previousSchema = schema;
-                IndexHelper.UpdateAlias(Name, metadata!.RealName);
+                client.UpdateAlias(client.IndexName, metadata!.RealName);
                 return;
             }
 

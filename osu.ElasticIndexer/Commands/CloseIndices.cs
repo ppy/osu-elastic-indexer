@@ -11,9 +11,11 @@ namespace osu.ElasticIndexer.Commands
     [Command("close", Description = "Closes unused indices")]
     public class CloseIndices : ProcessorCommandBase
     {
+        private readonly Client client = new Client();
+
         public int OnExecute(CancellationToken token)
         {
-            var indices = IndexHelper.GetIndices(IndexHelper.INDEX_NAME);
+            var indices = client.GetIndices(client.IndexName);
             var unaliasedIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
 
             if (!unaliasedIndices.Any())
@@ -39,7 +41,7 @@ namespace osu.ElasticIndexer.Commands
             foreach (var entry in unaliasedIndices)
             {
                 Console.WriteLine($"closing {entry.Key.Name}...");
-                AppSettings.ELASTIC_CLIENT.Indices.Close(entry.Key.Name);
+                client.ElasticClient.Indices.Close(entry.Key.Name);
             }
             Console.WriteLine("done.");
 

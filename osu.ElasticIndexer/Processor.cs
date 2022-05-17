@@ -16,9 +16,10 @@ namespace osu.ElasticIndexer
 
         public string QueueName { get; private set; }
 
+        private readonly Client client;
         private readonly string index;
 
-        internal Processor(string index) : base(new QueueConfiguration
+        internal Processor(string index, Client client) : base(new QueueConfiguration
         {
             InputQueueName = queue_name,
             BatchSize = AppSettings.BatchSize,
@@ -26,6 +27,7 @@ namespace osu.ElasticIndexer
             MaxInFlightItems = AppSettings.BatchSize * AppSettings.BufferSize
         })
         {
+            this.client = client;
             this.index = index;
             QueueName = queue_name;
         }
@@ -47,7 +49,7 @@ namespace osu.ElasticIndexer
                 .Index(index)
                 .IndexMany(add)
                 .DeleteMany(remove);
-            var response = AppSettings.ELASTIC_CLIENT.Bulk(bulkDescriptor);
+            var response = client.ElasticClient.Bulk(bulkDescriptor);
 
             handleResponse(response, items);
         }
@@ -81,7 +83,7 @@ namespace osu.ElasticIndexer
                 return;
             }
 
-            // TODO: item errors?
+            // TODO: per-item errors?
         }
     }
 }

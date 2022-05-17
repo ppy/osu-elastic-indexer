@@ -4,16 +4,12 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using Nest;
 using StackExchange.Redis;
 
 namespace osu.ElasticIndexer
 {
     public class AppSettings
     {
-        // shared client without a default index.
-        internal static readonly ElasticClient ELASTIC_CLIENT;
-
         // TODO: should share with queue processor
         internal static readonly ConnectionMultiplexer Redis;
 
@@ -45,7 +41,6 @@ namespace osu.ElasticIndexer
             Prefix = config["elasticsearch:prefix"] ?? string.Empty;
             ElasticsearchHost = config["elasticsearch:host"];
 
-            ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
             Redis = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_HOST"));
         }
 
@@ -59,7 +54,6 @@ namespace osu.ElasticIndexer
         public static string ConnectionString { get; private set; }
 
         public static string ElasticsearchHost { get; private set; }
-
 
         public static string Prefix { get; private set; }
 

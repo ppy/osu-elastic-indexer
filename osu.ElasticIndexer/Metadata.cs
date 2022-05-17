@@ -27,12 +27,12 @@ namespace osu.ElasticIndexer
         {
             RealName = indexName.Name;
 
-            UpdateWith(indexState);
+            updateWith(indexState);
         }
 
-        public void Save()
+        public void Save(ElasticClient elasticClient)
         {
-            AppSettings.ELASTIC_CLIENT.Map<SoloScoreIndexer>(mappings => mappings.Meta(
+            elasticClient.Map<SoloScoreIndexer>(mappings => mappings.Meta(
                 m => m
                     .Add("last_id", LastId)
                     .Add("reset_queue_to", ResetQueueTo)
@@ -43,7 +43,7 @@ namespace osu.ElasticIndexer
         }
 
         // TODO: should probably create whole object
-        private void UpdateWith(IndexState indexState)
+        private void updateWith(IndexState indexState)
         {
             var meta = indexState.Mappings.Meta;
             LastId = Convert.ToInt64(meta["last_id"]);
