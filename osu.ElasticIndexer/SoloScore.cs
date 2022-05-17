@@ -51,11 +51,11 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int? build_id { get => (int?)scoreInfo.Value.GetValueOrDefault("build_id"); }
+        public int? build_id => (int?)scoreInfo.Value.GetValueOrDefault("build_id");
 
         [Computed]
         [Boolean]
-        public bool passed { get => scoreInfo.Value["passed"]; }
+        public bool passed => scoreInfo.Value["passed"];
 
         [Number(NumberType.Float)]
         public double? pp { get; set; }
@@ -64,27 +64,27 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int total_score { get => (int)scoreInfo.Value["total_score"]; }
+        public int total_score => (int)scoreInfo.Value["total_score"];
 
         [Computed]
         [Number(NumberType.Float)]
-        public double accuracy { get => scoreInfo.Value["accuracy"]; }
+        public double accuracy => scoreInfo.Value["accuracy"];
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int max_combo { get => (int)scoreInfo.Value["max_combo"]; }
+        public int max_combo => (int)scoreInfo.Value["max_combo"];
 
         [Computed]
         [Keyword]
-        public string rank { get => scoreInfo.Value["rank"]; }
+        public string rank => scoreInfo.Value["rank"];
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? started_at { get => scoreInfo.Value.GetValueOrDefault("started_at"); }
+        public DateTimeOffset? started_at => scoreInfo.Value.GetValueOrDefault("started_at");
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? ended_at { get => scoreInfo.Value.GetValueOrDefault("ended_at"); }
+        public DateTimeOffset? ended_at => scoreInfo.Value.GetValueOrDefault("ended_at");
 
         [Computed]
         [Keyword]
