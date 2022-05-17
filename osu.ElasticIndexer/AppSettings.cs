@@ -2,9 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Nest;
 using StackExchange.Redis;

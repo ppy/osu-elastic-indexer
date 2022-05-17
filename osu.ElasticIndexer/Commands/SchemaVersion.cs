@@ -4,7 +4,6 @@
 using System;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
-using StackExchange.Redis;
 
 namespace osu.ElasticIndexer.Commands
 {
