@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer
                 {
                     ConsoleColor.Cyan.WriteLine($"Using aliased `{indexName}`.");
 
-                    return new Metadata(indexName, indexState) { IsAliased = true };
+                    return new Metadata(indexName, indexState);
                 }
 
                 // 2. Index has not been aliased and has tracking information;
@@ -102,10 +102,8 @@ namespace osu.ElasticIndexer
                 json,
                 new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
             );
-            var metadata = new Metadata(index, AppSettings.Schema)
-            {
-                State = "new"
-            };
+            var metadata = new Metadata(index, AppSettings.Schema);
+
             metadata.Save(ElasticClient);
 
             return metadata;
