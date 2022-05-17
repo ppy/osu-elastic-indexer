@@ -22,12 +22,9 @@ namespace osu.ElasticIndexer.Commands
             var schema = Helpers.GetSchemaVersion();
 
             if (string.IsNullOrEmpty(schema))
-            {
-                ConsoleColor.Yellow.WriteLine($"No existing schema version set, setting to {AppSettings.Schema}");
-                Helpers.SetSchemaVersion(AppSettings.Schema);
-            }
-            else
-                ConsoleColor.Green.WriteLine($"Running queue with schema version {AppSettings.Schema}");
+                ConsoleColor.Yellow.WriteLine($"No existing schema version set, is this intended?");
+
+            ConsoleColor.Green.WriteLine($"Running queue with schema version {AppSettings.Schema}");
         }
     }
 }
