@@ -52,17 +52,13 @@ namespace osu.ElasticIndexer
             // schema has changed to the current one
             if (previousSchema != schema && schema == AppSettings.Schema)
             {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"Schema switched to current: {schema}");
-                Console.ResetColor();
+                ConsoleColor.Yellow.WriteLine($"Schema switched to current: {schema}");
                 previousSchema = schema;
                 IndexHelper.UpdateAlias(Name, metadata!.RealName);
                 return;
             }
 
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
-            Console.ResetColor();
+            ConsoleColor.Yellow.WriteLine($"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
             Stop();
         }
     }

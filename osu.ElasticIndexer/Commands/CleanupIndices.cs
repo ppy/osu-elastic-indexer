@@ -22,11 +22,7 @@ namespace osu.ElasticIndexer.Commands
                 return 0;
             }
 
-            var originalColour = Console.ForegroundColor;
-
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("The following indices will be deleted!");
-            Console.ResetColor();
+            ConsoleColor.Red.WriteLine("The following indices will be deleted!");
             foreach (var record in closed)
             {
                 Console.WriteLine($"{record.Index}");
