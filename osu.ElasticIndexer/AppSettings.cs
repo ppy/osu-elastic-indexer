@@ -41,12 +41,9 @@ namespace osu.ElasticIndexer
                 BufferSize = int.Parse(config["buffer_size"]);
 
             ConnectionString = config.GetConnectionString("osu");
-
-            Prefix = config["elasticsearch:prefix"];
-            Schema = config["schema"];
-
+            Schema = config["schema"] ?? string.Empty;
+            Prefix = config["elasticsearch:prefix"] ?? string.Empty;
             ElasticsearchHost = config["elasticsearch:host"];
-            ElasticsearchPrefix = config["elasticsearch:prefix"];
 
             ELASTIC_CLIENT = new ElasticClient(new ConnectionSettings(new Uri(ElasticsearchHost)));
             Redis = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_HOST"));
@@ -63,7 +60,6 @@ namespace osu.ElasticIndexer
 
         public static string ElasticsearchHost { get; private set; }
 
-        public static string ElasticsearchPrefix { get; private set; }
 
         public static string Prefix { get; private set; }
 

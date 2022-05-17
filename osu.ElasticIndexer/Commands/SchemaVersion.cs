@@ -8,7 +8,8 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("schema", Description = "Gets or sets the current index schema version to use")]
-    public class SchemaVersion : ProcessorCommandBase
+    [Subcommand(typeof(SchemaVersionClear))]
+    public class SchemaVersion
     {
         [Option("--schema", Description = "The schema version")]
         public string? Schema { get; set; }

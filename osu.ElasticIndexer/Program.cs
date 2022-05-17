@@ -21,9 +21,6 @@ namespace osu.ElasticIndexer
     {
         public static void Main(string[] args)
         {
-            // FIXME: move the boot stuff out of AppSettings
-            var nothing = AppSettings.Schema;
-
             DefaultTypeMap.MatchNamesWithUnderscores = true;
 
             DogStatsd.Configure(new StatsdConfig

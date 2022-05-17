@@ -7,9 +7,15 @@ namespace osu.ElasticIndexer
     {
         private const string key = "osu-queue:score-index:schema";
 
+        public static void ClearSchemaVersion()
+        {
+            AppSettings.Redis.GetDatabase().KeyDelete(key);
+        }
+
         public static string GetSchemaVersion()
         {
-            return AppSettings.Redis.GetDatabase().StringGet(key);
+            var value = AppSettings.Redis.GetDatabase().StringGet(key);
+            return value.IsNullOrEmpty ? string.Empty : value.ToString();
         }
 
         public static void SetSchemaVersion(string value)
