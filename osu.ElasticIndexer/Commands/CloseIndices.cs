@@ -16,7 +16,7 @@ namespace osu.ElasticIndexer.Commands
             var indices = IndexHelper.GetIndices(IndexHelper.INDEX_NAME);
             var unaliasedIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
 
-            if (unaliasedIndices.Count() == 0)
+            if (!unaliasedIndices.Any())
             {
                 Console.WriteLine("No indices to close!");
                 return 0;

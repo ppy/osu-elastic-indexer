@@ -16,7 +16,7 @@ namespace osu.ElasticIndexer.Commands
             var response = AppSettings.ELASTIC_CLIENT.Cat.Indices(x => x.Index($"{IndexHelper.INDEX_NAME}_*"));
             var closed = response.Records.Where(record => record.Status == "close");
 
-            if (closed.Count() == 0)
+            if (!closed.Any())
             {
                 Console.WriteLine("No indices to delete!");
                 return 0;
