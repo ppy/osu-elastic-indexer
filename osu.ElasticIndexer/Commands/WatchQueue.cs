@@ -19,7 +19,7 @@ namespace osu.ElasticIndexer.Commands
 
         private void boot()
         {
-            var schema = Helpers.GetSchemaVersion();
+            var schema = new Redis().GetSchemaVersion();
 
             if (string.IsNullOrEmpty(schema))
                 ConsoleColor.Yellow.WriteLine($"No existing schema version set, is this intended?");

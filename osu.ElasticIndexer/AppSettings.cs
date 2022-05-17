@@ -4,15 +4,11 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using StackExchange.Redis;
 
 namespace osu.ElasticIndexer
 {
     public class AppSettings
     {
-        // TODO: should share with queue processor
-        internal static readonly ConnectionMultiplexer Redis;
-
         private AppSettings()
         {
         }
@@ -27,9 +23,6 @@ namespace osu.ElasticIndexer
                 .AddEnvironmentVariables()
                 .Build();
 
-            // set env variable for queue processor.
-            Environment.SetEnvironmentVariable("REDIS_HOST", config["redis:host"] ?? "redis");
-
             if (!string.IsNullOrEmpty(config["batch_size"]))
                 BatchSize = int.Parse(config["batch_size"]);
 
@@ -40,8 +33,10 @@ namespace osu.ElasticIndexer
             Schema = config["schema"] ?? string.Empty;
             Prefix = config["elasticsearch:prefix"] ?? string.Empty;
             ElasticsearchHost = config["elasticsearch:host"];
+            RedisHost = config["redis:host"] ?? "redis";
 
-            Redis = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_HOST"));
+            // set env variable for queue processor.
+            Environment.SetEnvironmentVariable("REDIS_HOST", RedisHost);
         }
 
         public static int BufferSize { get; private set; } = 5;
@@ -56,6 +51,8 @@ namespace osu.ElasticIndexer
         public static string ElasticsearchHost { get; private set; }
 
         public static string Prefix { get; private set; }
+
+        public static string RedisHost { get; private set; }
 
         public static string Schema { get; private set; }
     }

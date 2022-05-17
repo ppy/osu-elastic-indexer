@@ -12,6 +12,7 @@ namespace osu.ElasticIndexer
         private CancellationTokenSource? cts;
         private Metadata? metadata;
         private string? previousSchema;
+        private readonly Redis redis = new Redis();
 
         public void Run(CancellationToken token)
         {
@@ -35,7 +36,7 @@ namespace osu.ElasticIndexer
 
         private void checkSchema()
         {
-            var schema = Helpers.GetSchemaVersion();
+            var schema = redis.GetSchemaVersion();
             // first run
             if (previousSchema == null)
             {

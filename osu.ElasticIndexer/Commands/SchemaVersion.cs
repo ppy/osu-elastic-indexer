@@ -16,14 +16,16 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken token)
         {
+            var redis = new Redis();
+
             if (Schema == null)
             {
-                var value = Helpers.GetSchemaVersion();
+                var value = redis.GetSchemaVersion();
                 Console.WriteLine($"Current schema version is {value}");
             }
             else
             {
-                Helpers.SetSchemaVersion(Schema);
+                redis.SetSchemaVersion(Schema);
                 Console.WriteLine($"Schema version set to {Schema}");
             }
 

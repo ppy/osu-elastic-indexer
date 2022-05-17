@@ -13,7 +13,7 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute(CancellationToken token)
         {
             ConsoleColor.Yellow.WriteLine($"Unsetting schema...");
-            Helpers.ClearSchemaVersion();
+            new Redis().ClearSchemaVersion();
             return 0;
         }
     }
