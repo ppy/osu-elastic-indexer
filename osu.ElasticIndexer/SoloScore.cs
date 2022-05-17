@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dapper.Contrib.Extensions;
 using Nest;
@@ -10,6 +11,8 @@ using Newtonsoft.Json;
 
 namespace osu.ElasticIndexer
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("Style", "IDE1006")]
     [ElasticsearchType(IdProperty = nameof(Id))]
     [ChunkOn(
         Query = "s.*, p.pp from solo_scores s left join solo_scores_performance p on s.id = p.score_id",
@@ -99,7 +102,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Keyword]
-        public string country_code { get; set; } = "";
+        public string country_code { get; set; } = string.Empty;
 
         private Lazy<Dictionary<string, dynamic>> scoreInfo;
 

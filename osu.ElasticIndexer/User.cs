@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dapper;
 using Dapper.Contrib.Extensions;
@@ -12,6 +13,8 @@ namespace osu.ElasticIndexer
     /// <summary>
     /// User mapping model that contains only the properties needed for the indexer.
     /// </summary>
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("Style", "IDE1006")]
     [Table("phpbb_users")]
     public class User : Model
     {
