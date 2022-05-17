@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken token)
         {
-            var indices = client.GetIndices(client.IndexName);
+            var indices = client.GetIndices(client.AliasName);
             var unaliasedIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
 
             if (!unaliasedIndices.Any())

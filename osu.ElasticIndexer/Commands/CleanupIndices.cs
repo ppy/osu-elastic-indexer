@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken token)
         {
-            var response = client.ElasticClient.Cat.Indices(x => x.Index($"{client.IndexName}_*"));
+            var response = client.ElasticClient.Cat.Indices(x => x.Index($"{client.AliasName}_*"));
             var closed = response.Records.Where(record => record.Status == "close");
 
             if (!closed.Any())

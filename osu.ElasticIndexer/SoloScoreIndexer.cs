@@ -16,7 +16,7 @@ namespace osu.ElasticIndexer
         public void Run(CancellationToken token)
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token)) {
-                metadata = client.FindOrCreateIndex(client.IndexName);
+                metadata = client.FindOrCreateIndex(client.AliasName);
 
                 checkSchema();
 
@@ -53,7 +53,7 @@ namespace osu.ElasticIndexer
             {
                 ConsoleColor.Yellow.WriteLine($"Schema switched to current: {schema}");
                 previousSchema = schema;
-                client.UpdateAlias(client.IndexName, metadata!.RealName);
+                client.UpdateAlias(client.AliasName, metadata!.RealName);
                 return;
             }
 

@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer
     {
         // shared client without a default index.
         public readonly ElasticClient ElasticClient = new ElasticClient(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)));
-        public readonly string IndexName = $"{AppSettings.Prefix}solo_scores";
+        public readonly string AliasName = $"{AppSettings.Prefix}solo_scores";
 
         /// <summary>
         /// Attempts to find the matching index or creates a new one.

@@ -26,7 +26,7 @@ namespace osu.ElasticIndexer.Commands
                 return 1;
             }
 
-            var indexStates = client.GetIndicesForVersion(client.IndexName, Schema);
+            var indexStates = client.GetIndicesForVersion(client.AliasName, Schema);
             if (indexStates.Count == 0)
             {
                 Console.WriteLine("No matching indices found.");
@@ -35,7 +35,7 @@ namespace osu.ElasticIndexer.Commands
 
             // TODO: should check if completed?
             var indexName = indexStates.OrderByDescending(x => x.Key).First().Key.Name;
-            client.UpdateAlias(client.IndexName, indexName);
+            client.UpdateAlias(client.AliasName, indexName);
 
             return 0;
         }
