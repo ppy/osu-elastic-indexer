@@ -13,7 +13,7 @@ namespace osu.ElasticIndexer
 {
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [SuppressMessage("Style", "IDE1006")]
-    [ElasticsearchType(IdProperty = nameof(Id))]
+    [ElasticsearchType(IdProperty = nameof(id))]
     [ChunkOn(
         Query = "s.*, p.pp from solo_scores s left join solo_scores_performance p on s.id = p.score_id",
         CursorColumn = "s.id",
@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer
     {
         [Computed]
         [Ignore]
-        public override long CursorValue => Id;
+        public override long CursorValue => id;
 
         [Computed]
         [Ignore]
@@ -32,25 +32,25 @@ namespace osu.ElasticIndexer
 
         // Properties ordered in the order they appear in the table.
 
-        [Number(NumberType.Long, Name = "id")]
-        public long Id { get; set; }
+        [Number(NumberType.Long)]
+        public long id { get; set; }
 
-        [Number(NumberType.Long, Name = "beatmap_id")]
-        public uint BeatmapId { get; set; }
+        [Number(NumberType.Long)]
+        public uint beatmap_id { get; set; }
 
-        [Number(NumberType.Long, Name = "user_id")]
-        public uint UserId { get; set; }
+        [Number(NumberType.Long)]
+        public uint user_id { get; set; }
 
-        [Number(NumberType.Short, Name = "ruleset_id")]
-        public int RulesetId { get; set; }
-        [Date(Name = "created_at", Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset CreatedAt { get; set; }
+        [Number(NumberType.Short)]
+        public int ruleset_id { get; set; }
+        [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
+        public DateTimeOffset created_at { get; set; }
 
-        [Date(Name = "updated_at", Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset UpdatedAt { get; set; }
+        [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
+        public DateTimeOffset updated_at { get; set; }
 
         [Ignore]
-        public string Data { get; set; } = string.Empty;
+        public string data { get; set; } = string.Empty;
 
         [Computed]
         [Number(NumberType.Integer)]
@@ -109,10 +109,10 @@ namespace osu.ElasticIndexer
         public SoloScore()
         {
             scoreInfo = new Lazy<Dictionary<string, dynamic>>(() =>
-                JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(Data) ?? new Dictionary<string, dynamic>()
+                JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(data) ?? new Dictionary<string, dynamic>()
             );
         }
 
-        public override string ToString() => $"score_id: {Id} user_id: {UserId} beatmap_id: {BeatmapId} ruleset_id: {RulesetId}";
+        public override string ToString() => $"score_id: {id} user_id: {user_id} beatmap_id: {beatmap_id} ruleset_id: {ruleset_id}";
     }
 }

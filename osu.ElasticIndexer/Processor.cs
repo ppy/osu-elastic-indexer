@@ -57,7 +57,7 @@ namespace osu.ElasticIndexer
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {items.Last().Score.Id}");
+                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {items.Last().Score.id}");
                 foreach (var item in items)
                 {
                     item.Failed = true;

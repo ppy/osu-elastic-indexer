@@ -23,7 +23,7 @@ namespace osu.ElasticIndexer.Commands
                     new SoloScore()
                     {
                         // TODO: better random data
-                        Data = @"{
+                        data = @"{
                             ""mods"": [],
                             ""rank"": ""D"",
                             ""passed"": true,
@@ -51,7 +51,7 @@ namespace osu.ElasticIndexer.Commands
                             },
                             ""total_score"": 0
                         }",
-                        Id = ++counter,
+                        id = ++counter,
                         preserve = true
                     };
 
