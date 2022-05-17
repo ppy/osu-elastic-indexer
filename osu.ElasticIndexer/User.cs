@@ -22,7 +22,7 @@ namespace osu.ElasticIndexer
         public bool ShouldIndex => true;
 
         [Computed]
-        public string country_acronym { get; set; } = "";
+        public string country_acronym { get; set; } = string.Empty;
 
         public string country_code => country_acronym;
 

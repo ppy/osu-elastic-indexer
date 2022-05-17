@@ -47,7 +47,7 @@ namespace osu.ElasticIndexer
         public DateTimeOffset UpdatedAt { get; set; }
 
         [Ignore]
-        public string Data { get; set; } = String.Empty;
+        public string Data { get; set; } = string.Empty;
 
         [Computed]
         [Number(NumberType.Integer)]

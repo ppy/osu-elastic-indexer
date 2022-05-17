@@ -14,7 +14,7 @@ namespace osu.ElasticIndexer.Commands
     {
         [Required]
         [Option("--schema", Description = "Required. The schema version")]
-        public string Schema { get; set; } = String.Empty;
+        public string Schema { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken token)
         {
