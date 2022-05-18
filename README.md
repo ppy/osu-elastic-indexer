@@ -1,143 +1,97 @@
-# tl;dr
+# ElasticIndex
 
-Index all `solo_scores` with corresponding `solo_scores_performance` entry
+Component for loading [osu!](https://osu.ppy.sh) scores into Elasticsearch.
+
+## Requirements
+
+- .NET 6
+- Elasticsearch 7
+- Redis
+
+# Schema
+
+A string value is used to indicate the current schema version to be used.
+
+# Adding items to be indexed
+
+Push items to `osu-queue:score-index-${schema}`
+
+# Switching to a new schema
+
+Run `dotnet run schema --schema ${schema}` or set `osu-queue:score-index:schema` directly in Redis
+
+## Automatic index switching
+
+If there is an already running indexer watching the queue for the new schema version,
+it will automatically update the alias to point to the new index.
+When the alias is updated, any index previously used by the alias will be closed.
+
+The alias will not be updated if:
+- the schema value does not change
+- the indexer processing the queue for that version was not running before the change.
+
+When the schema version changes, all indexers processing the queues for any other version will automatically stop.
+
+# appsettings and env
+
+
+# Commands
+
+This documentation assumes `dotnet run` can be used;
+in cases where `dotnet run` is not available, the assembly should be used, e.g. `dotnet osu.ElasticIndexer.dll`
+
+## Watching a queue for new scores
+
+    schema=${schema} dotnet run queue
+
+e.g.
+
+    schema=1 dotnet run queue
+
+## Getting the current schema version
+
+    dotnet run schema
+
+## Setting the schema version
+
+    dotnet run schema --schema ${schema}
+
+## Unsetting the schema version
+
+This is used to unset the schema version for testing purposes.
+
+    dotnet run schema clear
+
+## Cleaning up closed indices
+
+This will delete all closed indices and free up the storage space used by those indices.
+TODO: single index option?
+
+    dotnet run cleanup
+
+## Closing unused indices
+
+This will close all score indices except the active one, unloading them from Elasticsearch's memory pool.
+TODO: single index option?
+
+    dotnet run cleanup
+
+## Adding fake items to the queue
+
+For testing purposes, we can add fake items to the queue:
+
+    schema=1 dotnet run fake
+
+It should be noted that these items will not exist or match the ones in the database.
+
+# (Re)Populating an index
+
+Populating an index is done by pushing score items to a queue.
+
+# Docker
 
     docker build -t ${tagname} -f osu.ElasticIndexer/Dockerfile osu.ElasticIndexer
 
-    docker run -e schema=1 -e rebuild=1 -e "elasticsearch__host=http://host.docker.internal:9200" -e "ConnectionStrings__osu=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname}
+    docker run -e schema=1 -e "elasticsearch__host=http://host.docker.internal:9200" -e "elasticsearch__prefix=docker." -e "redis__host=host.docker.internal" -e "ConnectionStrings__osu=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
 
-
-Index will be alias at `elasticsearch:9200/solo_scores`
-
-Delete indices:
-
-    http delete :9200/index_meta
-    http delete :9200/solo_scores_${timestamp}
-
-or set `action.destructive_requires_name` to `false` on elasticsearch and use
-
-    http delete :9200/solo_scores_*
-
-for fun times >_>
-
-
-# ElasticIndex
-
-Component for loading [osu!](https://osu.ppy.sh) data into Elasticsearch.
-
-Currently limited to user high scores.
-
-# Requirements
-
-- .NET 6
-
-# Operating modes
-
-The indexer has 2 operating modes,
-- building an index from scratch.
-- processing from a queue.
-
-## Queue processing
-
-In this mode the indexer will continuously wait for new scores to be indexed on a queue.
-
-## (Re)Populating an index
-
-This mode is used to perform a once-off population or rebuild of the scores index.
-
-
-## Scenarios
-
-TODO
-- create new index
-
-      schema=1 rebuild=1 dotnet run
-
-- continuously process new items
-- switching to a new index
-- schema updates
-
-
-# Configuration
-
-The project reads configuration in the following order:
-- `appsettings.json`
-- `appsettings.{env}.json`
-- Environment
-
-where `{env}` is specified by the `APP_ENV` environment variable and defaults to `development`.
-
-# Available settings
-
-Settings should be set in `appsettings` or environment appropriate to the platform, e.g.
-
-`appsettings.json`
-```json
-{
-  "elasticsearch": {
-    "host": "http://localhost:9200"
-  }
-}
-```
-
-`Linux / MacOS`
-```sh
-# note the double underscore
-elasticsearch__host=http://localhost:9200 dotnet run
-```
-
----
-
-### `buffer_size`
-Number of chunks from the database to read-ahead and buffer.
-Defaults to `5`
-
-### `concurrency`
-Don't change this.
-Defaults to `4`
-
-### `ConnectionStrings:osu`
-Standard .NET Connection String to the database.
-
-### `elasticsearch:host`
-Elasticsearch host.
-
-### `elasticsearch:prefix`
-Assigns a prefix to the indices used.
-
-### `new`
-Forces the indexer to always create a new index.
-
-`new` and `resume_from` incompatible and should not be used together.
-
-### `chunk_size`
-Batch size when querying from the database.
-Defaults to `10000`
-
-### `resume_from`
-Cursor value of where to resume reading from.
-
-### `watch`
-Sets the program into watch mode.
-In watch mode, the program will keep polling for updates to index.
-
-### `polling_interval`
-The time between watch polls.
-
-# Index aliasing and resume support
-Index aliases are used to support zero-downtime index switches.
-When creating new indices, the new index is suffixed with a timestamp.
-At the end of the indexing process, the alias is updated to point to the new index and the old index is closed.
-
-The program keeps track of progress information by writing to a `index_meta` index. When starting, it will try to resume from the last known position.
-
-Setting `resume_from=0` will force the indexer to being reading from the beginning.
-
-`new` and `resume_from` incompatible and should not be used together.
-
-# Creating a new index while the watcher is running
-The indexer supports running in watch mode while a different indexer process is creating a new index. Once the new index is complete, the watching indexer will automatically switch to updating the new index.
-
-# TODO
-
-- Option to cleanup closed indices.
+where `${cmd}` is the command to run, e.g. `dotnet osu.ElasticIndexer.dll queue`
