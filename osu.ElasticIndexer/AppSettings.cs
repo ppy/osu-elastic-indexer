@@ -31,7 +31,7 @@ namespace osu.ElasticIndexer
 
             ConnectionString = config.GetConnectionString("osu");
             Schema = config["schema"] ?? string.Empty;
-            Prefix = config["elasticsearch:prefix"] ?? string.Empty;
+            Prefix = config["prefix"] ?? string.Empty;
             ElasticsearchHost = config["elasticsearch:host"];
             RedisHost = config["redis:host"] ?? "redis";
 

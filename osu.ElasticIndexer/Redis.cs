@@ -7,7 +7,7 @@ namespace osu.ElasticIndexer
 {
     public class Redis
     {
-        private const string key = "osu-queue:score-index:schema";
+        private readonly string key = $"osu-queue:score-index:{AppSettings.Prefix}schema";
 
         public readonly ConnectionMultiplexer Connection = ConnectionMultiplexer.Connect(AppSettings.RedisHost);
 
