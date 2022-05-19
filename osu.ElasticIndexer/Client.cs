@@ -54,6 +54,11 @@ namespace osu.ElasticIndexer
             return createIndex(name);
         }
 
+        public IReadOnlyDictionary<IndexName, IndexState> GetIndex(string name)
+        {
+            return ElasticClient.Indices.Get(name).Indices;
+        }
+
         public IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)
         {
             return ElasticClient.Indices.Get($"{name}_*").Indices;

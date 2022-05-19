@@ -9,13 +9,16 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("close", Description = "Closes unused indices")]
-    public class CloseIndices : ProcessorCommandBase
+    public class CloseIndex : ProcessorCommandBase
     {
+        [Argument(0, "name", "The index to close. All unused indices are closed if not specified.")]
+        public string? Name { get; }
+
         private readonly Client client = new Client();
 
         public int OnExecute(CancellationToken token)
         {
-            var indices = client.GetIndices(client.AliasName);
+            var indices = string.IsNullOrEmpty(Name) ? client.GetIndices(client.AliasName) : client.GetIndex(Name);
             var unaliasedIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
 
             if (!unaliasedIndices.Any())
