@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer.Commands
                 var users = User.FetchUserMappings(scores);
                 foreach (var score in scores)
                 {
-                    score.country_code = users[score.user_id].country_acronym;
+                    score.country_code = users.ContainsKey(score.user_id) ? users[score.user_id].country_acronym : "XX";
                     Console.WriteLine($"Pushing {score}");
                     Processor.PushToQueue(new ScoreItem(score));
                 }
