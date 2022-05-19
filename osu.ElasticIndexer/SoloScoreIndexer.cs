@@ -22,7 +22,7 @@ namespace osu.ElasticIndexer
                 checkSchema();
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
-                    new Processor(metadata.RealName, client).Run(cts.Token);
+                    new Processor(metadata.RealName, client, () => Stop()).Run(cts.Token);
             }
         }
 

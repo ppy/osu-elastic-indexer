@@ -18,8 +18,11 @@ namespace osu.ElasticIndexer
 
         private readonly Client client;
         private readonly string index;
+        // QueueProcessor doens't expose cancellation without overriding Run,
+        // so we're making use of a supplied callback to stop processing.
+        private readonly Action stop;
 
-        internal Processor(string index, Client client) : base(new QueueConfiguration
+        internal Processor(string index, Client client, Action stopCallback) : base(new QueueConfiguration
         {
             InputQueueName = queue_name,
             BatchSize = AppSettings.BatchSize,
@@ -29,6 +32,7 @@ namespace osu.ElasticIndexer
         {
             this.client = client;
             this.index = index;
+            stop = stopCallback;
             QueueName = queue_name;
         }
 
@@ -59,7 +63,7 @@ namespace osu.ElasticIndexer
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine($"Server returned 429, re-queued chunk with lastId {items.Last().Score.id}");
+                ConsoleColor.Yellow.WriteLine($"Server returned 429, re-queued chunk with lastId {items.Last().Score.id}");
                 foreach (var item in items)
                 {
                     item.Failed = true;
@@ -73,13 +77,14 @@ namespace osu.ElasticIndexer
             // Index was closed, possibly because it was switched. Flag for bailout.
             if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
             {
-                Console.Error.WriteLine($"{index} was closed.");
+                ConsoleColor.Red.WriteLine($"{index} was closed.");
                 // requeue in case it was an accident.
                 foreach (var item in items)
                 {
                     item.Failed = true;
                 }
-                // TODO: stop
+
+                stop();
                 return;
             }
 
