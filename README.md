@@ -60,7 +60,7 @@ e.g.
 
 ## Setting the schema version
 
-    dotnet run schema --schema ${schema}
+    dotnet run schema set ${schema}
 
 ## Unsetting the schema version
 

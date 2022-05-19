@@ -7,28 +7,15 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("schema", Description = "Gets or sets the current index schema version to use")]
+    [Command("schema", Description = "Gets the current index schema version to use")]
     [Subcommand(typeof(SchemaVersionClear))]
+    [Subcommand(typeof(SchemaVersionSet))]
     public class SchemaVersion
     {
-        [Option("--schema", Description = "The schema version")]
-        public string? Schema { get; set; }
-
         public int OnExecute(CancellationToken token)
         {
-            var redis = new Redis();
-
-            if (Schema == null)
-            {
-                var value = redis.GetSchemaVersion();
-                Console.WriteLine($"Current schema version is {value}");
-            }
-            else
-            {
-                redis.SetSchemaVersion(Schema);
-                Console.WriteLine($"Schema version set to {Schema}");
-            }
-
+            var value = new Redis().GetSchemaVersion();
+            Console.WriteLine($"Current schema version is {value}");
             return 0;
         }
     }
