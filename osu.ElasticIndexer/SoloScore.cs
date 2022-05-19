@@ -42,6 +42,7 @@ namespace osu.ElasticIndexer
 
         [Number(NumberType.Short)]
         public int ruleset_id { get; set; }
+
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
         public DateTimeOffset created_at { get; set; }
 
@@ -57,7 +58,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Boolean]
-        public bool passed => scoreInfo.Value["passed"];
+        public bool passed => scoreInfo.Value.GetValueOrDefault("passed") ?? false;
 
         [Number(NumberType.Float)]
         public double? pp { get; set; }
