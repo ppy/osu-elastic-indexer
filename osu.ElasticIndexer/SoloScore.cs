@@ -15,7 +15,7 @@ namespace osu.ElasticIndexer
     [SuppressMessage("Style", "IDE1006")]
     [ElasticsearchType(IdProperty = nameof(id))]
     [ChunkOn(
-        Query = "s.*, p.pp from solo_scores s left join solo_scores_performance p on s.id = p.score_id",
+        Query = "s.*, (select pp from solo_scores_performance p where p.score_id = s.id) from solo_scores s",
         CursorColumn = "s.id",
         Max = "MAX(id) FROM solo_scores"
     )]
