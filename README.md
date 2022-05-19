@@ -1,4 +1,4 @@
-# ElasticIndex
+# ElasticIndexer
 
 Component for loading [osu!](https://osu.ppy.sh) scores into Elasticsearch.
 
@@ -32,8 +32,14 @@ The alias will not be updated if:
 
 When the schema version changes, all indexers processing the queues for any other version will automatically stop.
 
-# appsettings and env
+# Configuration
 
+Configuration is read from appsettings.json and environment variables. Configuration is loaded in the following order:
+1. appsettings.json
+2. appsettings.${APP_ENV}.json (if exists)
+3. Environment variables
+
+`APP_ENV` defaults to `development` if not specified.
 
 # Commands
 
@@ -61,6 +67,14 @@ e.g.
 This is used to unset the schema version for testing purposes.
 
     dotnet run schema clear
+
+## Changing the alias to a new index
+
+The index the alias points to can be changed manually:
+
+    dotnet run alias --schema 1
+
+will update the index alias to the latest index with schema `1` tag.
 
 ## Cleaning up closed indices
 
@@ -95,3 +109,5 @@ Populating an index is done by pushing score items to a queue.
     docker run -e schema=1 -e "elasticsearch__host=http://host.docker.internal:9200" -e "elasticsearch__prefix=docker." -e "redis__host=host.docker.internal" -e "ConnectionStrings__osu=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
 
 where `${cmd}` is the command to run, e.g. `dotnet osu.ElasticIndexer.dll queue`
+
+# Typical use-cases
