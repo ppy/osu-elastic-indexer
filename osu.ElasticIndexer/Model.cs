@@ -6,12 +6,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Dapper;
+using Dapper.Contrib.Extensions;
 using MySqlConnector;
+using Nest;
+using Newtonsoft.Json;
 
 namespace osu.ElasticIndexer
 {
     public abstract class Model
     {
+        [Computed]
+        [Ignore]
+        [JsonIgnore]
         public abstract long CursorValue { get; }
 
         public static IEnumerable<List<T>> Chunk<T>(string? where, int chunkSize = 10000, long? resumeFrom = null) where T : Model

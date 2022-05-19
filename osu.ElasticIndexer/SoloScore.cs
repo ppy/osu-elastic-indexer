@@ -22,12 +22,11 @@ namespace osu.ElasticIndexer
     [Table("solo_scores")]
     public class SoloScore : Model
     {
-        [Computed]
-        [Ignore]
         public override long CursorValue => id;
 
         [Computed]
         [Ignore]
+        [JsonIgnore]
         public bool ShouldIndex => preserve;
 
         // Properties ordered in the order they appear in the table.

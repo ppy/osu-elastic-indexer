@@ -18,20 +18,13 @@ namespace osu.ElasticIndexer
     [Table("phpbb_users")]
     public class User : Model
     {
-        [Computed]
         public override long CursorValue => user_id;
 
-        [Computed]
-        public bool ShouldIndex => true;
-
-        [Computed]
         public string country_acronym { get; set; } = string.Empty;
-
-        public string country_code => country_acronym;
 
         public uint user_id { get; set; }
 
-        public override string ToString() => $"user_id: {user_id} country_code: {country_code}";
+        public override string ToString() => $"user_id: {user_id} country_acronym: {country_acronym}";
 
         public static Dictionary<uint, User> FetchUserMappings(IEnumerable<SoloScore> scores)
         {
