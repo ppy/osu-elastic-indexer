@@ -14,6 +14,9 @@ namespace osu.ElasticIndexer.Commands
     {
         private readonly Client client = new Client();
 
+        [Option("--close", Description = "Closes the previously aliased index when switching.")]
+        public bool Close { get; set; }
+
         [Required]
         [Option("--schema", Description = "Required. The schema version")]
         public string Schema { get; set; } = string.Empty;
@@ -35,7 +38,7 @@ namespace osu.ElasticIndexer.Commands
 
             // TODO: should check if completed?
             var indexName = indexStates.OrderByDescending(x => x.Key).First().Key.Name;
-            client.UpdateAlias(client.AliasName, indexName);
+            client.UpdateAlias(client.AliasName, indexName, Close);
 
             return 0;
         }
