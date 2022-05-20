@@ -67,19 +67,19 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int total_score => (int)scoreInfo.Value["total_score"];
+        public int total_score => (int)(scoreInfo.Value.GetValueOrDefault("total_score") ?? 0);
 
         [Computed]
         [Number(NumberType.Float)]
-        public double accuracy => scoreInfo.Value["accuracy"];
+        public double accuracy => (double)(scoreInfo.Value.GetValueOrDefault("accuracy") ?? 0);
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int max_combo => (int)scoreInfo.Value["max_combo"];
+        public int max_combo => (int)(scoreInfo.Value.GetValueOrDefault("max_combo") ?? 0);
 
         [Computed]
         [Keyword]
-        public string rank => scoreInfo.Value["rank"];
+        public string rank => scoreInfo.Value.GetValueOrDefault("rank") ?? "F";
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
