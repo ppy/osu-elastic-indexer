@@ -49,16 +49,26 @@ namespace osu.ElasticIndexer
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
         public DateTimeOffset updated_at { get; set; }
 
+        [JsonIgnore]
         [Ignore]
-        public string data { get; set; } = string.Empty;
+        public string data {
+            get => JsonConvert.SerializeObject(scoreData);
+            set
+            {
+                var obj = JsonConvert.DeserializeObject<SoloScoreData>(value);
+
+                if (obj != null)
+                    scoreData = obj;
+            }
+        }
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int? build_id => (int?)scoreInfo.Value.GetValueOrDefault("build_id");
+        public int? build_id => scoreData.build_id;
 
         [Computed]
         [Boolean]
-        public bool passed => scoreInfo.Value.GetValueOrDefault("passed") ?? false;
+        public bool passed => scoreData.passed;
 
         [Number(NumberType.Float)]
         public double? pp { get; set; }
@@ -67,27 +77,27 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int total_score => (int)(scoreInfo.Value.GetValueOrDefault("total_score") ?? 0);
+        public int total_score => scoreData.total_score;
 
         [Computed]
         [Number(NumberType.Float)]
-        public double accuracy => (double)(scoreInfo.Value.GetValueOrDefault("accuracy") ?? 0);
+        public double accuracy => scoreData.accuracy;
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int max_combo => (int)(scoreInfo.Value.GetValueOrDefault("max_combo") ?? 0);
+        public int max_combo => scoreData.max_combo;
 
         [Computed]
         [Keyword]
-        public string rank => scoreInfo.Value.GetValueOrDefault("rank") ?? "F";
+        public string rank => scoreData.rank;
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? started_at => scoreInfo.Value.GetValueOrDefault("started_at");
+        public DateTimeOffset? started_at => scoreData.started_at;
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? ended_at => scoreInfo.Value.GetValueOrDefault("ended_at");
+        public DateTimeOffset? ended_at => scoreData.ended_at;
 
         [Computed]
         [Keyword]
@@ -95,7 +105,7 @@ namespace osu.ElasticIndexer
         {
             get
             {
-                List<dynamic> mods = scoreInfo.Value["mods"].ToObject<List<dynamic>>();
+                List<dynamic> mods = scoreData.mods.ToObject<List<dynamic>>() ?? new List<dynamic>();
                 return mods.Select(mod => (string)mod["acronym"]).ToList();
             }
         }
@@ -104,14 +114,7 @@ namespace osu.ElasticIndexer
         [Keyword]
         public string country_code { get; set; } = string.Empty;
 
-        private Lazy<Dictionary<string, dynamic>> scoreInfo;
-
-        public SoloScore()
-        {
-            scoreInfo = new Lazy<Dictionary<string, dynamic>>(() =>
-                JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(data) ?? new Dictionary<string, dynamic>()
-            );
-        }
+        private SoloScoreData scoreData = new SoloScoreData();
 
         public override string ToString() => $"score_id: {id} user_id: {user_id} beatmap_id: {beatmap_id} ruleset_id: {ruleset_id}";
     }
