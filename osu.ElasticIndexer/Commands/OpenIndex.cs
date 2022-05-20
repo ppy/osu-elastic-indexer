@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
@@ -12,42 +13,15 @@ namespace osu.ElasticIndexer.Commands
     public class OpenIndex : ProcessorCommandBase
     {
         [Argument(0, "name", "The index to open.")]
-        public string? Name { get; }
+        [Required]
+        public string Name { get; } = string.Empty;
 
         private readonly Client client = new Client();
 
-        public int OnExecute(CancellationToken token)
+        public int OnExecute()
         {
-            var indices = string.IsNullOrEmpty(Name) ? client.GetIndices(client.AliasName) : client.GetIndex(Name);
-            var unaliasedIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
-
-            if (!unaliasedIndices.Any())
-            {
-                Console.WriteLine("No indices to close!");
-                return 0;
-            }
-
-            Console.WriteLine("The following indices will be closed:");
-            foreach (var entry in unaliasedIndices)
-            {
-                Console.WriteLine(entry.Key.Name);
-            }
-
-            Console.WriteLine();
-            if (!Prompt.GetYesNo("Close these indices?", false, ConsoleColor.Yellow))
-            {
-                Console.WriteLine("aborted.");
-                return 1;
-            }
-
-            Console.WriteLine();
-            foreach (var entry in unaliasedIndices)
-            {
-                Console.WriteLine($"closing {entry.Key.Name}...");
-                client.ElasticClient.Indices.Close(entry.Key.Name);
-            }
-            Console.WriteLine("done.");
-
+            var response = client.ElasticClient.Indices.Open(Name);
+            Console.WriteLine(response);
             return 0;
         }
     }

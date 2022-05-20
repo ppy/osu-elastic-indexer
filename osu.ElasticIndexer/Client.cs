@@ -59,9 +59,9 @@ namespace osu.ElasticIndexer
             return ElasticClient.Indices.Get(name).Indices;
         }
 
-        public IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name)
+        public IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name, ExpandWildcards expandWildCards = ExpandWildcards.Open)
         {
-            return ElasticClient.Indices.Get($"{name}_*").Indices;
+            return ElasticClient.Indices.Get($"{name}_*", (x => x.ExpandWildcards(expandWildCards))).Indices;
         }
 
         public List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)

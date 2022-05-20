@@ -12,6 +12,7 @@ namespace osu.ElasticIndexer
     [Subcommand(typeof(CleanupIndices))]
     [Subcommand(typeof(ClearQueue))]
     [Subcommand(typeof(CloseIndex))]
+    [Subcommand(typeof(ListIndices))]
     [Subcommand(typeof(OpenIndex))]
     [Subcommand(typeof(PumpAllScores))]
     [Subcommand(typeof(PumpFakeScores))]
