@@ -8,19 +8,24 @@ Component for loading [osu!](https://osu.ppy.sh) scores into Elasticsearch.
 - Elasticsearch 7
 - Redis
 
-# Schema
+# Usage
+
+## Schema
 
 A string value is used to indicate the current schema version to be used.
 
-# Adding items to be indexed
+## Adding items to be indexed
+
+Scores with `preserve`=`true` will be added to the index,
+scores with `preserve`=`false` will be removed from the index.
 
 Push items to `osu-queue:score-index-${schema}`
 
-# Switching to a new schema
+## Switching to a new schema
 
 Run `dotnet run schema --schema ${schema}` or set `osu-queue:score-index:schema` directly in Redis
 
-## Automatic index switching
+### Automatic index switching
 
 If there is an already running indexer watching the queue for the new schema version,
 it will automatically update the alias to point to the new index.
