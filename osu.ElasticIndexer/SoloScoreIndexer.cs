@@ -14,6 +14,12 @@ namespace osu.ElasticIndexer
         private string? previousSchema;
         private readonly Redis redis = new Redis();
 
+        public SoloScoreIndexer()
+        {
+            if (string.IsNullOrEmpty(AppSettings.Schema))
+                throw new MissingSchemaException();
+        }
+
         public void Run(CancellationToken token)
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token)) {

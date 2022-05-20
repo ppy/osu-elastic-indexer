@@ -5,8 +5,8 @@ using System;
 
 namespace osu.ElasticIndexer
 {
-    public class VersionMismatchException : Exception
+    public class MissingSchemaException : Exception
     {
-        public VersionMismatchException(string message) : base(message) { }
+        public MissingSchemaException() : base("A schema version is required.") { }
     }
 }
