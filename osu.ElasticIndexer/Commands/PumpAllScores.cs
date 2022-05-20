@@ -13,9 +13,23 @@ namespace osu.ElasticIndexer.Commands
         [Option("--delay", Description = "Delay in milliseconds between reading chunks")]
         public int Delay { get; set; }
 
+        [Option("--from", Description = "Score id to resume from")]
+        public long? From { get; }
+
+        [Option("--switch", Description = "Update the configured schema in redis after completing")]
+        public bool Switch { get; }
+
         public int OnExecute(CancellationToken cancellationToken)
         {
-            var chunks = Model.Chunk<SoloScore>(AppSettings.BatchSize);
+            var redis = new Redis();
+            var currentSchema = redis.GetSchemaVersion();
+            ConsoleColor.Cyan.WriteLine($"Current schema version is: {currentSchema}");
+            ConsoleColor.Cyan.WriteLine($"Pushing to queue with schema: {AppSettings.Schema}");
+
+            if (Switch && currentSchema == AppSettings.Schema)
+                ConsoleColor.Yellow.WriteLine("Queue watchers will not update the alias if schema does not change!");
+
+            var chunks = Model.Chunk<SoloScore>(AppSettings.BatchSize, From);
             foreach (var scores in chunks)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -32,6 +46,9 @@ namespace osu.ElasticIndexer.Commands
                 if (Delay > 0)
                     Thread.Sleep(Delay);
             }
+
+            if (Switch)
+                redis.SetSchemaVersion(AppSettings.Schema);
 
             return 0;
         }

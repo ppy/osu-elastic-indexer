@@ -31,7 +31,9 @@ namespace osu.ElasticIndexer
                 var selects = attribute.Query;
                 var maxSelects = attribute.Max;
 
-                Console.WriteLine($"Chunking results from {typeof(T)} ({where})...");
+                Console.WriteLine($"Chunking results from {typeof(T)} from {resumeFrom}...");
+                if (where != null)
+                    Console.WriteLine($"  where {where}...");
 
                 dbConnection.Open();
 
