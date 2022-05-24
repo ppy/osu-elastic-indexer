@@ -33,6 +33,9 @@ namespace osu.ElasticIndexer.Commands
             if (Switch && currentSchema == AppSettings.Schema)
                 ConsoleColor.Yellow.WriteLine("Queue watchers will not update the alias if schema does not change!");
 
+            var startTime = DateTimeOffset.Now;
+            ConsoleColor.Cyan.WriteLine($"Start read: {startTime}");
+
             var chunks = Model.Chunk<SoloScore>(AppSettings.BatchSize, From);
             foreach (var scores in chunks)
             {
@@ -56,6 +59,9 @@ namespace osu.ElasticIndexer.Commands
                 if (Delay > 0)
                     Thread.Sleep(Delay);
             }
+
+            var endTime = DateTimeOffset.Now;
+            ConsoleColor.Cyan.WriteLine($"End read: {endTime}, time taken: {endTime - startTime}");
 
             if (Switch)
                 redis.SetSchemaVersion(AppSettings.Schema);
