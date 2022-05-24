@@ -31,13 +31,12 @@ namespace osu.ElasticIndexer
         [DefaultValue(0)]
         public int max_combo { get; set; }
 
-        [DefaultValue("F")]
-        public string rank { get; set; }
+        public string? rank { get; set; }
 
         public DateTimeOffset? started_at { get; set; }
 
         public DateTimeOffset? ended_at { get; set; }
 
-        public JToken mods { get; set; }
+        public JToken? mods { get; set; }
     }
 }

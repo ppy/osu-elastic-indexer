@@ -39,10 +39,10 @@ namespace osu.ElasticIndexer.Commands
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
-                var users = User.FetchUserMappings(scores);
                 foreach (var score in scores)
                 {
-                    score.country_code = users.ContainsKey(score.user_id) ? users[score.user_id].country_acronym : "XX";
+                    if (score.country_code == null)
+                        score.country_code = "XX";
 
                     if (Verbose)
                         Console.WriteLine($"Pushing {score}");
