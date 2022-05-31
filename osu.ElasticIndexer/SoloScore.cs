@@ -114,7 +114,7 @@ namespace osu.ElasticIndexer
         [Keyword]
         public string? country_code { get; set; }
 
-        private SoloScoreData scoreData = new SoloScoreData();
+        public SoloScoreData scoreData = new SoloScoreData();
 
         public override string ToString() => $"score_id: {id} user_id: {user_id} beatmap_id: {beatmap_id} ruleset_id: {ruleset_id}";
     }
