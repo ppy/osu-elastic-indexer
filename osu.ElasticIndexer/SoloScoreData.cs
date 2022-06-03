@@ -2,13 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using Dapper.Contrib.Extensions;
-using Nest;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace osu.ElasticIndexer
