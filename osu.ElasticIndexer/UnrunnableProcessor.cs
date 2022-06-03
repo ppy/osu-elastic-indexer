@@ -11,12 +11,9 @@ namespace osu.ElasticIndexer
     {
         private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
-        public string QueueName { get; }
-
         internal UnrunnableProcessor()
             : base(new QueueConfiguration { InputQueueName = queue_name })
         {
-            QueueName = queue_name;
         }
 
         public new void Run(CancellationToken cancellation = default)
