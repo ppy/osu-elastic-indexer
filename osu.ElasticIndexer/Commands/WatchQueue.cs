@@ -22,9 +22,9 @@ namespace osu.ElasticIndexer.Commands
             var schema = new Redis().GetSchemaVersion();
 
             if (string.IsNullOrEmpty(schema))
-                ConsoleColor.Yellow.WriteLine("No existing schema version set, is this intended?");
+                Console.WriteLine(ConsoleColor.Yellow, "No existing schema version set, is this intended?");
 
-            ConsoleColor.Green.WriteLine($"Running queue with schema version {AppSettings.Schema}");
+            Console.WriteLine(ConsoleColor.Green, $"Running queue with schema version {AppSettings.Schema}");
         }
     }
 }

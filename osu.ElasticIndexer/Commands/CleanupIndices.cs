@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer.Commands
                 return 0;
             }
 
-            ConsoleColor.Red.WriteLine("The following indices will be deleted!");
+            Console.WriteLine(ConsoleColor.Red, "The following indices will be deleted!");
 
             foreach (var record in closed)
             {

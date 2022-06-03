@@ -36,7 +36,7 @@ namespace osu.ElasticIndexer
 
                 if (indexName != null)
                 {
-                    ConsoleColor.Cyan.WriteLine($"Using aliased `{indexName}`.");
+                    Console.WriteLine(ConsoleColor.Cyan, $"Using aliased `{indexName}`.");
 
                     return new IndexMetadata(indexName, indexState);
                 }
@@ -45,7 +45,7 @@ namespace osu.ElasticIndexer
                 // likely resuming from an incomplete job or waiting to switch over.
                 // TODO: throw if there's more than one? or take lastest one.
                 (indexName, indexState) = indices.First();
-                ConsoleColor.Cyan.WriteLine($"Using non-aliased `{indexName}`.");
+                Console.WriteLine(ConsoleColor.Cyan, $"Using non-aliased `{indexName}`.");
 
                 return new IndexMetadata(indexName, indexState);
             }
@@ -74,7 +74,7 @@ namespace osu.ElasticIndexer
         public void UpdateAlias(string alias, string index, bool close = true)
         {
             // TODO: updating alias should mark the index as ready since it's switching over.
-            ConsoleColor.Yellow.WriteLine($"Updating `{alias}` alias to `{index}`...");
+            Console.WriteLine(ConsoleColor.Yellow, $"Updating `{alias}` alias to `{index}`...");
 
             var aliasDescriptor = new BulkAliasDescriptor();
             var oldIndices = ElasticClient.GetIndicesPointingToAlias(alias);
@@ -90,7 +90,7 @@ namespace osu.ElasticIndexer
 
             foreach (var toClose in oldIndices.Where(x => x != index))
             {
-                ConsoleColor.Yellow.WriteLine($"Closing {toClose}");
+                Console.WriteLine(ConsoleColor.Yellow, $"Closing {toClose}");
                 ElasticClient.Indices.Close(toClose);
             }
         }
@@ -100,7 +100,7 @@ namespace osu.ElasticIndexer
             var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
             var index = $"{name}_{suffix}";
 
-            ConsoleColor.Cyan.WriteLine($"Creating `{index}` for `{name}`.");
+            Console.WriteLine(ConsoleColor.Cyan, $"Creating `{index}` for `{name}`.");
 
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
             ElasticClient.LowLevel.Indices.Create<DynamicResponse>(

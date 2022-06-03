@@ -27,14 +27,14 @@ namespace osu.ElasticIndexer.Commands
         {
             var redis = new Redis();
             var currentSchema = redis.GetSchemaVersion();
-            ConsoleColor.Cyan.WriteLine($"Current schema version is: {currentSchema}");
-            ConsoleColor.Cyan.WriteLine($"Pushing to queue with schema: {AppSettings.Schema}");
+            Console.WriteLine(ConsoleColor.Cyan, $"Current schema version is: {currentSchema}");
+            Console.WriteLine(ConsoleColor.Cyan, $"Pushing to queue with schema: {AppSettings.Schema}");
 
             if (Switch && currentSchema == AppSettings.Schema)
-                ConsoleColor.Yellow.WriteLine("Queue watchers will not update the alias if schema does not change!");
+                Console.WriteLine(ConsoleColor.Yellow, "Queue watchers will not update the alias if schema does not change!");
 
             var startTime = DateTimeOffset.Now;
-            ConsoleColor.Cyan.WriteLine($"Start read: {startTime}");
+            Console.WriteLine(ConsoleColor.Cyan, $"Start read: {startTime}");
 
             var chunks = ElasticModel.Chunk<SoloScore>(AppSettings.BatchSize, From);
 
@@ -61,7 +61,7 @@ namespace osu.ElasticIndexer.Commands
             }
 
             var endTime = DateTimeOffset.Now;
-            ConsoleColor.Cyan.WriteLine($"End read: {endTime}, time taken: {endTime - startTime}");
+            Console.WriteLine(ConsoleColor.Cyan, $"End read: {endTime}, time taken: {endTime - startTime}");
 
             if (Switch)
                 redis.SetSchemaVersion(AppSettings.Schema);
