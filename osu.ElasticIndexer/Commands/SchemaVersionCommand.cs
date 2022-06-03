@@ -9,7 +9,7 @@ namespace osu.ElasticIndexer.Commands
     [Command("schema", Description = "Gets the current index schema version to use")]
     [Subcommand(typeof(SchemaVersionClear))]
     [Subcommand(typeof(SchemaVersionSet))]
-    public class SchemaVersion
+    public class SchemaVersionCommand
     {
         public int OnExecute(CancellationToken token)
         {

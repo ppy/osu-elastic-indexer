@@ -7,7 +7,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("clear-queue", Description = "Clears the queue")]
-    public class ClearQueue : ProcessorCommandBase
+    public class ClearQueueCommand : ProcessorCommandBase
     {
         public int OnExecute(CancellationToken token)
         {

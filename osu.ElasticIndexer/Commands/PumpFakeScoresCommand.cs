@@ -7,7 +7,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("fake", Description = "Pumps fake scores through the queue")]
-    public class PumpFakeScores : ProcessorCommandBase
+    public class PumpFakeScoresCommand : ProcessorCommandBase
     {
         [Option("--delay", Description = "Delay in milliseconds between generating chunks")]
         public int Delay { get; set; }

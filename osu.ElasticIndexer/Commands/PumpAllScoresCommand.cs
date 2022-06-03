@@ -9,7 +9,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("all", Description = "Pumps scores through the queue for processing")]
-    public class PumpAllScores : ProcessorCommandBase
+    public class PumpAllScoresCommand : ProcessorCommandBase
     {
         [Option("--delay", Description = "Delay in milliseconds between reading chunks")]
         public int Delay { get; set; }

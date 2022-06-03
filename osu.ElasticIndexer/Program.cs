@@ -8,16 +8,16 @@ using osu.ElasticIndexer.Commands;
 namespace osu.ElasticIndexer
 {
     [Command]
-    [Subcommand(typeof(CleanupIndices))]
-    [Subcommand(typeof(ClearQueue))]
-    [Subcommand(typeof(CloseIndex))]
-    [Subcommand(typeof(ListIndices))]
-    [Subcommand(typeof(OpenIndex))]
-    [Subcommand(typeof(PumpAllScores))]
-    [Subcommand(typeof(PumpFakeScores))]
-    [Subcommand(typeof(SchemaVersion))]
-    [Subcommand(typeof(UpdateAlias))]
-    [Subcommand(typeof(WatchQueue))]
+    [Subcommand(typeof(CleanupIndicesCommand))]
+    [Subcommand(typeof(ClearQueueCommand))]
+    [Subcommand(typeof(CloseIndexCommand))]
+    [Subcommand(typeof(ListIndicesCommand))]
+    [Subcommand(typeof(OpenIndexCommand))]
+    [Subcommand(typeof(PumpAllScoresCommand))]
+    [Subcommand(typeof(PumpFakeScoresCommand))]
+    [Subcommand(typeof(SchemaVersionCommand))]
+    [Subcommand(typeof(UpdateAliasCommand))]
+    [Subcommand(typeof(WatchQueueCommand))]
     public class Program
     {
         public static void Main(string[] args)

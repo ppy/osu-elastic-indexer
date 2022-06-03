@@ -9,7 +9,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("cleanup", Description = "Deletes closed indices")]
-    public class CleanupIndices : ProcessorCommandBase
+    public class CleanupIndicesCommand : ProcessorCommandBase
     {
         private readonly Client client = new Client();
 

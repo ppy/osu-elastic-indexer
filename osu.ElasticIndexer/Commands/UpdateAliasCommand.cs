@@ -9,7 +9,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands
 {
     [Command("alias", Description = "Updates alias to the latest index of a given version")]
-    public class UpdateAlias
+    public class UpdateAliasCommand
     {
         private readonly Client client = new Client();
 
