@@ -36,7 +36,7 @@ namespace osu.ElasticIndexer.Commands
             var startTime = DateTimeOffset.Now;
             ConsoleColor.Cyan.WriteLine($"Start read: {startTime}");
 
-            var chunks = Model.Chunk<SoloScore>(AppSettings.BatchSize, From);
+            var chunks = ElasticModel.Chunk<SoloScore>(AppSettings.BatchSize, From);
 
             foreach (var scores in chunks)
             {

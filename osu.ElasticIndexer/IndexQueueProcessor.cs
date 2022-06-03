@@ -10,7 +10,7 @@ using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer
 {
-    public class Processor : QueueProcessor<ScoreItem>
+    public class IndexQueueProcessor : QueueProcessor<ScoreItem>
     {
         private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
@@ -21,7 +21,7 @@ namespace osu.ElasticIndexer
         // so we're making use of a supplied callback to stop processing.
         private readonly Action stop;
 
-        internal Processor(string index, Client client, Action stopCallback)
+        internal IndexQueueProcessor(string index, Client client, Action stopCallback)
             : base(new QueueConfiguration
             {
                 InputQueueName = queue_name,

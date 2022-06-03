@@ -5,20 +5,21 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class Metadata
+    public class IndexMetadata
     {
-        public readonly string RealName;
         public readonly string Schema;
 
-        public Metadata(string indexName, string schema)
+        public readonly string Name;
+
+        public IndexMetadata(string indexName, string schema)
         {
-            RealName = indexName;
+            Name = indexName;
             Schema = schema;
         }
 
-        public Metadata(IndexName indexName, IndexState indexState)
+        public IndexMetadata(IndexName indexName, IndexState indexState)
         {
-            RealName = indexName.Name;
+            Name = indexName.Name;
             Schema = (string)indexState.Mappings.Meta["schema"];
         }
 
@@ -26,7 +27,7 @@ namespace osu.ElasticIndexer
         {
             elasticClient.Map<SoloScoreIndexer>(mappings => mappings.Meta(
                 m => m.Add("schema", Schema)
-            ).Index(RealName));
+            ).Index(Name));
         }
     }
 }

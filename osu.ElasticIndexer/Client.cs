@@ -22,7 +22,7 @@ namespace osu.ElasticIndexer
         /// </summary>
         /// <param name="name">name of the index alias.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        public Metadata FindOrCreateIndex(string name)
+        public IndexMetadata FindOrCreateIndex(string name)
         {
             Console.WriteLine();
 
@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer
                 {
                     ConsoleColor.Cyan.WriteLine($"Using aliased `{indexName}`.");
 
-                    return new Metadata(indexName, indexState);
+                    return new IndexMetadata(indexName, indexState);
                 }
 
                 // 2. Index has not been aliased and has tracking information;
@@ -47,7 +47,7 @@ namespace osu.ElasticIndexer
                 (indexName, indexState) = indices.First();
                 ConsoleColor.Cyan.WriteLine($"Using non-aliased `{indexName}`.");
 
-                return new Metadata(indexName, indexState);
+                return new IndexMetadata(indexName, indexState);
             }
 
             // 3. no existing index
@@ -95,7 +95,7 @@ namespace osu.ElasticIndexer
             }
         }
 
-        private Metadata createIndex(string name)
+        private IndexMetadata createIndex(string name)
         {
             var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
             var index = $"{name}_{suffix}";
@@ -108,7 +108,7 @@ namespace osu.ElasticIndexer
                 json,
                 new CreateIndexRequestParameters { WaitForActiveShards = "all" }
             );
-            var metadata = new Metadata(index, AppSettings.Schema);
+            var metadata = new IndexMetadata(index, AppSettings.Schema);
 
             metadata.Save(ElasticClient);
 

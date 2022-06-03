@@ -13,14 +13,14 @@ using Newtonsoft.Json;
 
 namespace osu.ElasticIndexer
 {
-    public abstract class Model
+    public abstract class ElasticModel
     {
         [Computed]
         [Ignore]
         [JsonIgnore]
         public abstract long CursorValue { get; }
 
-        public static IEnumerable<List<T>> Chunk<T>(string? where, int chunkSize = 10000, long? resumeFrom = null) where T : Model
+        public static IEnumerable<List<T>> Chunk<T>(string? where, int chunkSize = 10000, long? resumeFrom = null) where T : ElasticModel
         {
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
@@ -60,7 +60,7 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : Model =>
+        public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : ElasticModel =>
             Chunk<T>(null, chunkSize, resumeFrom);
     }
 }

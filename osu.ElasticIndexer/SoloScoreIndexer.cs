@@ -10,7 +10,7 @@ namespace osu.ElasticIndexer
     {
         private readonly Client client = new Client();
         private CancellationTokenSource? cts;
-        private Metadata? metadata;
+        private IndexMetadata? metadata;
         private string? previousSchema;
         private readonly Redis redis = new Redis();
 
@@ -29,7 +29,7 @@ namespace osu.ElasticIndexer
                 checkSchema();
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
-                    new Processor(metadata.RealName, client, Stop).Run(cts.Token);
+                    new IndexQueueProcessor(metadata.Name, client, Stop).Run(cts.Token);
             }
         }
 
@@ -62,7 +62,7 @@ namespace osu.ElasticIndexer
             {
                 ConsoleColor.Yellow.WriteLine($"Schema switched to current: {schema}");
                 previousSchema = schema;
-                client.UpdateAlias(client.AliasName, metadata!.RealName);
+                client.UpdateAlias(client.AliasName, metadata!.Name);
                 return;
             }
 

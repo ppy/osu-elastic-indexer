@@ -20,7 +20,7 @@ namespace osu.ElasticIndexer
         Max = "MAX(id) FROM solo_scores"
     )]
     [Table("solo_scores")]
-    public class SoloScore : Model
+    public class SoloScore : ElasticModel
     {
         public override long CursorValue => id;
 

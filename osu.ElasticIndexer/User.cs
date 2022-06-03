@@ -16,7 +16,7 @@ namespace osu.ElasticIndexer
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [SuppressMessage("Style", "IDE1006")]
     [Table("phpbb_users")]
-    public class User : Model
+    public class User : ElasticModel
     {
         public override long CursorValue => user_id;
 
