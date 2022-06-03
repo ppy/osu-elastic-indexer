@@ -85,7 +85,6 @@ namespace osu.ElasticIndexer
                 }
 
                 stop();
-                return;
             }
 
             // TODO: per-item errors?

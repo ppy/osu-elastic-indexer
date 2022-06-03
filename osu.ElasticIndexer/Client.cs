@@ -61,7 +61,7 @@ namespace osu.ElasticIndexer
 
         public IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name, ExpandWildcards expandWildCards = ExpandWildcards.Open)
         {
-            return ElasticClient.Indices.Get($"{name}_*", (x => x.ExpandWildcards(expandWildCards))).Indices;
+            return ElasticClient.Indices.Get($"{name}_*", descriptor => descriptor.ExpandWildcards(expandWildCards)).Indices;
         }
 
         public List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
@@ -105,7 +105,7 @@ namespace osu.ElasticIndexer
             ElasticClient.LowLevel.Indices.Create<DynamicResponse>(
                 index,
                 json,
-                new CreateIndexRequestParameters() { WaitForActiveShards = "all" }
+                new CreateIndexRequestParameters { WaitForActiveShards = "all" }
             );
             var metadata = new Metadata(index, AppSettings.Schema);
 

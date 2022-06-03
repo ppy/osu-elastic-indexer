@@ -33,7 +33,7 @@ namespace osu.ElasticIndexer
             {
                 dbConnection.Open();
                 return dbConnection
-                    .Query<User>($"select user_id, country_acronym from phpbb_users where user_id in @userIds", new { userIds })
+                    .Query<User>("select user_id, country_acronym from phpbb_users where user_id in @userIds", new { userIds })
                     .ToDictionary(u => u.user_id);
             }
         }

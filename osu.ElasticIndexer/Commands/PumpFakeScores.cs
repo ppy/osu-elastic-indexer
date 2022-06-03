@@ -20,7 +20,7 @@ namespace osu.ElasticIndexer.Commands
             while (!cancellationToken.IsCancellationRequested)
             {
                 var score =
-                    new SoloScore()
+                    new SoloScore
                     {
                         // TODO: better random data
                         data = @"{

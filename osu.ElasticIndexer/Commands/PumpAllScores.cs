@@ -15,13 +15,13 @@ namespace osu.ElasticIndexer.Commands
         public int Delay { get; set; }
 
         [Option("--from", Description = "Score id to resume from")]
-        public long? From { get; }
+        public long? From { get; set; }
 
         [Option("--switch", Description = "Update the configured schema in redis after completing")]
-        public bool Switch { get; }
+        public bool Switch { get; set; }
 
         [Option("--verbose", Description = "Fill your console with text")]
-        public bool Verbose { get; }
+        public bool Verbose { get; set; }
 
         public int OnExecute(CancellationToken cancellationToken)
         {

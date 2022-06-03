@@ -12,7 +12,7 @@ namespace osu.ElasticIndexer.Commands
     public class CloseIndex : ProcessorCommandBase
     {
         [Argument(0, "name", "The index to close. All unused indices are closed if not specified.")]
-        public string? Name { get; }
+        public string? Name { get; set; }
 
         private readonly Client client = new Client();
 

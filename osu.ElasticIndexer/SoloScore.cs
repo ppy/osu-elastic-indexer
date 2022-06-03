@@ -105,8 +105,8 @@ namespace osu.ElasticIndexer
         {
             get
             {
-                List<dynamic> mods = scoreData.mods?.ToObject<List<dynamic>>() ?? new List<dynamic>();
-                return mods.Select(mod => (string)mod["acronym"]).ToList();
+                List<dynamic> modObjects = scoreData.mods?.ToObject<List<dynamic>>() ?? new List<dynamic>();
+                return modObjects.Select(mod => (string)mod["acronym"]).ToList();
             }
         }
 
