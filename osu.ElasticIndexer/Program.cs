@@ -4,7 +4,6 @@
 using Dapper;
 using McMaster.Extensions.CommandLineUtils;
 using osu.ElasticIndexer.Commands;
-using StatsdClient;
 
 namespace osu.ElasticIndexer
 {
@@ -24,12 +23,6 @@ namespace osu.ElasticIndexer
         public static void Main(string[] args)
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
-
-            DogStatsd.Configure(new StatsdConfig
-            {
-                StatsdServerName = "127.0.0.1",
-                Prefix = "elasticsearch.scores"
-            });
 
             CommandLineApplication.Execute<Program>(args);
         }
