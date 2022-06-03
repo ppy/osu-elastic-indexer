@@ -7,7 +7,7 @@ namespace osu.ElasticIndexer
 {
     public class ScoreItem : QueueItem
     {
-        public SoloScore Score { get; private set; }
+        public SoloScore Score { get; }
 
         public ScoreItem(SoloScore score)
         {

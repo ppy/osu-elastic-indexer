@@ -8,8 +8,8 @@ namespace osu.ElasticIndexer
 {
     public class DispatcherQueueItem<T>
     {
-        public IEnumerable<T> ItemsToDelete { get; private set; }
-        public IEnumerable<T> ItemsToIndex { get; private set; }
+        public IEnumerable<T> ItemsToDelete { get; }
+        public IEnumerable<T> ItemsToIndex { get; }
 
         public DispatcherQueueItem(IEnumerable<T>? add, IEnumerable<T>? remove)
         {

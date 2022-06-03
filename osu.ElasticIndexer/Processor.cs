@@ -14,26 +14,25 @@ namespace osu.ElasticIndexer
     {
         private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
-        public string QueueName { get; private set; }
-
         private readonly Client client;
         private readonly string index;
-        // QueueProcessor doens't expose cancellation without overriding Run,
+
+        // QueueProcessor doesn't expose cancellation without overriding Run,
         // so we're making use of a supplied callback to stop processing.
         private readonly Action stop;
 
-        internal Processor(string index, Client client, Action stopCallback) : base(new QueueConfiguration
-        {
-            InputQueueName = queue_name,
-            BatchSize = AppSettings.BatchSize,
-            ErrorThreshold = AppSettings.BatchSize * 2, // needs to be larger than BatchSize to handle ES busy errors.
-            MaxInFlightItems = AppSettings.BatchSize * AppSettings.BufferSize
-        })
+        internal Processor(string index, Client client, Action stopCallback)
+            : base(new QueueConfiguration
+            {
+                InputQueueName = queue_name,
+                BatchSize = AppSettings.BatchSize,
+                ErrorThreshold = AppSettings.BatchSize * 2, // needs to be larger than BatchSize to handle ES busy errors.
+                MaxInFlightItems = AppSettings.BatchSize * AppSettings.BufferSize
+            })
         {
             this.client = client;
             this.index = index;
             stop = stopCallback;
-            QueueName = queue_name;
         }
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
@@ -50,9 +49,10 @@ namespace osu.ElasticIndexer
             }
 
             var bulkDescriptor = new BulkDescriptor()
-                .Index(index)
-                .IndexMany(add)
-                .DeleteMany(remove);
+                                 .Index(index)
+                                 .IndexMany(add)
+                                 .DeleteMany(remove);
+
             var response = client.ElasticClient.Bulk(bulkDescriptor);
 
             handleResponse(response, items);

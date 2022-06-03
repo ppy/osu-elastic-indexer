@@ -39,21 +39,21 @@ namespace osu.ElasticIndexer
             Environment.SetEnvironmentVariable("REDIS_HOST", RedisHost);
         }
 
-        public static int BufferSize { get; private set; } = 5;
+        public static int BufferSize { get; } = 5;
 
         // same value as elasticsearch-net
         public static TimeSpan BulkAllBackOffTimeDefault = TimeSpan.FromMinutes(1);
 
-        public static int BatchSize { get; private set; } = 10000;
+        public static int BatchSize { get; } = 10000;
 
-        public static string ConnectionString { get; private set; }
+        public static string ConnectionString { get; }
 
-        public static string ElasticsearchHost { get; private set; }
+        public static string ElasticsearchHost { get; }
 
-        public static string Prefix { get; private set; }
+        public static string Prefix { get; }
 
-        public static string RedisHost { get; private set; }
+        public static string RedisHost { get; }
 
-        public static string Schema { get; private set; }
+        public static string Schema { get; }
     }
 }
