@@ -51,7 +51,8 @@ namespace osu.ElasticIndexer
 
         [JsonIgnore]
         [Ignore]
-        public string data {
+        public string data
+        {
             get => JsonConvert.SerializeObject(scoreData);
             set
             {

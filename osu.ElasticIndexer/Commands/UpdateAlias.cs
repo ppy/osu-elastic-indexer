@@ -30,6 +30,7 @@ namespace osu.ElasticIndexer.Commands
             }
 
             var indexStates = client.GetIndicesForVersion(client.AliasName, Schema);
+
             if (indexStates.Count == 0)
             {
                 Console.WriteLine("No matching indices found.");

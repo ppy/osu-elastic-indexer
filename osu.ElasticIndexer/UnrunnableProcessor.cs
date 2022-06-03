@@ -13,7 +13,8 @@ namespace osu.ElasticIndexer
 
         public string QueueName { get; }
 
-        internal UnrunnableProcessor() : base(new QueueConfiguration { InputQueueName = queue_name })
+        internal UnrunnableProcessor()
+            : base(new QueueConfiguration { InputQueueName = queue_name })
         {
             QueueName = queue_name;
         }

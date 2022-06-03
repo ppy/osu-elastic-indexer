@@ -22,7 +22,8 @@ namespace osu.ElasticIndexer
 
         public void Run(CancellationToken token)
         {
-            using (cts = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+            using (cts = CancellationTokenSource.CreateLinkedTokenSource(token))
+            {
                 metadata = client.FindOrCreateIndex(client.AliasName);
 
                 checkSchema();
@@ -43,6 +44,7 @@ namespace osu.ElasticIndexer
         private void checkSchema()
         {
             var schema = redis.GetSchemaVersion();
+
             // first run
             if (previousSchema == null)
             {

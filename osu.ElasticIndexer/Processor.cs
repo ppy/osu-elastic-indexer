@@ -64,6 +64,7 @@ namespace osu.ElasticIndexer
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
                 ConsoleColor.Yellow.WriteLine($"Server returned 429, re-queued chunk with lastId {items.Last().Score.id}");
+
                 foreach (var item in items)
                 {
                     item.Failed = true;
@@ -78,6 +79,7 @@ namespace osu.ElasticIndexer
             if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
             {
                 ConsoleColor.Red.WriteLine($"{index} was closed.");
+
                 // requeue in case it was an accident.
                 foreach (var item in items)
                 {

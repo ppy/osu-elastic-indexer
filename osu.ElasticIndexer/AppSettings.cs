@@ -17,11 +17,11 @@ namespace osu.ElasticIndexer
         {
             var env = Environment.GetEnvironmentVariable("APP_ENV") ?? "development";
             var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
-                .AddEnvironmentVariables()
-                .Build();
+                         .SetBasePath(Directory.GetCurrentDirectory())
+                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                         .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
+                         .AddEnvironmentVariables()
+                         .Build();
 
             if (!string.IsNullOrEmpty(config["batch_size"]))
                 BatchSize = int.Parse(config["batch_size"]);

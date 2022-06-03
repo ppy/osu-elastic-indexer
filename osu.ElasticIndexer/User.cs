@@ -29,12 +29,13 @@ namespace osu.ElasticIndexer
         public static Dictionary<uint, User> FetchUserMappings(IEnumerable<SoloScore> scores)
         {
             var userIds = scores.Select(s => s.user_id);
+
             using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
             {
                 dbConnection.Open();
                 return dbConnection
-                    .Query<User>("select user_id, country_acronym from phpbb_users where user_id in @userIds", new { userIds })
-                    .ToDictionary(u => u.user_id);
+                       .Query<User>("select user_id, country_acronym from phpbb_users where user_id in @userIds", new { userIds })
+                       .ToDictionary(u => u.user_id);
             }
         }
     }

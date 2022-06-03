@@ -25,12 +25,14 @@ namespace osu.ElasticIndexer.Commands
             }
 
             ConsoleColor.Red.WriteLine("The following indices will be deleted!");
+
             foreach (var record in closed)
             {
                 Console.WriteLine($"{record.Index}");
             }
 
             Console.WriteLine();
+
             if (!Prompt.GetYesNo("Delete these indices?", false, ConsoleColor.Yellow))
             {
                 Console.WriteLine("aborted.");
@@ -38,11 +40,13 @@ namespace osu.ElasticIndexer.Commands
             }
 
             Console.WriteLine();
+
             foreach (var record in closed)
             {
                 Console.WriteLine($"deleting {record.Index}...");
                 client.ElasticClient.Indices.Delete(record.Index);
             }
+
             Console.WriteLine("done.");
 
             return 0;

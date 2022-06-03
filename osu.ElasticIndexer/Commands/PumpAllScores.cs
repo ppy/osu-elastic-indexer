@@ -37,6 +37,7 @@ namespace osu.ElasticIndexer.Commands
             ConsoleColor.Cyan.WriteLine($"Start read: {startTime}");
 
             var chunks = Model.Chunk<SoloScore>(AppSettings.BatchSize, From);
+
             foreach (var scores in chunks)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -44,8 +45,7 @@ namespace osu.ElasticIndexer.Commands
 
                 foreach (var score in scores)
                 {
-                    if (score.country_code == null)
-                        score.country_code = "XX";
+                    score.country_code ??= "XX";
 
                     if (Verbose)
                         Console.WriteLine($"Pushing {score}");

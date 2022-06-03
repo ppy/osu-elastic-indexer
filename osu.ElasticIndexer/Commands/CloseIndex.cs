@@ -28,12 +28,14 @@ namespace osu.ElasticIndexer.Commands
             }
 
             Console.WriteLine("The following indices will be closed:");
+
             foreach (var entry in unaliasedIndices)
             {
                 Console.WriteLine(entry.Key.Name);
             }
 
             Console.WriteLine();
+
             if (!Prompt.GetYesNo("Close these indices?", false, ConsoleColor.Yellow))
             {
                 Console.WriteLine("aborted.");
@@ -41,11 +43,13 @@ namespace osu.ElasticIndexer.Commands
             }
 
             Console.WriteLine();
+
             foreach (var entry in unaliasedIndices)
             {
                 Console.WriteLine($"closing {entry.Key.Name}...");
                 client.ElasticClient.Indices.Close(entry.Key.Name);
             }
+
             Console.WriteLine("done.");
 
             return 0;

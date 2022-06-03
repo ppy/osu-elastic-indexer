@@ -31,9 +31,9 @@ namespace osu.ElasticIndexer
             // 3 cases are handled:
             if (indices.Count > 0)
             {
-
                 // 1. Index was already aliased; likely resuming from a completed job.
                 var (indexName, indexState) = indices.FirstOrDefault(entry => entry.Value.Aliases.ContainsKey(name));
+
                 if (indexName != null)
                 {
                     ConsoleColor.Cyan.WriteLine($"Using aliased `{indexName}`.");
@@ -67,8 +67,8 @@ namespace osu.ElasticIndexer
         public List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
         {
             return GetIndices(name)
-                .Where(entry => (string?)entry.Value.Mappings.Meta?["schema"] == schema)
-                .ToList();
+                   .Where(entry => (string?)entry.Value.Mappings.Meta?["schema"] == schema)
+                   .ToList();
         }
 
         public void UpdateAlias(string alias, string index, bool close = true)
@@ -87,6 +87,7 @@ namespace osu.ElasticIndexer
 
             // cleanup
             if (!close) return;
+
             foreach (var toClose in oldIndices.Where(x => x != index))
             {
                 ConsoleColor.Yellow.WriteLine($"Closing {toClose}");

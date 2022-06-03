@@ -19,7 +19,7 @@ namespace osu.ElasticIndexer
         public Metadata(IndexName indexName, IndexState indexState)
         {
             RealName = indexName.Name;
-            Schema = (string) indexState.Mappings.Meta["schema"];
+            Schema = (string)indexState.Mappings.Meta["schema"];
         }
 
         public void Save(ElasticClient elasticClient)
