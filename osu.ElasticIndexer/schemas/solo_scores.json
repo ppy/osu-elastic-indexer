@@ -9,10 +9,10 @@
         "type": "float"
       },
       "beatmap_id": {
-        "type": "long"
+        "type": "keyword"
       },
       "build_id": {
-        "type": "integer"
+        "type": "keyword"
       },
       "country_code": {
         "type": "keyword"
@@ -26,7 +26,7 @@
         "type": "date"
       },
       "id": {
-        "type": "long"
+        "type": "keyword"
       },
       "max_combo": {
         "type": "integer"
@@ -44,7 +44,7 @@
         "type": "keyword"
       },
       "ruleset_id": {
-        "type": "short"
+        "type": "keyword"
       },
       "started_at": {
         "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
@@ -58,7 +58,7 @@
         "type": "date"
       },
       "user_id": {
-        "type": "long"
+        "type": "keyword"
       }
     }
   },

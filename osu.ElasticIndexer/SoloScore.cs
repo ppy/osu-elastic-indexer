@@ -33,16 +33,16 @@ namespace osu.ElasticIndexer
 
         // Properties ordered in the order they appear in the table.
 
-        [Number(NumberType.Long)]
+        [Keyword]
         public long id { get; set; }
 
-        [Number(NumberType.Long)]
+        [Keyword]
         public uint beatmap_id { get; set; }
 
-        [Number(NumberType.Long)]
+        [Keyword]
         public uint user_id { get; set; }
 
-        [Number(NumberType.Short)]
+        [Keyword]
         public int ruleset_id { get; set; }
 
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
@@ -66,7 +66,7 @@ namespace osu.ElasticIndexer
         }
 
         [Computed]
-        [Number(NumberType.Integer)]
+        [Keyword]
         public int? build_id => scoreData.build_id;
 
         [Computed]
