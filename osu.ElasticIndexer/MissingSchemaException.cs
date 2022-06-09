@@ -1,13 +1,15 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using Dapper.Contrib.Extensions;
+using System;
 
 namespace osu.ElasticIndexer
 {
-    [RulesetId(1)]
-    [Table("osu_scores_taiko_high")]
-    public class HighScoreTaiko : HighScore
+    public class MissingSchemaException : Exception
     {
+        public MissingSchemaException()
+            : base("A schema version is required.")
+        {
+        }
     }
 }

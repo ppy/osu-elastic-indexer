@@ -6,13 +6,15 @@ using System;
 namespace osu.ElasticIndexer
 {
     /// <summary>
-    /// Integer value of the game mode.
+    /// Attributes which column to use as the cursor column.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class RulesetIdAttribute : Attribute
+    public class ChunkOnAttribute : Attribute
     {
-        public int Id { get; }
+        public string? CursorColumn { get; set; }
 
-        public RulesetIdAttribute(int id) => Id = id;
-   }
+        public string? Max { get; set; }
+
+        public string? Query { get; set; }
+    }
 }

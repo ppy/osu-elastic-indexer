@@ -1,0 +1,71 @@
+{
+  "mappings": {
+    "_source": {
+      "enabled": false
+    },
+    "dynamic": false,
+    "properties": {
+      "accuracy": {
+        "type": "float"
+      },
+      "beatmap_id": {
+        "type": "long"
+      },
+      "build_id": {
+        "type": "integer"
+      },
+      "country_code": {
+        "type": "keyword"
+      },
+      "created_at": {
+        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
+        "type": "date"
+      },
+      "ended_at": {
+        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
+        "type": "date"
+      },
+      "id": {
+        "type": "long"
+      },
+      "max_combo": {
+        "type": "integer"
+      },
+      "mods": {
+        "type": "keyword"
+      },
+      "passed": {
+        "type": "boolean"
+      },
+      "pp": {
+        "type": "float"
+      },
+      "rank": {
+        "type": "keyword"
+      },
+      "ruleset_id": {
+        "type": "short"
+      },
+      "started_at": {
+        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
+        "type": "date"
+      },
+      "total_score": {
+        "type": "integer"
+      },
+      "updated_at": {
+        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
+        "type": "date"
+      },
+      "user_id": {
+        "type": "long"
+      }
+    }
+  },
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "number_of_replicas": "0"
+    }
+  }
+}
