@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.IO;
 using Microsoft.Extensions.Configuration;
 
 namespace osu.ElasticIndexer
@@ -15,11 +14,7 @@ namespace osu.ElasticIndexer
 
         static AppSettings()
         {
-            var env = Environment.GetEnvironmentVariable("APP_ENV") ?? "development";
             var config = new ConfigurationBuilder()
-                         .SetBasePath(Directory.GetCurrentDirectory())
-                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                         .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
                          .AddEnvironmentVariables()
                          .Build();
 
@@ -29,14 +24,11 @@ namespace osu.ElasticIndexer
             if (!string.IsNullOrEmpty(config["buffer_size"]))
                 BufferSize = int.Parse(config["buffer_size"]);
 
-            ConnectionString = config.GetConnectionString("osu");
+            ConnectionString = config["DB_CONNECTION_STRING"];
             Schema = config["schema"] ?? string.Empty;
             Prefix = config["prefix"] ?? string.Empty;
-            ElasticsearchHost = config["elasticsearch:host"];
-            RedisHost = config["redis:host"] ?? "redis";
-
-            // set env variable for queue processor.
-            Environment.SetEnvironmentVariable("REDIS_HOST", RedisHost);
+            ElasticsearchHost = config["ES_HOST"];
+            RedisHost = config["REDIS_HOST"];
         }
 
         public static int BufferSize { get; } = 5;
