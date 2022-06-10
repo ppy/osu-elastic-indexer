@@ -15,7 +15,11 @@ namespace osu.ElasticIndexer
     [SuppressMessage("Style", "IDE1006")]
     [ElasticsearchType(IdProperty = nameof(id))]
     [ChunkOn(
-        Query = "s.*, (select pp from solo_scores_performance p where p.score_id = s.id) pp, (select country_acronym from phpbb_users u where u.user_id = s.user_id) country_code from solo_scores s",
+        Query = @"s.*,
+        (select pp from solo_scores_performance p where p.score_id = s.id) pp,
+        (select country_acronym from phpbb_users u where u.user_id = s.user_id) country_code,
+        (select user_warnings from phpbb_users u where u.user_id = s.user_id) user_warnings
+        from solo_scores s",
         CursorColumn = "s.id",
         Max = "MAX(id) FROM solo_scores"
     )]
@@ -27,7 +31,7 @@ namespace osu.ElasticIndexer
         [Computed]
         [Ignore]
         [JsonIgnore]
-        public bool ShouldIndex => preserve;
+        public bool ShouldIndex => preserve && user_warnings == 0;
 
         // Properties ordered in the order they appear in the table.
 
@@ -91,6 +95,9 @@ namespace osu.ElasticIndexer
         [Computed]
         [Keyword]
         public string? rank => scoreData.rank;
+
+        [Ignore]
+        public int user_warnings { get; set; }
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
