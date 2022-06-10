@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Elasticsearch.Net;
 using Nest;
 using osu.Server.QueueProcessor;
 
@@ -53,13 +54,36 @@ namespace osu.ElasticIndexer
                                  .IndexMany(add)
                                  .DeleteMany(remove);
 
-            var response = client.ElasticClient.Bulk(bulkDescriptor);
+            try
+            {
+                var response = client.ElasticClient.Bulk(bulkDescriptor);
 
-            handleResponse(response, items);
+                handleResponse(response, items);
+            }
+            catch (ElasticsearchClientException ex)
+            {
+                // Server disappeared, maybe network failure or it's restarting; spin until it's available again.
+                Console.WriteLine(ConsoleColor.Red, ex.Message);
+                Console.WriteLine(ConsoleColor.Yellow, ex.InnerException?.Message);
+                waitUntilActive();
+            }
         }
 
         private void handleResponse(BulkResponse response, IEnumerable<ScoreItem> items)
         {
+            if (!response.IsValid)
+            {
+                // If it gets to here, then something is really wrong, just bail out.
+                Console.WriteLine(ConsoleColor.Red, response.ToString());
+                Console.WriteLine(ConsoleColor.Red, response.OriginalException?.Message);
+                foreach (var item in items)
+                {
+                    item.Failed = true;
+                }
+
+                stop();
+            }
+
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
@@ -90,6 +114,16 @@ namespace osu.ElasticIndexer
             }
 
             // TODO: per-item errors?
+        }
+
+        private void waitUntilActive()
+        {
+            // Spin until valid response from elasticsearch.
+            while (!client.ElasticClient.Indices.Get(index, d => d.RequestConfiguration(r => r.ThrowExceptions(false))).IsValid)
+            {
+                Console.WriteLine(ConsoleColor.Yellow, $"wating 10 seconds for server to come alive...");
+                Task.Delay(TimeSpan.FromSeconds(10)).Wait();
+            }
         }
     }
 }
