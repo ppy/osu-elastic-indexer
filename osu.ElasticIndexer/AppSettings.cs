@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using Microsoft.Extensions.Configuration;
 
 namespace osu.ElasticIndexer
 {
@@ -14,21 +13,19 @@ namespace osu.ElasticIndexer
 
         static AppSettings()
         {
-            var config = new ConfigurationBuilder()
-                         .AddEnvironmentVariables()
-                         .Build();
+            var batchSizeEnv = Environment.GetEnvironmentVariable("batch_size");
+            if (!string.IsNullOrEmpty(batchSizeEnv))
+                BatchSize = int.Parse(batchSizeEnv);
 
-            if (!string.IsNullOrEmpty(config["batch_size"]))
-                BatchSize = int.Parse(config["batch_size"]);
+            var bufferSizeEnv = Environment.GetEnvironmentVariable("batch_size");
+            if (!string.IsNullOrEmpty(bufferSizeEnv))
+                BufferSize = int.Parse(bufferSizeEnv);
 
-            if (!string.IsNullOrEmpty(config["buffer_size"]))
-                BufferSize = int.Parse(config["buffer_size"]);
-
-            ConnectionString = config["DB_CONNECTION_STRING"];
-            Schema = config["schema"] ?? string.Empty;
-            Prefix = config["prefix"] ?? string.Empty;
-            ElasticsearchHost = config["ES_HOST"];
-            RedisHost = config["REDIS_HOST"];
+            ConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
+            Schema = Environment.GetEnvironmentVariable("schema") ?? string.Empty;
+            Prefix = Environment.GetEnvironmentVariable("prefix") ?? string.Empty;
+            ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://elasticsearch:9200";
+            RedisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "redis";
         }
 
         public static int BufferSize { get; } = 5;
