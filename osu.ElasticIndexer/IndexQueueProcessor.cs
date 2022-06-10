@@ -83,6 +83,7 @@ namespace osu.ElasticIndexer
                 // If it gets to here, then something is really wrong, just bail out.
                 Console.WriteLine(ConsoleColor.Red, response.ToString());
                 Console.WriteLine(ConsoleColor.Red, response.OriginalException?.Message);
+
                 foreach (var item in items)
                 {
                     item.Failed = true;
@@ -128,7 +129,7 @@ namespace osu.ElasticIndexer
             // Spin until valid response from elasticsearch.
             while (!client.ElasticClient.Indices.Get(index, d => d.RequestConfiguration(r => r.ThrowExceptions(false))).IsValid)
             {
-                Console.WriteLine(ConsoleColor.Yellow, $"wating 10 seconds for server to come alive...");
+                Console.WriteLine(ConsoleColor.Yellow, "wating 10 seconds for server to come alive...");
                 Task.Delay(TimeSpan.FromSeconds(10)).Wait();
             }
         }

@@ -15,6 +15,7 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute()
         {
             var indices = client.GetIndices(client.AliasName, ExpandWildcards.All);
+
             if (indices.Count > 0)
             {
                 var response = client.ElasticClient.Cat.Indices(descriptor => descriptor.Index(indices.Keys.Select(k => k.Name).ToArray()));
