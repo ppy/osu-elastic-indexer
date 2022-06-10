@@ -54,11 +54,16 @@ namespace osu.ElasticIndexer
                                  .IndexMany(add)
                                  .DeleteMany(remove);
 
+            var response = client.ElasticClient.Bulk(bulkDescriptor);
+
+            handleResponse(response, items);
+        }
+
+        private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
+        {
             try
             {
-                var response = client.ElasticClient.Bulk(bulkDescriptor);
-
-                handleResponse(response, items);
+                return client.ElasticClient.Bulk(bulkDescriptor);
             }
             catch (ElasticsearchClientException ex)
             {
@@ -66,6 +71,8 @@ namespace osu.ElasticIndexer
                 Console.WriteLine(ConsoleColor.Red, ex.Message);
                 Console.WriteLine(ConsoleColor.Yellow, ex.InnerException?.Message);
                 waitUntilActive();
+
+                return dispatch(bulkDescriptor);
             }
         }
 
