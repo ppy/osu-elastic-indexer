@@ -58,6 +58,9 @@ in cases where `dotnet run` is not available, the assembly should be used, e.g. 
 
 ## Watching a queue for new scores
 
+Running `queue` will automatically create an index if an open index matching the requested `schema` does not exist.
+If a matching open index exists, it will be reused.
+
     schema=${schema} dotnet run queue
 
 e.g.
