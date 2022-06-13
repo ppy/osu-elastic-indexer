@@ -19,7 +19,7 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute(CancellationToken token)
         {
             var index = string.IsNullOrEmpty(Name) ? $"{client.AliasName}_*" : Name;
-            var response = client.ElasticClient.Cat.Indices(x => x.Index(Name));
+            var response = client.ElasticClient.Cat.Indices(x => x.Index(index));
             var closed = response.Records.Where(record => record.Status == "close");
 
             if (!closed.Any())
