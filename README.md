@@ -116,7 +116,7 @@ Populating an index is done by pushing score items to a queue.
 
     docker build -t ${tagname} -f osu.ElasticIndexer/Dockerfile osu.ElasticIndexer
 
-    docker run -e schema=1 -e "elasticsearch__host=http://host.docker.internal:9200" -e "elasticsearch__prefix=docker." -e "redis__host=host.docker.internal" -e "ConnectionStrings__osu=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
+    docker run -e schema=1 -e "ES_HOST=http://host.docker.internal:9200" -e "prefix=docker." -e "REDIS_HOST=host.docker.internal" -e "DB_CONNECTION_STRING=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
 
 where `${cmd}` is the command to run, e.g. `dotnet osu.ElasticIndexer.dll queue`
 
