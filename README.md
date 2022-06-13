@@ -96,9 +96,12 @@ TODO: single index option?
 ## Closing unused indices
 
 This will close all score indices except the active one, unloading them from Elasticsearch's memory pool.
-TODO: single index option?
 
-    dotnet run cleanup
+    dotnet run close
+
+A specific index can be closed by passing in index's name as an argument; e.g. the following will close `index_1`:
+
+    dotnet run close index_1
 
 ## Adding fake items to the queue
 
