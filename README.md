@@ -86,13 +86,6 @@ The index the alias points to can be changed manually:
 
 will update the index alias to the latest index with schema `1` tag.
 
-## Cleaning up closed indices
-
-This will delete all closed indices and free up the storage space used by those indices.
-TODO: single index option?
-
-    dotnet run cleanup
-
 ## Closing unused indices
 
 This will close all score indices except the active one, unloading them from Elasticsearch's memory pool.
@@ -102,6 +95,17 @@ This will close all score indices except the active one, unloading them from Ela
 A specific index can be closed by passing in index's name as an argument; e.g. the following will close `index_1`:
 
     dotnet run close index_1
+
+## Cleaning up closed indices
+
+This will delete all closed indices and free up the storage space used by those indices.
+The command will only delete an index if it is in the `closed` state.
+
+    dotnet run delete
+
+Passing arguments to the command will delete the matching index:
+
+    dotnet run delete index_1
 
 ## Adding fake items to the queue
 
