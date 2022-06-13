@@ -39,12 +39,17 @@ When the schema version changes, all indexers processing the queues for any othe
 
 # Configuration
 
-Configuration is read from appsettings.json and environment variables. Configuration is loaded in the following order:
-1. appsettings.json
-2. appsettings.${APP_ENV}.json (if exists)
-3. Environment variables
+Configuration is loaded from environment variables. No environment files are automatically loaded.
 
-`APP_ENV` defaults to `development` if not specified.
+To read environment variables from an env file, you can prefix the command to run with `env $(cat {envfile})` replacing `{envfile}` with your env file, e.g.
+
+    env $(cat .env) dotnet run
+
+additional envs can be set:
+
+    env $(cat .env) schema=1 dotnet run
+
+envvars with spaces are not supported.
 
 # Commands
 
