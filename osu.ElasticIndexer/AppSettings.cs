@@ -5,21 +5,17 @@ using System;
 
 namespace osu.ElasticIndexer
 {
-    public class AppSettings
+    public static class AppSettings
     {
-        private AppSettings()
-        {
-        }
-
         static AppSettings()
         {
-            var batchSizeEnv = Environment.GetEnvironmentVariable("batch_size");
-            if (!string.IsNullOrEmpty(batchSizeEnv))
-                BatchSize = int.Parse(batchSizeEnv);
+            string? batchSize = Environment.GetEnvironmentVariable("batch_size");
+            if (!string.IsNullOrEmpty(batchSize))
+                BatchSize = int.Parse(batchSize);
 
-            var bufferSizeEnv = Environment.GetEnvironmentVariable("batch_size");
-            if (!string.IsNullOrEmpty(bufferSizeEnv))
-                BufferSize = int.Parse(bufferSizeEnv);
+            string? bufferSize = Environment.GetEnvironmentVariable("buffer_size");
+            if (!string.IsNullOrEmpty(bufferSize))
+                BufferSize = int.Parse(bufferSize);
 
             ConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
             Schema = Environment.GetEnvironmentVariable("schema") ?? string.Empty;
