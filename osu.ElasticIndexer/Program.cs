@@ -8,9 +8,9 @@ using osu.ElasticIndexer.Commands;
 namespace osu.ElasticIndexer
 {
     [Command]
-    [Subcommand(typeof(CleanupIndicesCommand))]
     [Subcommand(typeof(ClearQueueCommand))]
     [Subcommand(typeof(CloseIndexCommand))]
+    [Subcommand(typeof(DeleteIndexCommand))]
     [Subcommand(typeof(ListIndicesCommand))]
     [Subcommand(typeof(OpenIndexCommand))]
     [Subcommand(typeof(PumpAllScoresCommand))]
