@@ -89,6 +89,12 @@ The index the alias points to can be changed manually:
 
 will update the index alias to the latest index with schema `1` tag.
 
+## List indices
+
+To list all indices and their corresponding states (schema, aliased, open or closed)
+
+    dotnet run list
+
 ## Closing unused indices
 
 This will close all score indices except the active one, unloading them from Elasticsearch's memory pool.
