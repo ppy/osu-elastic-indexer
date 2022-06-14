@@ -16,7 +16,7 @@ namespace osu.ElasticIndexer
     [ElasticsearchType(IdProperty = nameof(id))]
     [ChunkOn(
         Query = @"s.*, pp, country_acronym, user_warnings FROM solo_scores s
-        JOIN solo_scores_performance ON score_id = s.id
+        LEFT JOIN solo_scores_performance ON score_id = s.id
         JOIN phpbb_users USING (user_id)",
         CursorColumn = "s.id",
         Max = "MAX(id) FROM solo_scores"
