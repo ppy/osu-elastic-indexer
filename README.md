@@ -124,6 +124,18 @@ For testing purposes, we can add fake items to the queue:
 
 It should be noted that these items will not exist or match the ones in the database.
 
+## Adding existing database records to the queue
+
+    schema=1 dotnet run all
+
+will read existing `solo_scores` in chunks and add them to the queue for indexing. Only scores with a corresponding `solo_scores_performance` and `phpbb_users` entries will be queued.
+
+Extra options:
+
+`--from {id}`: `solo_scores.id` to start reading from
+
+`--switch`: Sets the schema version after the last item is queued; it does not wait for the item to be indexed; this option is provided as a conveninence for testing.
+
 # (Re)Populating an index
 
 Populating an index is done by pushing score items to a queue.
