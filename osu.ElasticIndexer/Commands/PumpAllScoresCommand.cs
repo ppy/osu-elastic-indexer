@@ -25,6 +25,9 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(AppSettings.Schema))
+                throw new MissingSchemaException();
+
             var redis = new Redis();
             var currentSchema = redis.GetSchemaVersion();
             Console.WriteLine(ConsoleColor.Cyan, $"Current schema version is: {currentSchema}");
