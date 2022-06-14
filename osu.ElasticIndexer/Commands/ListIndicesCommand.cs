@@ -15,15 +15,19 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute()
         {
             var indices = client.GetIndices(client.AliasName, ExpandWildcards.All);
-            var response = client.ElasticClient.Cat.Indices(descriptor => descriptor.Index(indices.Keys.Select(k => k.Name).ToArray()));
 
-            foreach (var record in response.Records)
+            if (indices.Count > 0)
             {
-                var indexState = indices[record.Index];
-                var schema = indexState.Mappings.Meta?["schema"];
-                var aliased = indexState.Aliases.ContainsKey(client.AliasName);
+                var response = client.ElasticClient.Cat.Indices(descriptor => descriptor.Index(indices.Keys.Select(k => k.Name).ToArray()));
 
-                Console.WriteLine($"{record.Index} schema:{schema} aliased:{aliased} {record.Status} {record.DocsCount} {record.PrimaryStoreSize}");
+                foreach (var record in response.Records)
+                {
+                    var indexState = indices[record.Index];
+                    var schema = indexState.Mappings.Meta?["schema"];
+                    var aliased = indexState.Aliases.ContainsKey(client.AliasName);
+
+                    Console.WriteLine($"{record.Index} schema:{schema} aliased:{aliased} {record.Status} {record.DocsCount} {record.PrimaryStoreSize}");
+                }
             }
 
             return 0;

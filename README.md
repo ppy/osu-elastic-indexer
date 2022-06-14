@@ -39,12 +39,17 @@ When the schema version changes, all indexers processing the queues for any othe
 
 # Configuration
 
-Configuration is read from appsettings.json and environment variables. Configuration is loaded in the following order:
-1. appsettings.json
-2. appsettings.${APP_ENV}.json (if exists)
-3. Environment variables
+Configuration is loaded from environment variables. No environment files are automatically loaded.
 
-`APP_ENV` defaults to `development` if not specified.
+To read environment variables from an env file, you can prefix the command to run with `env $(cat {envfile})` replacing `{envfile}` with your env file, e.g.
+
+    env $(cat .env) dotnet run
+
+additional envs can be set:
+
+    env $(cat .env) schema=1 dotnet run
+
+envvars with spaces are not supported.
 
 # Commands
 
@@ -52,6 +57,9 @@ This documentation assumes `dotnet run` can be used;
 in cases where `dotnet run` is not available, the assembly should be used, e.g. `dotnet osu.ElasticIndexer.dll`
 
 ## Watching a queue for new scores
+
+Running `queue` will automatically create an index if an open index matching the requested `schema` does not exist.
+If a matching open index exists, it will be reused.
 
     schema=${schema} dotnet run queue
 
@@ -81,19 +89,32 @@ The index the alias points to can be changed manually:
 
 will update the index alias to the latest index with schema `1` tag.
 
-## Cleaning up closed indices
+## List indices
 
-This will delete all closed indices and free up the storage space used by those indices.
-TODO: single index option?
+To list all indices and their corresponding states (schema, aliased, open or closed)
 
-    dotnet run cleanup
+    dotnet run list
 
 ## Closing unused indices
 
 This will close all score indices except the active one, unloading them from Elasticsearch's memory pool.
-TODO: single index option?
 
-    dotnet run cleanup
+    dotnet run close
+
+A specific index can be closed by passing in index's name as an argument; e.g. the following will close `index_1`:
+
+    dotnet run close index_1
+
+## Cleaning up closed indices
+
+This will delete all closed indices and free up the storage space used by those indices.
+The command will only delete an index if it is in the `closed` state.
+
+    dotnet run delete
+
+Passing arguments to the command will delete the matching index:
+
+    dotnet run delete index_1
 
 ## Adding fake items to the queue
 
@@ -111,7 +132,7 @@ Populating an index is done by pushing score items to a queue.
 
     docker build -t ${tagname} -f osu.ElasticIndexer/Dockerfile osu.ElasticIndexer
 
-    docker run -e schema=1 -e "elasticsearch__host=http://host.docker.internal:9200" -e "elasticsearch__prefix=docker." -e "redis__host=host.docker.internal" -e "ConnectionStrings__osu=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
+    docker run -e schema=1 -e "ES_HOST=http://host.docker.internal:9200" -e "prefix=docker." -e "REDIS_HOST=host.docker.internal" -e "DB_CONNECTION_STRING=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
 
 where `${cmd}` is the command to run, e.g. `dotnet osu.ElasticIndexer.dll queue`
 

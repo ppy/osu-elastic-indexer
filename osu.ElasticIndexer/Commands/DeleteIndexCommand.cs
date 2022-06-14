@@ -8,14 +8,18 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("cleanup", Description = "Deletes closed indices")]
-    public class CleanupIndicesCommand : ProcessorCommandBase
+    [Command("delete", Description = "Deletes closed indices")]
+    public class DeleteIndexCommand : ProcessorCommandBase
     {
+        [Argument(0, "name", "The index to delete. All closed indices are closed if not specified.")]
+        public string? Name { get; set; }
+
         private readonly Client client = new Client();
 
         public int OnExecute(CancellationToken token)
         {
-            var response = client.ElasticClient.Cat.Indices(x => x.Index($"{client.AliasName}_*"));
+            var index = string.IsNullOrEmpty(Name) ? $"{client.AliasName}_*" : Name;
+            var response = client.ElasticClient.Cat.Indices(x => x.Index(index));
             var closed = response.Records.Where(record => record.Status == "close");
 
             if (!closed.Any())

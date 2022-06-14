@@ -2,41 +2,26 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.IO;
-using Microsoft.Extensions.Configuration;
 
 namespace osu.ElasticIndexer
 {
-    public class AppSettings
+    public static class AppSettings
     {
-        private AppSettings()
-        {
-        }
-
         static AppSettings()
         {
-            var env = Environment.GetEnvironmentVariable("APP_ENV") ?? "development";
-            var config = new ConfigurationBuilder()
-                         .SetBasePath(Directory.GetCurrentDirectory())
-                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                         .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false)
-                         .AddEnvironmentVariables()
-                         .Build();
+            string? batchSize = Environment.GetEnvironmentVariable("batch_size");
+            if (!string.IsNullOrEmpty(batchSize))
+                BatchSize = int.Parse(batchSize);
 
-            if (!string.IsNullOrEmpty(config["batch_size"]))
-                BatchSize = int.Parse(config["batch_size"]);
+            string? bufferSize = Environment.GetEnvironmentVariable("buffer_size");
+            if (!string.IsNullOrEmpty(bufferSize))
+                BufferSize = int.Parse(bufferSize);
 
-            if (!string.IsNullOrEmpty(config["buffer_size"]))
-                BufferSize = int.Parse(config["buffer_size"]);
-
-            ConnectionString = config.GetConnectionString("osu");
-            Schema = config["schema"] ?? string.Empty;
-            Prefix = config["prefix"] ?? string.Empty;
-            ElasticsearchHost = config["elasticsearch:host"];
-            RedisHost = config["redis:host"] ?? "redis";
-
-            // set env variable for queue processor.
-            Environment.SetEnvironmentVariable("REDIS_HOST", RedisHost);
+            ConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
+            Schema = Environment.GetEnvironmentVariable("schema") ?? string.Empty;
+            Prefix = Environment.GetEnvironmentVariable("prefix") ?? string.Empty;
+            ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://elasticsearch:9200";
+            RedisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "redis";
         }
 
         public static int BufferSize { get; } = 5;
