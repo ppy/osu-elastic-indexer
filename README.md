@@ -128,7 +128,7 @@ It should be noted that these items will not exist or match the ones in the data
 
     schema=1 dotnet run all
 
-will read existing `solo_scores` in chunks and add them to the queue for indexing. Only scores with a corresponding `solo_scores_performance` and `phpbb_users` entries will be queued.
+will read existing `solo_scores` in chunks and add them to the queue for indexing. Only scores with a corresponding `phpbb_users` entry will be queued.
 
 Extra options:
 
