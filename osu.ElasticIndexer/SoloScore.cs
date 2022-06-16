@@ -33,7 +33,7 @@ namespace osu.ElasticIndexer
 
         // Properties ordered in the order they appear in the table.
 
-        [Keyword]
+        [Number(NumberType.Long)]
         public long id { get; set; }
 
         [Keyword]
