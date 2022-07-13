@@ -9,10 +9,10 @@
         "type": "float"
       },
       "beatmap_id": {
-        "type": "long"
+        "type": "keyword"
       },
       "build_id": {
-        "type": "integer"
+        "type": "keyword"
       },
       "country_code": {
         "type": "keyword"
@@ -44,7 +44,7 @@
         "type": "keyword"
       },
       "ruleset_id": {
-        "type": "short"
+        "type": "keyword"
       },
       "started_at": {
         "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
@@ -58,14 +58,18 @@
         "type": "date"
       },
       "user_id": {
-        "type": "long"
+        "type": "keyword"
       }
     }
   },
   "settings": {
     "index": {
       "number_of_shards": "1",
-      "number_of_replicas": "0"
+      "number_of_replicas": "0",
+      "sort": {
+        "field": "total_score",
+        "order": "desc"
+      }
     }
   }
 }
