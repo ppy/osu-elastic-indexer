@@ -71,6 +71,10 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Boolean]
+        public bool convert { get; set; }
+
+        [Computed]
+        [Boolean]
         public bool passed => scoreData.passed;
 
         [Number(NumberType.Float)]
