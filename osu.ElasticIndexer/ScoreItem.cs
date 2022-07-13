@@ -7,11 +7,17 @@ namespace osu.ElasticIndexer
 {
     public class ScoreItem : QueueItem
     {
+        public string? Action { get; }
         public SoloScore Score { get; }
 
         public ScoreItem(SoloScore score)
         {
             Score = score;
+        }
+
+        public ScoreItem(SoloScore score, string action): this(score)
+        {
+            Action = action;
         }
 
         public override string ToString() => $"ScoreItem id: {Score.id}";
