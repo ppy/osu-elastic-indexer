@@ -39,7 +39,7 @@ namespace osu.ElasticIndexer
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
             var add = new List<SoloScore>();
-            var remove = new List<SoloScore>();
+            var remove = new List<string>();
             var list = new List<long>();
 
             foreach (var item in items)
@@ -47,7 +47,7 @@ namespace osu.ElasticIndexer
                 var action = item.Action?.ToLowerInvariant();
                 if (action == "delete")
                 {
-                    remove.Add(item.Score);
+                    remove.Add(item.Score.id.ToString());
                     continue;
                 }
 
@@ -60,7 +60,7 @@ namespace osu.ElasticIndexer
                 if (item.Score.ShouldIndex)
                     add.Add(item.Score);
                 else
-                    remove.Add(item.Score);
+                    remove.Add(item.Score.id.ToString());
             }
 
             if (list.Any())
@@ -71,14 +71,15 @@ namespace osu.ElasticIndexer
                     if (score.ShouldIndex)
                         add.Add(score);
                     else
-                        remove.Add(score);
+                        remove.Add(score.id.ToString());
                 }
             }
 
             var bulkDescriptor = new BulkDescriptor()
                                  .Index(index)
                                  .IndexMany(add)
-                                 .DeleteMany(remove);
+                                 // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
+                                 .DeleteMany<SoloScore>(remove);
 
             var response = client.ElasticClient.Bulk(bulkDescriptor);
 
