@@ -7,7 +7,8 @@ namespace osu.ElasticIndexer
 {
     public class ScoreItem : QueueItem
     {
-        public string? Action { get; }
+        // TODO :figure out what's the deal with constructor not working?
+        public string? Action { get; set; }
         public SoloScore Score { get; }
 
         public ScoreItem(SoloScore score)
@@ -15,11 +16,6 @@ namespace osu.ElasticIndexer
             Score = score;
         }
 
-        public ScoreItem(SoloScore score, string action): this(score)
-        {
-            Action = action;
-        }
-
-        public override string ToString() => $"ScoreItem id: {Score.id}";
+        public override string ToString() => $"ScoreItem id: {Score.id}, action: {Action}";
     }
 }

@@ -25,7 +25,7 @@ namespace osu.ElasticIndexer.Commands
             Console.WriteLine(ConsoleColor.Cyan, $"Current schema version is: {currentSchema}");
             Console.WriteLine(ConsoleColor.Cyan, $"Pushing to queue with schema: {AppSettings.Schema}");
 
-            var scoreItem = new ScoreItem(new SoloScore() { id = ScoreId }, "index");
+            var scoreItem = new ScoreItem(new SoloScore() { id = ScoreId }) { Action = "index" };
             Processor.PushToQueue(scoreItem);
 
             Console.WriteLine(ConsoleColor.Cyan, $"Queued index: {scoreItem}");
