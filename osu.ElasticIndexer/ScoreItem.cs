@@ -9,6 +9,9 @@ namespace osu.ElasticIndexer
     {
         // TODO :figure out what's the deal with constructor not working?
         public string? Action { get; set; }
+
+        public string? ParsedAction => Action?.ToLowerInvariant();
+
         public SoloScore Score { get; }
 
         public ScoreItem(SoloScore score)
@@ -16,6 +19,6 @@ namespace osu.ElasticIndexer
             Score = score;
         }
 
-        public override string ToString() => $"ScoreItem id: {Score.id}, action: {Action}";
+        public override string ToString() => $"ScoreItem id: {Score.id} {Action}";
     }
 }

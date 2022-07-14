@@ -44,7 +44,7 @@ namespace osu.ElasticIndexer
 
             foreach (var item in items)
             {
-                var action = item.Action?.ToLowerInvariant();
+                var action = item.ParsedAction;
                 if (action == "delete")
                 {
                     remove.Add(item.Score.id.ToString());
