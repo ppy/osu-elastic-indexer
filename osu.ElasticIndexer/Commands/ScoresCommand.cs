@@ -19,14 +19,15 @@ namespace osu.ElasticIndexer.Commands
 
         [Argument(1)]
         [Required]
-        public long ScoreId { get; set; }
+        public string ScoreId { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();
 
-            var scoreItem = new ScoreItem(new SoloScore() { id = ScoreId }) { Action = Action };
+            var Id = long.Parse(ScoreId);
+            var scoreItem = new ScoreItem(new SoloScore() { id = Id }) { Action = Action };
             Processor.PushToQueue(scoreItem);
 
             Console.WriteLine(ConsoleColor.Cyan, $"Queued to {Processor.QueueName}: {scoreItem}");
