@@ -40,13 +40,39 @@ namespace osu.ElasticIndexer
         {
             var add = new List<SoloScore>();
             var remove = new List<SoloScore>();
+            var list = new List<long>();
 
             foreach (var item in items)
             {
+                var action = item.Action?.ToLowerInvariant();
+                if (action == "delete")
+                {
+                    remove.Add(item.Score);
+                    continue;
+                }
+
+                if (action == "index")
+                {
+                    list.Add(item.Score.id);
+                    continue;
+                }
+
                 if (item.Score.ShouldIndex)
                     add.Add(item.Score);
                 else
                     remove.Add(item.Score);
+            }
+
+            if (list.Any())
+            {
+                var scores = ElasticModel.Find<SoloScore>(list);
+                foreach (var score in scores)
+                {
+                    if (score.ShouldIndex)
+                        add.Add(score);
+                    else
+                        remove.Add(score);
+                }
             }
 
             var bulkDescriptor = new BulkDescriptor()
