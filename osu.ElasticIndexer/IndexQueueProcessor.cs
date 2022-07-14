@@ -40,32 +40,39 @@ namespace osu.ElasticIndexer
         {
             var add = new List<SoloScore>();
             var remove = new List<string>();
-            var list = new List<long>();
+            var lookupIds = new List<long>();
 
             foreach (var item in items)
             {
                 var action = item.ParsedAction;
-                if (action == "delete")
+                if (item.ScoreId != null && action != null)
                 {
-                    remove.Add(item.Score.id.ToString());
-                    continue;
+                    var id = (long) item.ScoreId; // doesn't figure out id isn't nullable here...
+                    if (action == "delete")
+                    {
+                        remove.Add(id.ToString());
+                    }
+                    else if (action == "index")
+                    {
+                        lookupIds.Add(id);
+                    }
                 }
-
-                if (action == "index")
+                else if (item.Score != null)
                 {
-                    list.Add(item.Score.id);
-                    continue;
+                    if (item.Score.ShouldIndex)
+                        add.Add(item.Score);
+                    else
+                        remove.Add(item.Score.id.ToString());
                 }
-
-                if (item.Score.ShouldIndex)
-                    add.Add(item.Score);
                 else
-                    remove.Add(item.Score.id.ToString());
+                {
+                    Console.WriteLine(ConsoleColor.Red, "queue item missing both data and action");
+                }
             }
 
-            if (list.Any())
+            if (lookupIds.Any())
             {
-                var scores = ElasticModel.Find<SoloScore>(list);
+                var scores = ElasticModel.Find<SoloScore>(lookupIds);
                 foreach (var score in scores)
                 {
                     if (score.ShouldIndex)

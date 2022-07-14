@@ -27,7 +27,7 @@ namespace osu.ElasticIndexer.Commands
                 throw new MissingSchemaException();
 
             var Id = long.Parse(ScoreId);
-            var scoreItem = new ScoreItem(new SoloScore() { id = Id }) { Action = Action };
+            var scoreItem = new ScoreItem() { Action = Action, ScoreId = Id };
             Processor.PushToQueue(scoreItem);
 
             Console.WriteLine(ConsoleColor.Cyan, $"Queued to {Processor.QueueName}: {scoreItem}");
