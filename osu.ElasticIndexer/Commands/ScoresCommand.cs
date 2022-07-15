@@ -9,7 +9,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("scores", Description = "Namespace for score indexing commands")]
+    [Command("scores", Description = "Queue a score for indexing or deletion by id.")]
     public class ScoresCommand : ProcessorCommandBase
     {
         [Argument(0)]
