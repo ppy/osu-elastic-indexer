@@ -18,10 +18,6 @@ namespace osu.ElasticIndexer
         private readonly Client client;
         private readonly string index;
 
-        private readonly HashSet<long> lookupIds = new HashSet<long>();
-        private readonly List<SoloScore> scoresAdd = new List<SoloScore>();
-        private readonly List<string> scoresRemove = new List<string>();
-
         // QueueProcessor doesn't expose cancellation without overriding Run,
         // so we're making use of a supplied callback to stop processing.
         private readonly Action stop;
@@ -42,6 +38,8 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
+            var buffer = new IndexQueueItems();
+
             // Figure out what to do with the queue item.
             foreach (var item in items)
             {
@@ -53,16 +51,16 @@ namespace osu.ElasticIndexer
 
                     if (action == "delete")
                     {
-                        scoresRemove.Add(id.ToString());
+                        buffer.Remove.Add(id.ToString());
                     }
                     else if (action == "index")
                     {
-                        lookupIds.Add(id);
+                        buffer.LookupIds.Add(id);
                     }
                 }
                 else if (item.Score != null)
                 {
-                    addToBuffer(item.Score);
+                    addToBuffer(item.Score, buffer);
                 }
                 else
                 {
@@ -71,31 +69,28 @@ namespace osu.ElasticIndexer
             }
 
             // Handle any scores that need a lookup.
-            performLookup();
+            performLookup(buffer);
 
-            if (scoresAdd.Any() || scoresRemove.Any())
+            if (buffer.Add.Any() || buffer.Remove.Any())
             {
                 var bulkDescriptor = new BulkDescriptor()
                                      .Index(index)
-                                     .IndexMany(scoresAdd)
+                                     .IndexMany(buffer.Add)
                                      // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
-                                     .DeleteMany<SoloScore>(scoresRemove);
+                                     .DeleteMany<SoloScore>(buffer.Remove);
 
                 var response = client.ElasticClient.Bulk(bulkDescriptor);
 
                 handleResponse(response, items);
             }
-
-            scoresAdd.Clear();
-            scoresRemove.Clear();
         }
 
-        private void addToBuffer(SoloScore score)
+        private void addToBuffer(SoloScore score, IndexQueueItems buffer)
         {
             if (score.ShouldIndex)
-                scoresAdd.Add(score);
+                buffer.Add.Add(score);
             else
-                scoresRemove.Add(score.id.ToString());
+                buffer.Remove.Add(score.id.ToString());
         }
 
         private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
@@ -163,22 +158,22 @@ namespace osu.ElasticIndexer
             // TODO: per-item errors?
         }
 
-        private void performLookup()
+        private void performLookup(IndexQueueItems buffer)
         {
-            if (!lookupIds.Any()) return;
+            if (!buffer.LookupIds.Any()) return;
 
-            var scores = ElasticModel.Find<SoloScore>(lookupIds);
+            var scores = ElasticModel.Find<SoloScore>(buffer.LookupIds);
 
             foreach (var score in scores)
             {
-                addToBuffer(score);
-                lookupIds.Remove(score.id);
+                addToBuffer(score, buffer);
+                buffer.LookupIds.Remove(score.id);
             }
 
             // Remaining scores do not exist and should be deleted.
-            scoresRemove.AddRange(lookupIds.Select(id => id.ToString()));
+            buffer.Remove.AddRange(buffer.LookupIds.Select(id => id.ToString()));
 
-            lookupIds.Clear();
+            buffer.LookupIds.Clear();
         }
 
         private void waitUntilActive()
