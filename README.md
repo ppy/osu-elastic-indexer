@@ -124,6 +124,20 @@ For testing purposes, we can add fake items to the queue:
 
 It should be noted that these items will not exist or match the ones in the database.
 
+## Queuing a specific score for indexing
+
+    schema=${schema} dotnet run scores index ${id}
+
+will queue the score with `${id}` for indexing; the score will be added or deleted as necessary, according to the value of `SoloScore.ShouldIndex`.
+
+See [Queuing items for processing from another client](#queuing-items-for-processing-from-another-client)
+
+## Queuing a specific score for deletion
+
+    schema=${schema} dotnet run scores delete ${id}
+
+will queue the score with `${id}` for deletion, regardless of whether the score should be indexed or not.
+
 ## Adding existing database records to the queue
 
     schema=1 dotnet run all
@@ -149,3 +163,35 @@ Populating an index is done by pushing score items to a queue.
 where `${cmd}` is the command to run, e.g. `dotnet osu.ElasticIndexer.dll queue`
 
 # Typical use-cases
+
+## Queuing items for processing from another client
+
+Push items into the Redis queue "`osu-queue:score-index-${schema}`"
+e.g.
+
+```csharp
+ListLeftPush("osu-queue:score-index-1", "{ \"Action\": \"index\",\"ScoreId\": 1 }");
+```
+
+or from redis-cli:
+```
+LPUSH "osu-queue:score-index-1" "{\"Action\":\"index\",\"ScoreId\":1}"
+```
+
+### Indexing a score by `id`
+```json
+{ "Action": "index", "ScoreId": 1 }
+```
+
+### Deleting a score by `id`
+```json
+{ "Action": "delete", "ScoreId": 1 }
+```
+
+### Queuing a whole score
+
+```json
+{
+    "Score": {Solo.Score}
+}
+```
