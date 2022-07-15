@@ -18,6 +18,9 @@ namespace osu.ElasticIndexer
         private readonly Client client;
         private readonly string index;
 
+        private readonly List<SoloScore> scoresAdd = new List<SoloScore>();
+        private readonly List<string> scoresRemove = new List<string>();
+
         // QueueProcessor doesn't expose cancellation without overriding Run,
         // so we're making use of a supplied callback to stop processing.
         private readonly Action stop;
@@ -38,8 +41,6 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            var add = new List<SoloScore>();
-            var remove = new List<string>();
             var lookupIds = new List<long>();
 
             foreach (var item in items)
@@ -50,7 +51,7 @@ namespace osu.ElasticIndexer
                     var id = (long) item.ScoreId; // doesn't figure out id isn't nullable here...
                     if (action == "delete")
                     {
-                        remove.Add(id.ToString());
+                        scoresRemove.Add(id.ToString());
                     }
                     else if (action == "index")
                     {
@@ -59,10 +60,7 @@ namespace osu.ElasticIndexer
                 }
                 else if (item.Score != null)
                 {
-                    if (item.Score.ShouldIndex)
-                        add.Add(item.Score);
-                    else
-                        remove.Add(item.Score.id.ToString());
+                    addToBuffer(item.Score);
                 }
                 else
                 {
@@ -75,25 +73,33 @@ namespace osu.ElasticIndexer
                 var scores = ElasticModel.Find<SoloScore>(lookupIds);
                 foreach (var score in scores)
                 {
-                    if (score.ShouldIndex)
-                        add.Add(score);
-                    else
-                        remove.Add(score.id.ToString());
+                    addToBuffer(score);
                 }
             }
 
-            if (add.Any() || remove.Any())
+            if (scoresAdd.Any() || scoresRemove.Any())
             {
                 var bulkDescriptor = new BulkDescriptor()
                                     .Index(index)
-                                    .IndexMany(add)
+                                    .IndexMany(scoresAdd)
                                     // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
-                                    .DeleteMany<SoloScore>(remove);
+                                    .DeleteMany<SoloScore>(scoresRemove);
 
                 var response = client.ElasticClient.Bulk(bulkDescriptor);
 
                 handleResponse(response, items);
             }
+
+            scoresAdd.Clear();
+            scoresRemove.Clear();
+        }
+
+        private void addToBuffer(SoloScore score)
+        {
+            if (score.ShouldIndex)
+                scoresAdd.Add(score);
+            else
+                scoresRemove.Add(score.id.ToString());
         }
 
         private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
