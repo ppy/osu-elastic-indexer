@@ -82,15 +82,18 @@ namespace osu.ElasticIndexer
                 }
             }
 
-            var bulkDescriptor = new BulkDescriptor()
-                                 .Index(index)
-                                 .IndexMany(add)
-                                 // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
-                                 .DeleteMany<SoloScore>(remove);
+            if (add.Any() || remove.Any())
+            {
+                var bulkDescriptor = new BulkDescriptor()
+                                    .Index(index)
+                                    .IndexMany(add)
+                                    // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
+                                    .DeleteMany<SoloScore>(remove);
 
-            var response = client.ElasticClient.Bulk(bulkDescriptor);
+                var response = client.ElasticClient.Bulk(bulkDescriptor);
 
-            handleResponse(response, items);
+                handleResponse(response, items);
+            }
         }
 
         private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
