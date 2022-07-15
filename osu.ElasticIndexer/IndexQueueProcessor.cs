@@ -76,10 +76,10 @@ namespace osu.ElasticIndexer
             if (scoresAdd.Any() || scoresRemove.Any())
             {
                 var bulkDescriptor = new BulkDescriptor()
-                    .Index(index)
-                    .IndexMany(scoresAdd)
-                    // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
-                    .DeleteMany<SoloScore>(scoresRemove);
+                                     .Index(index)
+                                     .IndexMany(scoresAdd)
+                                     // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
+                                     .DeleteMany<SoloScore>(scoresRemove);
 
                 var response = client.ElasticClient.Bulk(bulkDescriptor);
 
