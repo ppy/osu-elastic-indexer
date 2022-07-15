@@ -46,9 +46,11 @@ namespace osu.ElasticIndexer
             foreach (var item in items)
             {
                 var action = item.ParsedAction;
+
                 if (item.ScoreId != null && action != null)
                 {
-                    var id = (long) item.ScoreId; // doesn't figure out id isn't nullable here...
+                    var id = (long)item.ScoreId; // doesn't figure out id isn't nullable here...
+
                     if (action == "delete")
                     {
                         scoresRemove.Add(id.ToString());
@@ -74,10 +76,10 @@ namespace osu.ElasticIndexer
             if (scoresAdd.Any() || scoresRemove.Any())
             {
                 var bulkDescriptor = new BulkDescriptor()
-                                    .Index(index)
-                                    .IndexMany(scoresAdd)
-                                    // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
-                                    .DeleteMany<SoloScore>(scoresRemove);
+                    .Index(index)
+                    .IndexMany(scoresAdd)
+                    // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
+                    .DeleteMany<SoloScore>(scoresRemove);
 
                 var response = client.ElasticClient.Bulk(bulkDescriptor);
 
@@ -166,6 +168,7 @@ namespace osu.ElasticIndexer
             if (!lookupIds.Any()) return;
 
             var scores = ElasticModel.Find<SoloScore>(lookupIds);
+
             foreach (var score in scores)
             {
                 addToBuffer(score);

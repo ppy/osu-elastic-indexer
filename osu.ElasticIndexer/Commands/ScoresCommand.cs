@@ -26,8 +26,8 @@ namespace osu.ElasticIndexer.Commands
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();
 
-            var Id = long.Parse(ScoreId);
-            var scoreItem = new ScoreItem() { Action = Action, ScoreId = Id };
+            var id = long.Parse(ScoreId);
+            var scoreItem = new ScoreItem { Action = Action, ScoreId = id };
             Processor.PushToQueue(scoreItem);
 
             Console.WriteLine(ConsoleColor.Cyan, $"Queued to {Processor.QueueName}: {scoreItem}");
