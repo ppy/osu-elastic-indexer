@@ -15,6 +15,7 @@ namespace osu.ElasticIndexer
     [Subcommand(typeof(OpenIndexCommand))]
     [Subcommand(typeof(PumpAllScoresCommand))]
     [Subcommand(typeof(PumpFakeScoresCommand))]
+    [Subcommand(typeof(PushFileCommand))]
     [Subcommand(typeof(ScoresCommand))]
     [Subcommand(typeof(SchemaVersionCommand))]
     [Subcommand(typeof(UpdateAliasCommand))]
