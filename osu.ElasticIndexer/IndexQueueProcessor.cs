@@ -18,6 +18,7 @@ namespace osu.ElasticIndexer
         private readonly Client client;
         private readonly string index;
 
+        private readonly HashSet<long> lookupIds = new HashSet<long>();
         private readonly List<SoloScore> scoresAdd = new List<SoloScore>();
         private readonly List<string> scoresRemove = new List<string>();
 
@@ -41,8 +42,7 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            var lookupIds = new List<long>();
-
+            // Figure out what to do with the queue item.
             foreach (var item in items)
             {
                 var action = item.ParsedAction;
@@ -68,14 +68,8 @@ namespace osu.ElasticIndexer
                 }
             }
 
-            if (lookupIds.Any())
-            {
-                var scores = ElasticModel.Find<SoloScore>(lookupIds);
-                foreach (var score in scores)
-                {
-                    addToBuffer(score);
-                }
-            }
+            // Handle any scores that need a lookup.
+            performLookup();
 
             if (scoresAdd.Any() || scoresRemove.Any())
             {
@@ -165,6 +159,23 @@ namespace osu.ElasticIndexer
             }
 
             // TODO: per-item errors?
+        }
+
+        private void performLookup()
+        {
+            if (!lookupIds.Any()) return;
+
+            var scores = ElasticModel.Find<SoloScore>(lookupIds);
+            foreach (var score in scores)
+            {
+                addToBuffer(score);
+                lookupIds.Remove(score.id);
+            }
+
+            // Remaining scores do not exist and should be deleted.
+            scoresRemove.AddRange(lookupIds.Select(id => id.ToString()));
+
+            lookupIds.Clear();
         }
 
         private void waitUntilActive()
