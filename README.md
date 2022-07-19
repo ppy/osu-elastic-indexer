@@ -6,7 +6,33 @@ Component for loading [osu!](https://osu.ppy.sh) scores into Elasticsearch.
 
 - .NET 6
 - Elasticsearch 7
-- Redis
+- Redis 6
+
+## Elasticsearch 8 compatiblity
+
+Requires minimum Elasticsearch 8.2.
+
+The following env needs to be set on the indexer:
+
+```bash
+ELASTIC_CLIENT_APIVERSIONING=true
+```
+
+and the following must be set in elasticsearch server configuration
+`elasticsearch.yml`
+
+```yml
+xpack.security.enabled: false
+```
+
+or docker environment, e.g. in docker compose:
+```yml
+environment:
+  xpack.security.enabled: false
+```
+
+This will enable http connections to elasticsearch and disable the https and authentication requirement, as well as, returning a compatible response to the client.
+
 
 # Usage
 
