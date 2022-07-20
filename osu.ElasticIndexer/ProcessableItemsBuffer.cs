@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace osu.ElasticIndexer
 {
-    public class IndexQueueItems
+    public class ProcessableItemsBuffer
     {
         public readonly HashSet<long> LookupIds = new HashSet<long>();
         public readonly List<SoloScore> Add = new List<SoloScore>();

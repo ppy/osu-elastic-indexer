@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            var buffer = new IndexQueueItems();
+            var buffer = new ProcessableItemsBuffer();
 
             // Figure out what to do with the queue item.
             foreach (var item in items)
@@ -75,7 +75,7 @@ namespace osu.ElasticIndexer
             }
         }
 
-        private void addToBuffer(SoloScore score, IndexQueueItems buffer)
+        private void addToBuffer(SoloScore score, ProcessableItemsBuffer buffer)
         {
             if (score.ShouldIndex)
                 buffer.Add.Add(score);
@@ -148,7 +148,7 @@ namespace osu.ElasticIndexer
             // TODO: per-item errors?
         }
 
-        private void performLookup(IndexQueueItems buffer)
+        private void performLookup(ProcessableItemsBuffer buffer)
         {
             if (!buffer.LookupIds.Any()) return;
 
