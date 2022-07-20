@@ -132,12 +132,6 @@ will queue the score with `${id}` for indexing; the score will be added or delet
 
 See [Queuing items for processing from another client](#queuing-items-for-processing-from-another-client)
 
-## Queuing a specific score for deletion
-
-    schema=${schema} dotnet run scores delete ${id}
-
-will queue the score with `${id}` for deletion, regardless of whether the score should be indexed or not.
-
 ## Adding existing database records to the queue
 
     schema=1 dotnet run all

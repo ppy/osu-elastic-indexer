@@ -13,7 +13,7 @@ namespace osu.ElasticIndexer.Commands
     {
         [Argument(0)]
         [Required]
-        [AllowedValues("delete", "index", IgnoreCase = true)]
+        [AllowedValues("index", IgnoreCase = true)]
         public string Action { get; set; } = string.Empty;
 
         [Argument(1)]

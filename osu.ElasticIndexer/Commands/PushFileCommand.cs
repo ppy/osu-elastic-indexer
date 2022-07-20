@@ -21,8 +21,8 @@ namespace osu.ElasticIndexer.Commands
                 throw new MissingSchemaException();
 
             var value = File.ReadAllText(Filename);
-
             var redis = new Redis();
+
             redis.Connection.GetDatabase().ListLeftPush(Processor.QueueName, value);
 
             return 0;

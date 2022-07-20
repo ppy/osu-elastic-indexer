@@ -49,11 +49,7 @@ namespace osu.ElasticIndexer
                 {
                     var id = (long)item.ScoreId; // doesn't figure out id isn't nullable here...
 
-                    if (action == "delete")
-                    {
-                        buffer.Remove.Add(id.ToString());
-                    }
-                    else if (action == "index")
+                    if (action == "index")
                     {
                         buffer.LookupIds.Add(id);
                     }
