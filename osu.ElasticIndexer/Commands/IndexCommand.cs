@@ -8,14 +8,9 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("scores", Description = "Queue a score for indexing or deletion by id.")]
-    public class ScoresCommand : ProcessorCommandBase
+    [Command("index", Description = "Queue a score for indexing by id.")]
+    public class IndexCommand : ProcessorCommandBase
     {
-        [Argument(0)]
-        [Required]
-        [AllowedValues("index", IgnoreCase = true)]
-        public string Action { get; set; } = string.Empty;
-
         [Argument(1)]
         [Required]
         public string ScoreId { get; set; } = string.Empty;
@@ -26,7 +21,7 @@ namespace osu.ElasticIndexer.Commands
                 throw new MissingSchemaException();
 
             var id = long.Parse(ScoreId);
-            var scoreItem = new ScoreItem { Action = Action, ScoreId = id };
+            var scoreItem = new ScoreItem { ScoreId = id };
             Processor.PushToQueue(scoreItem);
 
             Console.WriteLine(ConsoleColor.Cyan, $"Queued to {Processor.QueueName}: {scoreItem}");

@@ -8,12 +8,7 @@ namespace osu.ElasticIndexer
 {
     public class ScoreItem : QueueItem
     {
-        // TODO :figure out what's the deal with constructor not working?
-        public string? Action { get; set; }
         public long? ScoreId { get; set; }
-
-        [IgnoreDataMember]
-        public string? ParsedAction => Action?.ToLowerInvariant();
 
         public SoloScore? Score { get; set; }
 
@@ -26,6 +21,6 @@ namespace osu.ElasticIndexer
             Score = score;
         }
 
-        public override string ToString() => Score != null ? $"ScoreItem Score: {Score.id}" : $"ScoreItem ScoreId: {ScoreId} {Action} ";
+        public override string ToString() => Score != null ? $"ScoreItem Score: {Score.id}" : $"ScoreItem ScoreId: {ScoreId}";
     }
 }

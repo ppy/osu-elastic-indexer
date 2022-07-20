@@ -43,16 +43,10 @@ namespace osu.ElasticIndexer
             // Figure out what to do with the queue item.
             foreach (var item in items)
             {
-                var action = item.ParsedAction;
-
-                if (item.ScoreId != null && action != null)
+                if (item.ScoreId != null)
                 {
-                    var id = (long)item.ScoreId; // doesn't figure out id isn't nullable here...
-
-                    if (action == "index")
-                    {
-                        buffer.LookupIds.Add(id);
-                    }
+                    // doesn't figure out id isn't nullable here...
+                    buffer.LookupIds.Add((long)item.ScoreId);
                 }
                 else if (item.Score != null)
                 {
