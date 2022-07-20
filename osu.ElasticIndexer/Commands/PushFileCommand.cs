@@ -23,10 +23,7 @@ namespace osu.ElasticIndexer.Commands
             var value = File.ReadAllText(Filename);
 
             var redis = new Redis();
-            var database = redis.Connection.GetDatabase();
-            var queueName = $"osu-queue:score-index-{AppSettings.Schema}";
-
-            database.ListLeftPush(queueName, value);
+            redis.Connection.GetDatabase().ListLeftPush(Processor.QueueName, value);
 
             return 0;
         }
