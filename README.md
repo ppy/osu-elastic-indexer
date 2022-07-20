@@ -16,8 +16,8 @@ A string value is used to indicate the current schema version to be used.
 
 ## Adding items to be indexed
 
-Scores with `preserve`=`true` will be added to the index,
-scores with `preserve`=`false` will be removed from the index.
+Scores with `preserve`=`true` belonging to a user with `user_warnings`=`0` will be added to the index,
+scores where any of the previous conditions are false will be removed from the index.
 
 Push items to `osu-queue:score-index-${schema}`
 
