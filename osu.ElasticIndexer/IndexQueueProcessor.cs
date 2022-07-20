@@ -45,12 +45,14 @@ namespace osu.ElasticIndexer
             {
                 if (item.ScoreId != null)
                 {
-                    // doesn't figure out id isn't nullable here...
-                    buffer.ScoreIdsForLookup.Add((long)item.ScoreId);
+                    buffer.ScoreIdsForLookup.Add(item.ScoreId.Value);
                 }
                 else if (item.Score != null)
                 {
-                    addToBuffer(item.Score, buffer);
+                    if (item.Score.ShouldIndex)
+                        buffer.Additions.Add(item.Score);
+                    else
+                        buffer.Deletions.Add(item.Score.id);
                 }
                 else
                 {
@@ -58,8 +60,8 @@ namespace osu.ElasticIndexer
                 }
             }
 
-            // Handle any scores that need a lookup.
-            performLookup(buffer);
+            // Handle any scores that need a lookup from the database.
+            performDatabaseLookup(buffer);
 
             Debug.Assert(buffer.ScoreIdsForLookup.Count == 0);
 
@@ -75,14 +77,6 @@ namespace osu.ElasticIndexer
 
                 handleResponse(response, items);
             }
-        }
-
-        private void addToBuffer(SoloScore score, ProcessableItemsBuffer buffer)
-        {
-            if (score.ShouldIndex)
-                buffer.Additions.Add(score);
-            else
-                buffer.Deletions.Add(score.id);
         }
 
         private void handleResponse(BulkResponse response, IEnumerable<ScoreItem> items)
@@ -133,7 +127,7 @@ namespace osu.ElasticIndexer
             // TODO: per-item errors?
         }
 
-        private void performLookup(ProcessableItemsBuffer buffer)
+        private void performDatabaseLookup(ProcessableItemsBuffer buffer)
         {
             if (!buffer.ScoreIdsForLookup.Any()) return;
 
@@ -141,13 +135,16 @@ namespace osu.ElasticIndexer
 
             foreach (var score in scores)
             {
-                addToBuffer(score, buffer);
+                if (score.ShouldIndex)
+                    buffer.Additions.Add(score);
+                else
+                    buffer.Deletions.Add(score.id);
+
                 buffer.ScoreIdsForLookup.Remove(score.id);
             }
 
             // Remaining scores do not exist and should be deleted.
             buffer.Deletions.AddRange(buffer.ScoreIdsForLookup);
-
             buffer.ScoreIdsForLookup.Clear();
         }
 
