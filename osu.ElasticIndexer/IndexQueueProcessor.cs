@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Elasticsearch.Net;
 using Nest;
 using osu.Server.QueueProcessor;
 
@@ -84,23 +83,6 @@ namespace osu.ElasticIndexer
                 buffer.Additions.Add(score);
             else
                 buffer.Deletions.Add(score.id);
-        }
-
-        private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
-        {
-            try
-            {
-                return client.ElasticClient.Bulk(bulkDescriptor);
-            }
-            catch (ElasticsearchClientException ex)
-            {
-                // Server disappeared, maybe network failure or it's restarting; spin until it's available again.
-                Console.WriteLine(ConsoleColor.Red, ex.Message);
-                Console.WriteLine(ConsoleColor.Yellow, ex.InnerException?.Message);
-                waitUntilActive();
-
-                return dispatch(bulkDescriptor);
-            }
         }
 
         private void handleResponse(BulkResponse response, IEnumerable<ScoreItem> items)
