@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
@@ -46,7 +47,7 @@ namespace osu.ElasticIndexer
                 if (item.ScoreId != null)
                 {
                     // doesn't figure out id isn't nullable here...
-                    buffer.LookupIds.Add((long)item.ScoreId);
+                    buffer.ScoreIdsForLookup.Add((long)item.ScoreId);
                 }
                 else if (item.Score != null)
                 {
@@ -61,13 +62,15 @@ namespace osu.ElasticIndexer
             // Handle any scores that need a lookup.
             performLookup(buffer);
 
-            if (buffer.Add.Any() || buffer.Remove.Any())
+            Debug.Assert(buffer.ScoreIdsForLookup.Count == 0);
+
+            if (buffer.Additions.Any() || buffer.Deletions.Any())
             {
                 var bulkDescriptor = new BulkDescriptor()
                                      .Index(index)
-                                     .IndexMany(buffer.Add)
-                                     // type is needed for string ids https://github.com/elastic/elasticsearch-net/issues/3500
-                                     .DeleteMany<SoloScore>(buffer.Remove);
+                                     .IndexMany(buffer.Additions)
+                                     // type is needed for ids https://github.com/elastic/elasticsearch-net/issues/3500
+                                     .DeleteMany<SoloScore>(buffer.Deletions);
 
                 var response = client.ElasticClient.Bulk(bulkDescriptor);
 
@@ -78,9 +81,9 @@ namespace osu.ElasticIndexer
         private void addToBuffer(SoloScore score, ProcessableItemsBuffer buffer)
         {
             if (score.ShouldIndex)
-                buffer.Add.Add(score);
+                buffer.Additions.Add(score);
             else
-                buffer.Remove.Add(score.id.ToString());
+                buffer.Deletions.Add(score.id);
         }
 
         private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
@@ -150,20 +153,20 @@ namespace osu.ElasticIndexer
 
         private void performLookup(ProcessableItemsBuffer buffer)
         {
-            if (!buffer.LookupIds.Any()) return;
+            if (!buffer.ScoreIdsForLookup.Any()) return;
 
-            var scores = ElasticModel.Find<SoloScore>(buffer.LookupIds);
+            var scores = ElasticModel.Find<SoloScore>(buffer.ScoreIdsForLookup);
 
             foreach (var score in scores)
             {
                 addToBuffer(score, buffer);
-                buffer.LookupIds.Remove(score.id);
+                buffer.ScoreIdsForLookup.Remove(score.id);
             }
 
             // Remaining scores do not exist and should be deleted.
-            buffer.Remove.AddRange(buffer.LookupIds.Select(id => id.ToString()));
+            buffer.Deletions.AddRange(buffer.ScoreIdsForLookup);
 
-            buffer.LookupIds.Clear();
+            buffer.ScoreIdsForLookup.Clear();
         }
 
         private void waitUntilActive()
