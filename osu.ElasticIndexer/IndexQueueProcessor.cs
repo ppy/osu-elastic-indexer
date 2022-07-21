@@ -90,6 +90,7 @@ namespace osu.ElasticIndexer
                 }
 
                 stop();
+                return;
             }
 
             // Elasticsearch bulk thread pool is full.
