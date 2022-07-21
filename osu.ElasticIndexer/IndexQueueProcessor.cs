@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Elasticsearch.Net;
 using Nest;
 using osu.Server.QueueProcessor;
 
@@ -73,9 +74,26 @@ namespace osu.ElasticIndexer
                                      // type is needed for ids https://github.com/elastic/elasticsearch-net/issues/3500
                                      .DeleteMany<SoloScore>(buffer.Deletions);
 
-                var response = client.ElasticClient.Bulk(bulkDescriptor);
+                var response = dispatch(bulkDescriptor);
 
                 handleResponse(response, items);
+            }
+        }
+
+        private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
+        {
+            try
+            {
+                return client.ElasticClient.Bulk(bulkDescriptor);
+            }
+            catch (ElasticsearchClientException ex)
+            {
+                // Server disappeared, maybe network failure or it's restarting; spin until it's available again.
+                Console.WriteLine(ConsoleColor.Red, ex.Message);
+                Console.WriteLine(ConsoleColor.Yellow, ex.InnerException?.Message);
+                waitUntilActive();
+
+                return dispatch(bulkDescriptor);
             }
         }
 
