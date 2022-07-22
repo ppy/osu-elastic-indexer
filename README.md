@@ -42,8 +42,8 @@ A string value is used to indicate the current schema version to be used.
 
 ## Adding items to be indexed
 
-Scores with `preserve`=`true` will be added to the index,
-scores with `preserve`=`false` will be removed from the index.
+Scores with `preserve`=`true` belonging to a user with `user_warnings`=`0` will be added to the index,
+scores where any of the previous conditions are false will be removed from the index.
 
 Push items to `osu-queue:score-index-${schema}`
 
@@ -150,6 +150,14 @@ For testing purposes, we can add fake items to the queue:
 
 It should be noted that these items will not exist or match the ones in the database.
 
+## Queuing a specific score for indexing
+
+    schema=${schema} dotnet run index ${id}
+
+will queue the score with `${id}` for indexing; the score will be added or deleted as necessary, according to the value of `SoloScore.ShouldIndex`.
+
+See [Queuing items for processing from another client](#queuing-items-for-processing-from-another-client)
+
 ## Adding existing database records to the queue
 
     schema=1 dotnet run all
@@ -175,3 +183,30 @@ Populating an index is done by pushing score items to a queue.
 where `${cmd}` is the command to run, e.g. `dotnet osu.ElasticIndexer.dll queue`
 
 # Typical use-cases
+
+## Queuing items for processing from another client
+
+Push items into the Redis queue "`osu-queue:score-index-${schema}`"
+e.g.
+
+```csharp
+ListLeftPush("osu-queue:score-index-1", "{ \"ScoreId\": 1 }");
+```
+
+or from redis-cli:
+```
+LPUSH "osu-queue:score-index-1" "{\"ScoreId\":1}"
+```
+
+### Indexing a score by `id`
+```json
+{ "ScoreId": 1 }
+```
+
+### Queuing a whole score
+
+```json
+{
+    "Score": {Solo.Score}
+}
+```

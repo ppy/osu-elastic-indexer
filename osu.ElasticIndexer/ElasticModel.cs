@@ -61,5 +61,21 @@ namespace osu.ElasticIndexer
 
         public static IEnumerable<List<T>> Chunk<T>(int chunkSize = 10000, long? resumeFrom = null) where T : ElasticModel =>
             Chunk<T>(null, chunkSize, resumeFrom);
+
+        public static List<T> Find<T>(IEnumerable<long> ids) where T : ElasticModel
+        {
+            using (var dbConnection = new MySqlConnection(AppSettings.ConnectionString))
+            {
+                var attribute = typeof(T).GetCustomAttributes<ChunkOnAttribute>().First();
+                var cursorColumn = attribute.CursorColumn;
+                var selects = attribute.Query;
+
+                string query = $"select {selects} where {cursorColumn} in @ids";
+
+                dbConnection.Open();
+
+                return dbConnection.Query<T>(query, new { ids }).AsList();
+            }
+        }
     }
 }

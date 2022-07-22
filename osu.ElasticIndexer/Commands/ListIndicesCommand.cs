@@ -26,7 +26,7 @@ namespace osu.ElasticIndexer.Commands
                     var schema = indexState.Mappings.Meta?["schema"];
                     var aliased = indexState.Aliases.ContainsKey(client.AliasName);
 
-                    Console.WriteLine($"{record.Index} schema:{schema} aliased:{aliased} {record.Status} {record.DocsCount} {record.PrimaryStoreSize}");
+                    Console.WriteLine($"{record.Index} schema:{schema} aliased:{aliased} {record.Status} docs {record.DocsCount} deleted {record.DocsDeleted} {record.PrimaryStoreSize}");
                 }
             }
 

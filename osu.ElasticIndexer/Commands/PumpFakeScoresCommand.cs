@@ -54,7 +54,7 @@ namespace osu.ElasticIndexer.Commands
                         preserve = true
                     };
 
-                Processor.PushToQueue(new ScoreItem(score));
+                Processor.PushToQueue(new ScoreItem { Score = score });
 
                 if (counter % 1000 == 0)
                     Console.WriteLine($"pushed to {Processor.QueueName}, current id: {counter}");

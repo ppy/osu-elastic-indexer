@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
@@ -38,25 +39,45 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            var add = new List<SoloScore>();
-            var remove = new List<SoloScore>();
+            var buffer = new ProcessableItemsBuffer();
 
+            // Figure out what to do with the queue item.
             foreach (var item in items)
             {
-                if (item.Score.ShouldIndex)
-                    add.Add(item.Score);
+                if (item.ScoreId != null)
+                {
+                    buffer.ScoreIdsForLookup.Add(item.ScoreId.Value);
+                }
+                else if (item.Score != null)
+                {
+                    if (item.Score.ShouldIndex)
+                        buffer.Additions.Add(item.Score);
+                    else
+                        buffer.Deletions.Add(item.Score.id);
+                }
                 else
-                    remove.Add(item.Score);
+                {
+                    Console.WriteLine(ConsoleColor.Red, "queue item missing both data and action");
+                }
             }
 
-            var bulkDescriptor = new BulkDescriptor()
-                                 .Index(index)
-                                 .IndexMany(add)
-                                 .DeleteMany(remove);
+            // Handle any scores that need a lookup from the database.
+            performDatabaseLookup(buffer);
 
-            var response = client.ElasticClient.Bulk(bulkDescriptor);
+            Debug.Assert(buffer.ScoreIdsForLookup.Count == 0);
 
-            handleResponse(response, items);
+            if (buffer.Additions.Any() || buffer.Deletions.Any())
+            {
+                var bulkDescriptor = new BulkDescriptor()
+                                     .Index(index)
+                                     .IndexMany(buffer.Additions)
+                                     // type is needed for ids https://github.com/elastic/elasticsearch-net/issues/3500
+                                     .DeleteMany<SoloScore>(buffer.Deletions);
+
+                var response = dispatch(bulkDescriptor);
+
+                handleResponse(response, items);
+            }
         }
 
         private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
@@ -96,7 +117,7 @@ namespace osu.ElasticIndexer
             // Elasticsearch bulk thread pool is full.
             if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
             {
-                Console.WriteLine(ConsoleColor.Yellow, $"Server returned 429, re-queued chunk with lastId {items.Last().Score.id}");
+                Console.WriteLine(ConsoleColor.Yellow, $"Server returned 429, re-queued chunk with lastId {items.Last()}");
 
                 foreach (var item in items)
                 {
@@ -123,6 +144,27 @@ namespace osu.ElasticIndexer
             }
 
             // TODO: per-item errors?
+        }
+
+        private void performDatabaseLookup(ProcessableItemsBuffer buffer)
+        {
+            if (!buffer.ScoreIdsForLookup.Any()) return;
+
+            var scores = ElasticModel.Find<SoloScore>(buffer.ScoreIdsForLookup);
+
+            foreach (var score in scores)
+            {
+                if (score.ShouldIndex)
+                    buffer.Additions.Add(score);
+                else
+                    buffer.Deletions.Add(score.id);
+
+                buffer.ScoreIdsForLookup.Remove(score.id);
+            }
+
+            // Remaining scores do not exist and should be deleted.
+            buffer.Deletions.AddRange(buffer.ScoreIdsForLookup);
+            buffer.ScoreIdsForLookup.Clear();
         }
 
         private void waitUntilActive()

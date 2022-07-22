@@ -53,7 +53,7 @@ namespace osu.ElasticIndexer.Commands
                     if (Verbose)
                         Console.WriteLine($"Pushing {score}");
 
-                    Processor.PushToQueue(new ScoreItem(score));
+                    Processor.PushToQueue(new ScoreItem { Score = score });
                 }
 
                 if (!Verbose)
