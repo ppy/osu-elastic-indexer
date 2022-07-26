@@ -34,8 +34,8 @@ namespace osu.ElasticIndexer.Commands
 
             var redis = new Redis();
             var currentSchema = redis.GetSchemaVersion();
-            Console.WriteLine(ConsoleColor.Cyan, $"Current schema version is: {currentSchema}");
-            Console.WriteLine(ConsoleColor.Cyan, $"Pushing to queue with schema: {AppSettings.Schema}");
+            Console.WriteLine(ConsoleColor.Green, $"Current schema version is: {currentSchema}");
+            Console.WriteLine(ConsoleColor.Green, $"Pushing to queue with schema: {AppSettings.Schema}");
 
             if (Switch && currentSchema == AppSettings.Schema)
                 Console.WriteLine(ConsoleColor.Yellow, "Queue watchers will not update the alias if schema does not change!");
