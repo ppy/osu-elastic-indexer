@@ -23,10 +23,14 @@ namespace osu.ElasticIndexer.Commands
         [Option("--verbose", Description = "Fill your console with text")]
         public bool Verbose { get; set; }
 
+        private CancellationToken cancellationToken;
+
         public int OnExecute(CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();
+
+            this.cancellationToken = cancellationToken;
 
             var redis = new Redis();
             var currentSchema = redis.GetSchemaVersion();
@@ -39,7 +43,28 @@ namespace osu.ElasticIndexer.Commands
             var startTime = DateTimeOffset.Now;
             Console.WriteLine(ConsoleColor.Cyan, $"Start read: {startTime}");
 
-            var chunks = ElasticModel.Chunk<SoloScore>(AppSettings.BatchSize, From);
+            var lastId = queueScores(From);
+
+            var endTime = DateTimeOffset.Now;
+            Console.WriteLine(ConsoleColor.Cyan, $"End read: {endTime}, time taken: {endTime - startTime}");
+
+            if (Switch)
+            {
+                redis.SetSchemaVersion(AppSettings.Schema);
+                Console.WriteLine(ConsoleColor.Yellow, $"Schema version set to {AppSettings.Schema}, queueing scores > {lastId}");
+                queueScores(lastId);
+
+                var switchEndTime = DateTimeOffset.Now;
+                Console.WriteLine(ConsoleColor.Cyan, $"End read after switch: {switchEndTime}, time taken: {switchEndTime - startTime}");
+            }
+
+            return 0;
+        }
+
+        private long? queueScores(long? from)
+        {
+            var chunks = ElasticModel.Chunk<SoloScore>(AppSettings.BatchSize, from);
+            SoloScore? last = null;
 
             foreach (var scores in chunks)
             {
@@ -56,20 +81,16 @@ namespace osu.ElasticIndexer.Commands
                     Processor.PushToQueue(new ScoreItem { Score = score });
                 }
 
+                last = scores.LastOrDefault();
+
                 if (!Verbose)
-                    Console.WriteLine($"Pushed {scores.LastOrDefault()}");
+                    Console.WriteLine($"Pushed {last}");
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);
             }
 
-            var endTime = DateTimeOffset.Now;
-            Console.WriteLine(ConsoleColor.Cyan, $"End read: {endTime}, time taken: {endTime - startTime}");
-
-            if (Switch)
-                redis.SetSchemaVersion(AppSettings.Schema);
-
-            return 0;
+            return last?.id;
         }
     }
 }
