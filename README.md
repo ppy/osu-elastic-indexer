@@ -10,7 +10,7 @@ Component for loading [osu!](https://osu.ppy.sh) scores into Elasticsearch.
 
 ## Elasticsearch 8 compatiblity
 
-Requires minimum Elasticsearch 8.2.
+If using Elasticsearch 8, a minimum version of Elasticsearch 8.2 is required.
 
 The following env needs to be set on the indexer:
 
