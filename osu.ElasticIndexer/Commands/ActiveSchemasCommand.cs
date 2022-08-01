@@ -17,8 +17,8 @@ namespace osu.ElasticIndexer.Commands
 
             Console.WriteLine(
                 value.Length == 0
-                ? "No known schema versions currently being processed."
-                : $"Schema versions currently being processed: {string.Join(", ", value)}"
+                    ? "No known schema versions currently being processed."
+                    : $"Schema versions currently being processed: {string.Join(", ", value)}"
             );
 
             return 0;
