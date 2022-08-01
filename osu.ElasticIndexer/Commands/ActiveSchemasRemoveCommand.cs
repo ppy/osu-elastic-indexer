@@ -18,11 +18,9 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute(CancellationToken token)
         {
             var exists = new Redis().RemoveActiveSchema(Schema);
+            var text = exists ? "Removed" : "Did not exist";
 
-            if (exists)
-                Console.WriteLine(ConsoleColor.Green, $"Removed: {Schema}");
-            else
-                Console.WriteLine(ConsoleColor.Green, $"Did not exist: {Schema}");
+            Console.WriteLine(ConsoleColor.Green, $"{text}: {Schema}");
 
             return 0;
         }

@@ -15,10 +15,11 @@ namespace osu.ElasticIndexer.Commands
         {
             var value = new Redis().GetActiveSchemas();
 
-            if (value.Length == 0)
-                Console.WriteLine("No known schema versions currently being processed.");
-            else
-                Console.WriteLine($"Schema versions currently being processed: {string.Join(", ", value)}");
+            Console.WriteLine(
+                value.Length == 0
+                ? "No known schema versions currently being processed."
+                : $"Schema versions currently being processed: {string.Join(", ", value)}"
+            );
 
             return 0;
         }

@@ -18,11 +18,9 @@ namespace osu.ElasticIndexer.Commands
         public int OnExecute(CancellationToken token)
         {
             var added = new Redis().AddActiveSchema(Schema);
+            var text = added ? "Added" : "Already exists";
 
-            if (added)
-                Console.WriteLine(ConsoleColor.Green, $"Added: {Schema}");
-            else
-                Console.WriteLine(ConsoleColor.Green, $"Already exists: {Schema}");
+            Console.WriteLine(ConsoleColor.Green, $"{text}: {Schema}");
 
             return 0;
         }
