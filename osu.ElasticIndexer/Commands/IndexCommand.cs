@@ -24,7 +24,7 @@ namespace osu.ElasticIndexer.Commands
             var scoreItem = new ScoreItem { ScoreId = id };
             Processor.PushToQueue(scoreItem);
 
-            Console.WriteLine(ConsoleColor.Cyan, $"Queued to {Processor.QueueName}: {scoreItem}");
+            Console.WriteLine(ConsoleColor.Green, $"Queued to {Processor.QueueName}: {scoreItem}");
 
             return 0;
         }
