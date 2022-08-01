@@ -35,10 +35,13 @@ namespace osu.ElasticIndexer
             }
         }
 
-        public void Stop()
+        public void Stop(bool aborted)
         {
             if (cts == null || cts.IsCancellationRequested)
                 return;
+
+            if (!aborted)
+                redis.RemoveActiveSchema(AppSettings.Schema);
 
             cts.Cancel();
         }
@@ -69,8 +72,7 @@ namespace osu.ElasticIndexer
             }
 
             Console.WriteLine(ConsoleColor.Yellow, $"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
-            redis.RemoveActiveSchema(AppSettings.Schema);
-            Stop();
+            Stop(false);
         }
     }
 }
