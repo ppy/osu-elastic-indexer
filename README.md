@@ -10,7 +10,7 @@ Component for loading [osu!](https://osu.ppy.sh) scores into Elasticsearch.
 
 ## Elasticsearch 8 compatiblity
 
-Requires minimum Elasticsearch 8.2.
+If using Elasticsearch 8, a minimum version of Elasticsearch 8.2 is required.
 
 The following env needs to be set on the indexer:
 
@@ -40,6 +40,11 @@ This will enable http connections to elasticsearch and disable the https and aut
 
 A string value is used to indicate the current schema version to be used.
 
+When the queue processor is running, it will store the version it is processing in a set in Redis at `osu-queue:score-index:${prefix}active-schemas`.
+
+If a queue processor is stops automatically due to a schema version change,
+it will remove the version it is processing from the set of versions; it _will not_ be removed if the processor if stopped manually or from processor failures; this is to allow other services to continue pushing to those queues.
+
 ## Adding items to be indexed
 
 Scores with `preserve`=`true` belonging to a user with `user_warnings`=`0` will be added to the index,
@@ -49,7 +54,7 @@ Push items to `osu-queue:score-index-${schema}`
 
 ## Switching to a new schema
 
-Run `dotnet run schema --schema ${schema}` or set `osu-queue:score-index:schema` directly in Redis
+Run `dotnet run schema --schema ${schema}` or set `osu-queue:score-index:${prefix}schema` directly in Redis
 
 ### Automatic index switching
 
@@ -169,6 +174,20 @@ Extra options:
 `--from {id}`: `solo_scores.id` to start reading from
 
 `--switch`: Sets the schema version after the last item is queued; it does not wait for the item to be indexed; this option is provided as a conveninence for testing.
+
+## Listing known versions currently being processed
+
+    dotnet run active-schemas
+
+will list the versions known to have queue processors listening on the queue.
+
+
+## Manually add or remove known versions
+
+For debugging purposes or to perform and manual maintenance or cleanups, the list of versions can be updated manually:
+
+    dotnet run active-schemas add ${schema}
+    dotnet run active-schemas remove ${schema}
 
 # (Re)Populating an index
 
