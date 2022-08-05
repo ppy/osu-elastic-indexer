@@ -21,9 +21,9 @@ namespace osu.ElasticIndexer
 
         // QueueProcessor doesn't expose cancellation without overriding Run,
         // so we're making use of a supplied callback to stop processing.
-        private readonly Action<bool> stop;
+        private readonly Action stop;
 
-        internal IndexQueueProcessor(string index, Client client, Action<bool> stopCallback)
+        internal IndexQueueProcessor(string index, Client client, Action stopCallback)
             : base(new QueueConfiguration
             {
                 InputQueueName = queue_name,
@@ -110,7 +110,7 @@ namespace osu.ElasticIndexer
                     item.Failed = true;
                 }
 
-                stop(true);
+                stop();
                 return;
             }
 
@@ -140,7 +140,7 @@ namespace osu.ElasticIndexer
                     item.Failed = true;
                 }
 
-                stop(true);
+                stop();
             }
 
             // TODO: per-item errors?
