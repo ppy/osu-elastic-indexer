@@ -95,7 +95,7 @@ namespace osu.ElasticIndexer
 
                 var exceptionTypeString = response.OriginalException?.GetType().ToString() ?? "null";
 
-                DogStatsd.Increment("server_error", 1, 1, new string[] { "status:unknown", $"exception_type:{exceptionTypeString}" });
+                DogStatsd.Increment("server_error", 1, 1, new[] { "status:unknown", $"exception_type:{exceptionTypeString}" });
                 stop();
 
                 return;
@@ -104,7 +104,7 @@ namespace osu.ElasticIndexer
             Console.WriteLine(ConsoleColor.Red, error.Error.Reason);
             // es_rejected_execution_exception is the server is too busy.
             // circuit_breaking_exception is a sign the jvm heap is too small or GC is stalling.
-            DogStatsd.Increment("server_error", 1, 1, new string[] { $"status:{error.Status}", $"type:{error.Error.Type}" });
+            DogStatsd.Increment("server_error", 1, 1, new[] { $"status:{error.Status}", $"type:{error.Error.Type}" });
 
             if (error.Status == 429)
             {
