@@ -28,6 +28,8 @@ namespace osu.ElasticIndexer
 
                 checkSchema();
 
+                redis.AddActiveSchema(AppSettings.Schema);
+
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
                     new IndexQueueProcessor(metadata.Name, client, Stop).Run(cts.Token);
             }
@@ -67,6 +69,7 @@ namespace osu.ElasticIndexer
             }
 
             Console.WriteLine(ConsoleColor.Yellow, $"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
+            redis.RemoveActiveSchema(AppSettings.Schema);
             Stop();
         }
     }
