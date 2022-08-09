@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
@@ -39,32 +38,7 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            var buffer = new ProcessableItemsBuffer();
-
-            // Figure out what to do with the queue item.
-            foreach (var item in items)
-            {
-                if (item.ScoreId != null)
-                {
-                    buffer.ScoreIdsForLookup.Add(item.ScoreId.Value);
-                }
-                else if (item.Score != null)
-                {
-                    if (item.Score.ShouldIndex)
-                        buffer.Additions.Add(item.Score);
-                    else
-                        buffer.Deletions.Add(item.Score.id);
-                }
-                else
-                {
-                    Console.WriteLine(ConsoleColor.Red, "queue item missing both data and action");
-                }
-            }
-
-            // Handle any scores that need a lookup from the database.
-            performDatabaseLookup(buffer);
-
-            Debug.Assert(buffer.ScoreIdsForLookup.Count == 0);
+            var buffer = new ProcessableItemsBuffer(items);
 
             if (buffer.Additions.Any() || buffer.Deletions.Any())
             {
@@ -144,27 +118,6 @@ namespace osu.ElasticIndexer
             }
 
             // TODO: per-item errors?
-        }
-
-        private void performDatabaseLookup(ProcessableItemsBuffer buffer)
-        {
-            if (!buffer.ScoreIdsForLookup.Any()) return;
-
-            var scores = ElasticModel.Find<SoloScore>(buffer.ScoreIdsForLookup);
-
-            foreach (var score in scores)
-            {
-                if (score.ShouldIndex)
-                    buffer.Additions.Add(score);
-                else
-                    buffer.Deletions.Add(score.id);
-
-                buffer.ScoreIdsForLookup.Remove(score.id);
-            }
-
-            // Remaining scores do not exist and should be deleted.
-            buffer.Deletions.AddRange(buffer.ScoreIdsForLookup);
-            buffer.ScoreIdsForLookup.Clear();
         }
 
         private void waitUntilActive()
