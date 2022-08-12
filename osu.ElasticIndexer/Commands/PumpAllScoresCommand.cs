@@ -21,9 +21,6 @@ namespace osu.ElasticIndexer.Commands
         [Option("--switch", Description = "Update the configured schema in redis after completing")]
         public bool Switch { get; set; }
 
-        [Option("--verbose", Description = "Fill your console with text")]
-        public bool Verbose { get; set; }
-
         public int OnExecute(CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(AppSettings.Schema))
@@ -55,13 +52,11 @@ namespace osu.ElasticIndexer.Commands
                     scoreItems.Add(new ScoreItem { Score = score });
                 }
 
-                if (Verbose)
-                    Console.WriteLine($"Pushing {scoreItems.Count} scores");
+                Console.WriteLine($"Pushing {scoreItems.Count} scores");
 
                 Processor.PushToQueue(scoreItems);
 
-                if (!Verbose)
-                    Console.WriteLine($"Pushed {scores.LastOrDefault()}");
+                Console.WriteLine($"Pushed {scores.LastOrDefault()}");
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);
