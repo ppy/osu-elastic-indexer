@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
@@ -46,15 +47,18 @@ namespace osu.ElasticIndexer.Commands
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
+                List<ScoreItem> scoreItems = new List<ScoreItem>();
+
                 foreach (var score in scores)
                 {
                     score.country_code ??= "XX";
-
-                    if (Verbose)
-                        Console.WriteLine($"Pushing {score}");
-
-                    Processor.PushToQueue(new ScoreItem { Score = score });
+                    scoreItems.Add(new ScoreItem { Score = score });
                 }
+
+                if (Verbose)
+                    Console.WriteLine($"Pushing {scoreItems.Count} scores");
+
+                Processor.PushToQueue(scoreItems);
 
                 if (!Verbose)
                     Console.WriteLine($"Pushed {scores.LastOrDefault()}");
