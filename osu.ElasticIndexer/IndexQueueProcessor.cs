@@ -3,10 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Elasticsearch.Net;
 using Nest;
 using osu.Server.QueueProcessor;
 
@@ -39,142 +37,83 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            var buffer = new ProcessableItemsBuffer();
-
-            // Figure out what to do with the queue item.
-            foreach (var item in items)
-            {
-                if (item.ScoreId != null)
-                {
-                    buffer.ScoreIdsForLookup.Add(item.ScoreId.Value);
-                }
-                else if (item.Score != null)
-                {
-                    if (item.Score.ShouldIndex)
-                        buffer.Additions.Add(item.Score);
-                    else
-                        buffer.Deletions.Add(item.Score.id);
-                }
-                else
-                {
-                    Console.WriteLine(ConsoleColor.Red, "queue item missing both data and action");
-                }
-            }
-
-            // Handle any scores that need a lookup from the database.
-            performDatabaseLookup(buffer);
-
-            Debug.Assert(buffer.ScoreIdsForLookup.Count == 0);
+            var buffer = new ProcessableItemsBuffer(items);
 
             if (buffer.Additions.Any() || buffer.Deletions.Any())
             {
                 var bulkDescriptor = new BulkDescriptor()
+                                     // Disabling exceptions streamlines error handling; all the relevant info will be in the response.
+                                     // With exceptions, some of the source data gets lost when it's put into the exception message.
+                                     .RequestConfiguration(r => r.ThrowExceptions(false))
                                      .Index(index)
                                      .IndexMany(buffer.Additions)
                                      // type is needed for ids https://github.com/elastic/elasticsearch-net/issues/3500
                                      .DeleteMany<SoloScore>(buffer.Deletions);
 
-                var response = dispatch(bulkDescriptor);
-
+                var response = client.ElasticClient.Bulk(bulkDescriptor);
                 handleResponse(response, items);
-            }
-        }
-
-        private BulkResponse dispatch(BulkDescriptor bulkDescriptor)
-        {
-            try
-            {
-                return client.ElasticClient.Bulk(bulkDescriptor);
-            }
-            catch (ElasticsearchClientException ex)
-            {
-                // Server disappeared, maybe network failure or it's restarting; spin until it's available again.
-                Console.WriteLine(ConsoleColor.Red, ex.Message);
-                Console.WriteLine(ConsoleColor.Yellow, ex.InnerException?.Message);
-                waitUntilActive();
-
-                return dispatch(bulkDescriptor);
             }
         }
 
         private void handleResponse(BulkResponse response, IEnumerable<ScoreItem> items)
         {
-            if (!response.IsValid)
+            if (response.IsValid)
             {
-                // If it gets to here, then something is really wrong, just bail out.
-                Console.WriteLine(ConsoleColor.Red, response.ToString());
-                Console.WriteLine(ConsoleColor.Red, response.OriginalException?.Message);
-
-                foreach (var item in items)
-                {
-                    item.Failed = true;
-                }
-
-                stop();
+                // everything is fine (until they change how IsValid works).
                 return;
             }
 
-            // Elasticsearch bulk thread pool is full.
-            if (response.ItemsWithErrors.Any(item => item.Status == 429 || item.Error.Type == "es_rejected_execution_exception"))
+            // Just assume everything failed.
+            foreach (var item in items)
             {
-                Console.WriteLine(ConsoleColor.Yellow, $"Server returned 429, re-queued chunk with lastId {items.Last()}");
-
-                foreach (var item in items)
-                {
-                    item.Failed = true;
-                }
-
-                // TODO: need a better way to tell queue to slow down (this delays requeuing and also exiting).
-                Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
-                return;
+                item.Failed = true;
             }
 
             // Index was closed, possibly because it was switched. Flag for bailout.
-            if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception"))
+            if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception" || item.Error.Type == "cluster_block_exception"))
             {
                 Console.WriteLine(ConsoleColor.Red, $"{index} was closed.");
-
-                // requeue in case it was an accident.
-                foreach (var item in items)
-                {
-                    item.Failed = true;
-                }
-
                 stop();
+                return;
+            }
+
+            // Try to figure out what's wrong
+            var error = response.ServerError;
+
+            if (error == null)
+            {
+                // TODO: requeue without marking as failed if server is offline.
+
+                // Something caused an error without a ServerError to be set;
+                // the server may be offline or unable to set ServerError.
+                // ...or an index error that didn't cause a server error; either way, we can't handle it.
+
+                Console.WriteLine(ConsoleColor.Red, response.ToString());
+                Console.WriteLine(ConsoleColor.Red, response.OriginalException?.ToString());
+                // Items may or may not have been set; try to get any information out.
+                Console.WriteLine(ConsoleColor.Yellow, response.ItemsWithErrors.FirstOrDefault()?.Error.ToString());
+
+                var exceptionTypeString = response.OriginalException?.GetType().ToString() ?? "null";
+
+                DogStatsd.Increment("server_error", 1, 1, new[] { "status:unknown", $"exception_type:{exceptionTypeString}" });
+                stop();
+
+                return;
+            }
+
+            Console.WriteLine(ConsoleColor.Red, error.Error.Reason);
+            // es_rejected_execution_exception is the server is too busy.
+            // circuit_breaking_exception is a sign the jvm heap is too small or GC is stalling.
+            DogStatsd.Increment("server_error", 1, 1, new[] { $"status:{error.Status}", $"type:{error.Error.Type}" });
+
+            if (error.Status == 429)
+            {
+                Console.WriteLine(ConsoleColor.Yellow, $"Delaying chunk with lastId {items.Last()}");
+                // TODO: need a better way to tell queue to slow down (this delays requeuing and also exiting).
+                Task.Delay(AppSettings.BulkAllBackOffTimeDefault).Wait();
             }
 
             // TODO: per-item errors?
-        }
-
-        private void performDatabaseLookup(ProcessableItemsBuffer buffer)
-        {
-            if (!buffer.ScoreIdsForLookup.Any()) return;
-
-            var scores = ElasticModel.Find<SoloScore>(buffer.ScoreIdsForLookup);
-
-            foreach (var score in scores)
-            {
-                if (score.ShouldIndex)
-                    buffer.Additions.Add(score);
-                else
-                    buffer.Deletions.Add(score.id);
-
-                buffer.ScoreIdsForLookup.Remove(score.id);
-            }
-
-            // Remaining scores do not exist and should be deleted.
-            buffer.Deletions.AddRange(buffer.ScoreIdsForLookup);
-            buffer.ScoreIdsForLookup.Clear();
-        }
-
-        private void waitUntilActive()
-        {
-            // Spin until valid response from elasticsearch.
-            while (!client.ElasticClient.Indices.Get(index, d => d.RequestConfiguration(r => r.ThrowExceptions(false))).IsValid)
-            {
-                Console.WriteLine(ConsoleColor.Yellow, "wating 10 seconds for server to come alive...");
-                Task.Delay(TimeSpan.FromSeconds(10)).Wait();
-            }
         }
     }
 }

@@ -21,15 +21,19 @@ namespace osu.ElasticIndexer.Commands
         [Option("--switch", Description = "Update the configured schema in redis after completing")]
         public bool Switch { get; set; }
 
+        private CancellationToken cancellationToken;
+
         public int OnExecute(CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();
 
+            this.cancellationToken = cancellationToken;
+
             var redis = new Redis();
             var currentSchema = redis.GetSchemaVersion();
-            Console.WriteLine(ConsoleColor.Cyan, $"Current schema version is: {currentSchema}");
-            Console.WriteLine(ConsoleColor.Cyan, $"Pushing to queue with schema: {AppSettings.Schema}");
+            Console.WriteLine(ConsoleColor.Green, $"Current schema version is: {currentSchema}");
+            Console.WriteLine(ConsoleColor.Green, $"Pushing to queue with schema: {AppSettings.Schema}");
 
             if (Switch && currentSchema == AppSettings.Schema)
                 Console.WriteLine(ConsoleColor.Yellow, "Queue watchers will not update the alias if schema does not change!");
@@ -37,7 +41,28 @@ namespace osu.ElasticIndexer.Commands
             var startTime = DateTimeOffset.Now;
             Console.WriteLine(ConsoleColor.Cyan, $"Start read: {startTime}");
 
-            var chunks = ElasticModel.Chunk<SoloScore>(AppSettings.BatchSize, From);
+            var lastId = queueScores(From);
+
+            var endTime = DateTimeOffset.Now;
+            Console.WriteLine(ConsoleColor.Cyan, $"End read: {endTime}, time taken: {endTime - startTime}");
+
+            if (Switch)
+            {
+                redis.SetSchemaVersion(AppSettings.Schema);
+                Console.WriteLine(ConsoleColor.Yellow, $"Schema version set to {AppSettings.Schema}, queueing scores > {lastId}");
+                queueScores(lastId);
+
+                var switchEndTime = DateTimeOffset.Now;
+                Console.WriteLine(ConsoleColor.Cyan, $"End read after switch: {switchEndTime}, time taken: {switchEndTime - startTime}");
+            }
+
+            return 0;
+        }
+
+        private long? queueScores(long? from)
+        {
+            var chunks = ElasticModel.Chunk<SoloScore>(AppSettings.BatchSize, from);
+            SoloScore? last = null;
 
             foreach (var scores in chunks)
             {
@@ -57,18 +82,13 @@ namespace osu.ElasticIndexer.Commands
                 Processor.PushToQueue(scoreItems);
 
                 Console.WriteLine($"Pushed {scores.LastOrDefault()}");
+                last = scores.LastOrDefault();
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);
             }
 
-            var endTime = DateTimeOffset.Now;
-            Console.WriteLine(ConsoleColor.Cyan, $"End read: {endTime}, time taken: {endTime - startTime}");
-
-            if (Switch)
-                redis.SetSchemaVersion(AppSettings.Schema);
-
-            return 0;
+            return last?.id;
         }
     }
 }
