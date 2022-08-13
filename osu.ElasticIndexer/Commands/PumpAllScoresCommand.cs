@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
@@ -19,9 +20,6 @@ namespace osu.ElasticIndexer.Commands
 
         [Option("--switch", Description = "Update the configured schema in redis after completing")]
         public bool Switch { get; set; }
-
-        [Option("--verbose", Description = "Fill your console with text")]
-        public bool Verbose { get; set; }
 
         private CancellationToken cancellationToken;
 
@@ -71,20 +69,20 @@ namespace osu.ElasticIndexer.Commands
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
+                List<ScoreItem> scoreItems = new List<ScoreItem>();
+
                 foreach (var score in scores)
                 {
                     score.country_code ??= "XX";
-
-                    if (Verbose)
-                        Console.WriteLine($"Pushing {score}");
-
-                    Processor.PushToQueue(new ScoreItem { Score = score });
+                    scoreItems.Add(new ScoreItem { Score = score });
                 }
 
-                last = scores.LastOrDefault();
+                Console.WriteLine($"Pushing {scoreItems.Count} scores");
 
-                if (!Verbose)
-                    Console.WriteLine($"Pushed {last}");
+                Processor.PushToQueue(scoreItems);
+
+                Console.WriteLine($"Pushed {scores.LastOrDefault()}");
+                last = scores.LastOrDefault();
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);
