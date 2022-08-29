@@ -5,6 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using osu.Game.Rulesets;
+using osu.Game.Rulesets.Judgements;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Scoring;
+using osu.Game.Scoring;
 
 namespace osu.ElasticIndexer
 {
@@ -37,6 +42,8 @@ namespace osu.ElasticIndexer
                 }
                 else if (item.Score != null)
                 {
+                    populateTotalScore(item.Score);
+
                     if (item.Score.ShouldIndex)
                         Additions.Add(item.Score);
                     else
@@ -62,6 +69,8 @@ namespace osu.ElasticIndexer
 
             foreach (var score in scores)
             {
+                populateTotalScore(score);
+
                 if (score.ShouldIndex)
                     Additions.Add(score);
                 else
@@ -73,6 +82,22 @@ namespace osu.ElasticIndexer
             // Remaining scores do not exist and should be deleted.
             Deletions.AddRange(scoreIdsForLookup);
             scoreIdsForLookup.Clear();
+        }
+
+        private void populateTotalScore(SoloScore score)
+        {
+            Ruleset ruleset = LegacyRulesetHelper.GetRulesetFromLegacyId(score.ruleset_id);
+
+            Mod[] mods = score.scoreData.Mods.Select(m => m.ToMod(ruleset)).ToArray();
+            ScoreInfo scoreInfo = score.scoreData.ToScoreInfo(mods);
+            scoreInfo.Ruleset = ruleset.RulesetInfo;
+
+            ScoreProcessor scoreProcessor = ruleset.CreateScoreProcessor();
+            int baseScore = score.scoreData.Statistics.Where(kvp => kvp.Key.AffectsAccuracy()).Sum(kvp => kvp.Value * Judgement.ToNumericResult(kvp.Key));
+            int maxBaseScore = score.scoreData.MaximumStatistics.Where(kvp => kvp.Key.AffectsAccuracy()).Sum(kvp => kvp.Value * Judgement.ToNumericResult(kvp.Key));
+
+            score.scoreData.TotalScore = (int)scoreProcessor.ComputeScore(ScoringMode.Standardised, scoreInfo);
+            score.scoreData.Accuracy = maxBaseScore == 0 ? 1 : baseScore / (double)maxBaseScore;
         }
     }
 }
