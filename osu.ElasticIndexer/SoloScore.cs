@@ -8,6 +8,7 @@ using System.Linq;
 using Dapper.Contrib.Extensions;
 using Nest;
 using Newtonsoft.Json;
+using osu.Game.Online.API.Requests.Responses;
 
 namespace osu.ElasticIndexer
 {
@@ -57,18 +58,12 @@ namespace osu.ElasticIndexer
         public string data
         {
             get => JsonConvert.SerializeObject(scoreData);
-            set
-            {
-                var obj = JsonConvert.DeserializeObject<SoloScoreData>(value);
-
-                if (obj != null)
-                    scoreData = obj;
-            }
+            set => scoreData = JsonConvert.DeserializeObject<SoloScoreInfo>(value)!;
         }
 
         [Computed]
         [Keyword]
-        public int? build_id => scoreData.build_id;
+        public int? build_id => scoreData.BuildID;
 
         [Computed]
         [Boolean]
@@ -77,7 +72,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Boolean]
-        public bool passed => scoreData.passed;
+        public bool passed => scoreData.Passed;
 
         [Ignore]
         public int playmode { get; set; }
@@ -89,47 +84,40 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int total_score => scoreData.total_score;
+        public int total_score => scoreData.TotalScore;
 
         [Computed]
         [Number(NumberType.Float)]
-        public double accuracy => scoreData.accuracy;
+        public double accuracy => scoreData.Accuracy;
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int max_combo => scoreData.max_combo;
+        public int max_combo => scoreData.MaxCombo;
 
         [Computed]
         [Keyword]
-        public string? rank => scoreData.rank;
+        public string rank => scoreData.Rank.ToString();
 
         [Ignore]
         public int user_warnings { get; set; }
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? started_at => scoreData.started_at;
+        public DateTimeOffset? started_at => scoreData.StartedAt;
 
         [Computed]
         [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? ended_at => scoreData.ended_at;
+        public DateTimeOffset? ended_at => scoreData.EndedAt;
 
         [Computed]
         [Keyword]
-        public List<string> mods
-        {
-            get
-            {
-                List<dynamic> modObjects = scoreData.mods?.ToObject<List<dynamic>>() ?? new List<dynamic>();
-                return modObjects.Select(mod => (string)mod["acronym"]).ToList();
-            }
-        }
+        public List<string> mods => scoreData.Mods.Select(mod => mod.Acronym).ToList();
 
         [Computed]
         [Keyword]
         public string? country_code { get; set; }
 
-        public SoloScoreData scoreData = new SoloScoreData();
+        public SoloScoreInfo scoreData = new SoloScoreInfo();
 
         public override string ToString() => $"score_id: {id} user_id: {user_id} beatmap_id: {beatmap_id} ruleset_id: {ruleset_id}";
     }
