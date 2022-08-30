@@ -62,6 +62,9 @@
       },
       "user_id": {
         "type": "keyword"
+      },
+      "is_legacy": {
+        "type": "boolean"
       }
     }
   },
@@ -70,8 +73,8 @@
       "number_of_shards": "1",
       "number_of_replicas": "0",
       "sort": {
-        "field": ["total_score", "id"],
-        "order": ["desc", "asc"]
+        "field": ["is_legacy", "total_score", "id"],
+        "order": ["asc", "desc", "asc"]
       }
     }
   }
