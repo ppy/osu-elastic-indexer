@@ -81,6 +81,39 @@ Additional envs can be set:
 
     env $(cat .env) schema=1 dotnet run
 
+## Environment Variables
+
+### BATCH_SIZE
+Maximum number of items to handle/dequeue per batch. This affects the size of the `_bulk` request sent to Elasticsearch.
+
+Defaults to `10000`.
+
+### BUFFER_SIZE
+
+Maximum number of `BATCH_SIZE * BUFFER_SIZE` items allowed inflight during queue processing.
+
+Defaults to `5` (default of `50000` items).
+
+### DB_CONNECTION_STRING
+Connection string for the database connection.
+Standard `MySqlConnector` connection string.
+
+### ES_INDEX_PREFIX
+Optional prefix for the index names in elasticsearch.
+
+### ES_HOST
+Url to the Elasticsearch host.
+
+Defaults to `http://elasticsearch:9200`
+
+### REDIS_HOST
+Redis connection string; see [here](https://stackexchange.github.io/StackExchange.Redis/Configuration.html#configuration-options) for configuration options.
+
+Defaults to `redis`
+
+### SCHEMA
+Schema version for the queue; see [Schema](#schema).
+
 # Commands
 
 This documentation assumes `dotnet run` can be used;
