@@ -79,7 +79,7 @@ To read environment variables from an env file, you can prefix the command to ru
 
 Additional envs can be set:
 
-    env $(cat .env) schema=1 dotnet run
+    env $(cat .env) SCHEMA=1 dotnet run
 
 ## Environment Variables
 
@@ -124,11 +124,11 @@ in cases where `dotnet run` is not available, the assembly should be used, e.g. 
 Running `queue` will automatically create an index if an open index matching the requested `schema` does not exist.
 If a matching open index exists, it will be reused.
 
-    schema=${schema} dotnet run queue
+    SCHEMA=${schema} dotnet run queue
 
 e.g.
 
-    schema=1 dotnet run queue
+    SCHEMA=1 dotnet run queue
 
 ## Getting the current schema version
 
@@ -183,13 +183,13 @@ Passing arguments to the command will delete the matching index:
 
 For testing purposes, we can add fake items to the queue:
 
-    schema=1 dotnet run fake
+    SCHEMA=1 dotnet run fake
 
 It should be noted that these items will not exist or match the ones in the database.
 
 ## Queuing a specific score for indexing
 
-    schema=${schema} dotnet run index ${id}
+    SCHEMA=${schema} dotnet run index ${id}
 
 will queue the score with `${id}` for indexing; the score will be added or deleted as necessary, according to the value of `SoloScore.ShouldIndex`.
 
@@ -197,7 +197,7 @@ See [Queuing items for processing from another client](#queuing-items-for-proces
 
 ## Adding existing database records to the queue
 
-    schema=1 dotnet run all
+    SCHEMA=1 dotnet run all
 
 will read existing `solo_scores` in chunks and add them to the queue for indexing. Only scores with a corresponding `phpbb_users` entry will be queued.
 
@@ -229,7 +229,7 @@ Populating an index is done by pushing score items to a queue.
 
     docker build -t ${tagname} -f osu.ElasticIndexer/Dockerfile osu.ElasticIndexer
 
-    docker run -e schema=1 -e "ES_HOST=http://host.docker.internal:9200" -e "prefix=docker." -e "REDIS_HOST=host.docker.internal" -e "DB_CONNECTION_STRING=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
+    docker run -e SCHEMA=1 -e "ES_HOST=http://host.docker.internal:9200" -e "ES_INDEX_PREFIX=docker." -e "REDIS_HOST=host.docker.internal" -e "DB_CONNECTION_STRING=Server=host.docker.internal;Database=osu;Uid=osuweb;SslMode=None;" ${tagname} ${cmd}
 
 where `${cmd}` is the command to run, e.g. `dotnet osu.ElasticIndexer.dll queue`
 
