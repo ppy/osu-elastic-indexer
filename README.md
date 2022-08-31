@@ -73,14 +73,13 @@ When the schema version changes, all indexers processing the queues for any othe
 Configuration is loaded from environment variables. No environment files are automatically loaded.
 
 To read environment variables from an env file, you can prefix the command to run with `env $(cat {envfile})` replacing `{envfile}` with your env file, e.g.
+> Note that this method of passing envvars does not support values with spaces.
 
     env $(cat .env) dotnet run
 
-additional envs can be set:
+Additional envs can be set:
 
     env $(cat .env) schema=1 dotnet run
-
-envvars with spaces are not supported.
 
 # Commands
 
