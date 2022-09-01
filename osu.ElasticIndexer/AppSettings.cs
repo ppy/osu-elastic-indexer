@@ -9,17 +9,17 @@ namespace osu.ElasticIndexer
     {
         static AppSettings()
         {
-            string? batchSize = Environment.GetEnvironmentVariable("batch_size");
+            string? batchSize = Environment.GetEnvironmentVariable("BATCH_SIZE");
             if (!string.IsNullOrEmpty(batchSize))
                 BatchSize = int.Parse(batchSize);
 
-            string? bufferSize = Environment.GetEnvironmentVariable("buffer_size");
+            string? bufferSize = Environment.GetEnvironmentVariable("BUFFER_SIZE");
             if (!string.IsNullOrEmpty(bufferSize))
                 BufferSize = int.Parse(bufferSize);
 
             ConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
-            Schema = Environment.GetEnvironmentVariable("schema") ?? string.Empty;
-            Prefix = Environment.GetEnvironmentVariable("prefix") ?? string.Empty;
+            Schema = Environment.GetEnvironmentVariable("SCHEMA") ?? string.Empty;
+            Prefix = Environment.GetEnvironmentVariable("ES_INDEX_PREFIX") ?? string.Empty;
             ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://elasticsearch:9200";
             RedisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "redis";
         }
