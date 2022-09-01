@@ -5,18 +5,18 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="dapper" Version="2.0.90" />
+    <PackageReference Include="dapper" Version="2.0.123" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
-    <PackageReference Include="DogStatsD-CSharp-Client" Version="7.0.0" />
+    <PackageReference Include="DogStatsD-CSharp-Client" Version="7.0.1" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.1" />
-    <PackageReference Include="MySqlConnector" Version="2.1.8" />
-    <PackageReference Include="NEST" Version="7.17.0" />
+    <PackageReference Include="MySqlConnector" Version="2.1.13" />
+    <PackageReference Include="NEST" Version="7.17.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="ppy.osu.Game" Version="2022.821.0" />
-    <PackageReference Include="ppy.osu.Game.Rulesets.Catch" Version="2022.821.0" />
-    <PackageReference Include="ppy.osu.Game.Rulesets.Mania" Version="2022.821.0" />
-    <PackageReference Include="ppy.osu.Game.Rulesets.Osu" Version="2022.821.0" />
-    <PackageReference Include="ppy.osu.Game.Rulesets.Taiko" Version="2022.821.0" />
+    <PackageReference Include="ppy.osu.Game" Version="2022.901.0" />
+    <PackageReference Include="ppy.osu.Game.Rulesets.Catch" Version="2022.901.0" />
+    <PackageReference Include="ppy.osu.Game.Rulesets.Mania" Version="2022.901.0" />
+    <PackageReference Include="ppy.osu.Game.Rulesets.Osu" Version="2022.901.0" />
+    <PackageReference Include="ppy.osu.Game.Rulesets.Taiko" Version="2022.901.0" />
     <PackageReference Include="ppy.osu.Server.OsuQueueProcessor" Version="2022.812.0" />
   </ItemGroup>
   <ItemGroup>
