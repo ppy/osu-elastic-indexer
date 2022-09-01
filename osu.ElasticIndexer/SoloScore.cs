@@ -84,7 +84,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int total_score => scoreData.TotalScore;
+        public int total_score => scoreData.LegacyTotalScore ?? scoreData.TotalScore;
 
         [Computed]
         [Number(NumberType.Float)]
@@ -116,6 +116,10 @@ namespace osu.ElasticIndexer
         [Computed]
         [Keyword]
         public string? country_code { get; set; }
+
+        [Computed]
+        [Boolean]
+        public bool is_legacy => build_id == null;
 
         public SoloScoreInfo scoreData = new SoloScoreInfo();
 
