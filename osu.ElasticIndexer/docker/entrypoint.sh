@@ -15,9 +15,13 @@ if [ "$@" = "queue" ]; then
   /app/docker/wait_for.sh redis:6379
   echo "Redis is alive."
 
-  # Delay starting indexer to give time for cluster state to change from red.
-  # TODO: poll elasticsearch for cluster status to change from red to yellow/green instead of sleep.
-  sleep 5
+  if [ "${START_DELAY:-0}" -gt 0 ]; then
+    # Optional delay starting indexer to give time for cluster state to change from red.
+    # TODO: poll elasticsearch for cluster status to change from red to yellow/green instead of sleep.
+    echo "Wating for $START_DELAY seconds..."
+    sleep $START_DELAY
+  fi
+
   echo "Starting indexer."
 fi
 
