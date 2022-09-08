@@ -10,10 +10,13 @@ namespace osu.ElasticIndexer.Commands
     [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
     public class WatchQueueCommand
     {
+        [Option("--force-version", Description = "Forces the schema version in Redis to be this processor's version.")]
+        public bool ForceVersion { get; set; }
+
         public int OnExecute(CancellationToken token)
         {
             boot();
-            new SoloScoreIndexer().Run(token);
+            new SoloScoreIndexer().Run(token, ForceVersion);
             return 0;
         }
 

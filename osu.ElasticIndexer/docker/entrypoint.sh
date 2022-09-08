@@ -5,7 +5,7 @@ set -u
 
 # Wait for dependencies if running queue;
 # for other options, just assume they're only run when everything is up.
-if [ "$@" = "queue" ]; then
+if [ "$1" = "queue" ]; then
   # TODO: support variables
   echo "Wating for dependencies..."
   /app/docker/wait_for.sh -t 30 elasticsearch:9200
