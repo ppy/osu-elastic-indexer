@@ -14,11 +14,16 @@ namespace osu.ElasticIndexer
     public class Client
     {
         // shared client without a default index.
-        public readonly ElasticClient ElasticClient = new ElasticClient(
-            new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)).ThrowExceptions()
-        );
+        public readonly ElasticClient ElasticClient;
 
         public readonly string AliasName = $"{AppSettings.Prefix}solo_scores";
+
+        public Client(bool throwsExceptions = true)
+        {
+            ElasticClient = new ElasticClient(
+                new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)).ThrowExceptions(throwsExceptions)
+            );
+        }
 
         /// <summary>
         /// Attempts to find the matching index or creates a new one.

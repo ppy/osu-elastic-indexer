@@ -3,7 +3,10 @@
 
 using System;
 using System.Threading;
+using Elasticsearch.Net;
 using McMaster.Extensions.CommandLineUtils;
+using StackExchange.Redis;
+using MySqlConnector;
 
 namespace osu.ElasticIndexer.Commands
 {
@@ -13,8 +16,14 @@ namespace osu.ElasticIndexer.Commands
         [Option("--force-version", Description = "Forces the schema version in Redis to be this processor's version.")]
         public bool ForceVersion { get; set; }
 
+        [Option("--wait", Description = "Waits for dependent services to start.")]
+        public bool Wait { get; set; }
+
         public int OnExecute(CancellationToken token)
         {
+            if (Wait)
+                waitForServices();
+
             boot();
             new SoloScoreIndexer().Run(token, ForceVersion);
             return 0;
@@ -28,6 +37,76 @@ namespace osu.ElasticIndexer.Commands
                 Console.WriteLine(ConsoleColor.Yellow, "No existing schema version set, is this intended?");
 
             Console.WriteLine(ConsoleColor.Green, $"Running queue with schema version {AppSettings.Schema}");
+        }
+
+        private void waitForServices()
+        {
+            waitForElasticsearch();
+            waitForRedis();
+            // Database is last because we want to isolate the error handling but we have to get the
+            // database connection string from QueueProcessor which also tries to connect to redis.
+            // Can remove if https://github.com/ppy/osu-queue-processor/issues/13 is implemented.
+            waitForDatabase();
+        }
+
+        // Only waits for the database, doesn't wait for tables or migrations to complete.
+        private void waitForDatabase()
+        {
+            while (true)
+            {
+                try
+                {
+                    new UnrunnableProcessor().GetDatabaseConnection().Dispose();
+                    Console.WriteLine(ConsoleColor.Green, "Database is alive.");
+
+                    break;
+                }
+                catch (MySqlException ex)
+                {
+                    // die on any other kind of error, e.g. permissions, etc.
+                    if (ex.ErrorCode == MySqlErrorCode.UnableToConnectToHost || ex.ErrorCode == MySqlErrorCode.UnknownDatabase)
+                        Thread.Sleep(10);
+                    else
+                        throw;
+                }
+            }
+        }
+
+        private void waitForElasticsearch()
+        {
+            var client = new Client(false);
+
+            while (true)
+            {
+                var response = client.ElasticClient.Cluster.Health();
+
+                // Yellow or Green cluster statuses are fine.
+                if (response.IsValid && response.Status != Health.Red)
+                {
+                    Console.WriteLine(ConsoleColor.Green, $"Elasticsearch ({response.ClusterName}) is alive.");
+                    break;
+                }
+
+                Thread.Sleep(10);
+            }
+        }
+
+        private void waitForRedis()
+        {
+            while (true)
+            {
+                try
+                {   var redis = new Redis();
+                    redis.Connection.GetDatabase().Ping();
+                    Console.WriteLine(ConsoleColor.Green, $"Redis ({redis.Connection.Configuration}) is alive.");
+
+                    break;
+                }
+                catch (RedisConnectionException)
+                {
+                    Thread.Sleep(10);
+                }
+            }
         }
     }
 }
