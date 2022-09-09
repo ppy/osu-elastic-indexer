@@ -93,7 +93,7 @@ namespace osu.ElasticIndexer.Commands
                 {
                     // There is a period during elasticseasrch startup where active_shards_percent_as_number
                     // is returned as NaN but the parser expects a number.
-                    if (!ex.Message.StartsWith("expected:'Number Token', actual:'\"NaN\"'"))
+                    if (!ex.Message.StartsWith("expected:'Number Token', actual:'\"NaN\"'", StringComparison.Ordinal))
                         throw;
                 }
 
