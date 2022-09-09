@@ -88,7 +88,9 @@ namespace osu.ElasticIndexer.Commands
                         Console.WriteLine(ConsoleColor.Green, $"Elasticsearch ({response.ClusterName}) is alive.");
                         break;
                     }
-                } catch (UnexpectedElasticsearchClientException ex) {
+                }
+                catch (UnexpectedElasticsearchClientException ex)
+                {
                     // There is a period during elasticseasrch startup where active_shards_percent_as_number
                     // is returned as NaN but the parser expects a number.
                     if (!ex.Message.StartsWith("expected:'Number Token', actual:'\"NaN\"'"))
@@ -104,7 +106,8 @@ namespace osu.ElasticIndexer.Commands
             while (true)
             {
                 try
-                {   var redis = new Redis();
+                {
+                    var redis = new Redis();
                     redis.Connection.GetDatabase().Ping();
                     Console.WriteLine(ConsoleColor.Green, $"Redis ({redis.Connection.Configuration}) is alive.");
 
