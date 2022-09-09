@@ -45,7 +45,6 @@ namespace osu.ElasticIndexer.Commands
             waitForRedis();
             // Database is last because we want to isolate the error handling but we have to get the
             // database connection string from QueueProcessor which also tries to connect to redis.
-            // Can remove if https://github.com/ppy/osu-queue-processor/issues/13 is implemented.
             waitForDatabase();
         }
 
@@ -56,6 +55,7 @@ namespace osu.ElasticIndexer.Commands
             {
                 try
                 {
+                    // Can remove and use plain connection if https://github.com/ppy/osu-queue-processor/issues/13 is implemented.
                     new UnrunnableProcessor().GetDatabaseConnection().Dispose();
                     Console.WriteLine(ConsoleColor.Green, "Database is alive.");
 
