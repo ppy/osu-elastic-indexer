@@ -78,13 +78,21 @@ namespace osu.ElasticIndexer.Commands
 
             while (true)
             {
-                var response = client.ElasticClient.Cluster.Health();
-
-                // Yellow or Green cluster statuses are fine.
-                if (response.IsValid && response.Status != Health.Red)
+                try
                 {
-                    Console.WriteLine(ConsoleColor.Green, $"Elasticsearch ({response.ClusterName}) is alive.");
-                    break;
+                    var response = client.ElasticClient.Cluster.Health();
+
+                    // Yellow or Green cluster statuses are fine.
+                    if (response.IsValid && response.Status != Health.Red)
+                    {
+                        Console.WriteLine(ConsoleColor.Green, $"Elasticsearch ({response.ClusterName}) is alive.");
+                        break;
+                    }
+                } catch (UnexpectedElasticsearchClientException ex) {
+                    // There is a period during elasticseasrch startup where active_shards_percent_as_number
+                    // is returned as NaN but the parser expects a number.
+                    if (!ex.Message.StartsWith("expected:'Number Token', actual:'\"NaN\"'"))
+                        throw;
                 }
 
                 Thread.Sleep(10);
