@@ -61,7 +61,7 @@ namespace osu.ElasticIndexer.Commands
 
         private long? queueScores(long? from)
         {
-            var chunks = ElasticModel.Chunk<SoloScore>(AppSettings.BatchSize, from);
+            var chunks = ElasticModel.Chunk<SoloScore>("preserve = 1", AppSettings.BatchSize, from);
             SoloScore? last = null;
 
             foreach (var scores in chunks)
