@@ -37,8 +37,8 @@ namespace osu.ElasticIndexer
                 dbConnection.Open();
 
                 string maxQuery = $"SELECT {maxSelects}";
-                if (!string.IsNullOrWhiteSpace(where))
-                    maxQuery += $" WHERE {where}";
+                // if (!string.IsNullOrWhiteSpace(where))
+                //     maxQuery += $" WHERE {where}";
 
                 var max = dbConnection.QuerySingleOrDefault<long?>(maxQuery);
                 if (!max.HasValue) yield break;
