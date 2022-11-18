@@ -79,6 +79,12 @@ namespace osu.ElasticIndexer.Commands
 
                 Console.WriteLine($"Pushing {scoreItems.Count} scores");
 
+                while (Processor.GetQueueSize() > 1000000)
+                {
+                    System.Console.WriteLine($"Paused due to excessive queue length ({Processor.GetQueueSize()})");
+                    Thread.Sleep(30000);
+                }
+
                 Processor.PushToQueue(scoreItems);
 
                 Console.WriteLine($"Pushed {scores.LastOrDefault()}");
