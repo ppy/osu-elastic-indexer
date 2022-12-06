@@ -4,6 +4,7 @@
 using Dapper;
 using McMaster.Extensions.CommandLineUtils;
 using osu.ElasticIndexer.Commands;
+using osu.ElasticIndexer.Commands.Queue;
 
 namespace osu.ElasticIndexer
 {
@@ -13,14 +14,10 @@ namespace osu.ElasticIndexer
     [Subcommand(typeof(CloseIndexCommand))]
     [Subcommand(typeof(DeleteIndexCommand))]
     [Subcommand(typeof(ListIndicesCommand))]
-    [Subcommand(typeof(IndexCommand))]
     [Subcommand(typeof(OpenIndexCommand))]
-    [Subcommand(typeof(PumpAllScoresCommand))]
-    [Subcommand(typeof(PumpFakeScoresCommand))]
-    [Subcommand(typeof(PushFileCommand))]
     [Subcommand(typeof(SchemaCommands))]
     [Subcommand(typeof(UpdateAliasCommand))]
-    [Subcommand(typeof(WatchQueueCommand))]
+    [Subcommand(typeof(QueueCommands))]
     public class Program
     {
         public static void Main(string[] args)

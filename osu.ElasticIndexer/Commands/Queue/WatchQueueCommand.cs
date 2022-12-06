@@ -5,12 +5,12 @@ using System;
 using System.Threading;
 using Elasticsearch.Net;
 using McMaster.Extensions.CommandLineUtils;
-using StackExchange.Redis;
 using MySqlConnector;
+using StackExchange.Redis;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
+    [Command("watch", Description = "Watches queue and dispatches scores for indexing")]
     public class WatchQueueCommand
     {
         [Option("--force-version", Description = "Forces the schema version in Redis to be this processor's version.")]

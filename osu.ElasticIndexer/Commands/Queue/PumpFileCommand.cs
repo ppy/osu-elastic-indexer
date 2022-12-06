@@ -1,30 +1,29 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("index", Description = "Queue a score for indexing by id.")]
-    public class IndexCommand : ProcessorCommandBase
+    [Command("pump-file", Description = "Pump contents of a file to the queue for testing.")]
+    public class PumpFileCommand : ProcessorCommandBase
     {
-        [Argument(1)]
+        [Argument(0)]
         [Required]
-        public string ScoreId { get; set; } = string.Empty;
+        public string Filename { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();
 
-            var id = long.Parse(ScoreId);
-            var scoreItem = new ScoreItem { ScoreId = id };
-            Processor.PushToQueue(scoreItem);
+            var value = File.ReadAllText(Filename);
+            var redis = new Redis();
 
-            Console.WriteLine(ConsoleColor.Green, $"Queued to {Processor.QueueName}: {scoreItem}");
+            redis.Connection.GetDatabase().ListLeftPush(Processor.QueueName, value);
 
             return 0;
         }

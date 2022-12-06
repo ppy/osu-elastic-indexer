@@ -4,9 +4,9 @@
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("fake", Description = "Pumps fake scores through the queue")]
+    [Command("pump-fake", Description = "Pumps fake scores through the queue")]
     public class PumpFakeScoresCommand : ProcessorCommandBase
     {
         [Option("--delay", Description = "Delay in milliseconds between generating chunks")]

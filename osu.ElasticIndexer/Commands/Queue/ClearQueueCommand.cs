@@ -4,9 +4,9 @@
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("clear-queue", Description = "Clears the queue")]
+    [Command("clear", Description = "Clears the queue.")]
     public class ClearQueueCommand : ProcessorCommandBase
     {
         public int OnExecute(CancellationToken token)

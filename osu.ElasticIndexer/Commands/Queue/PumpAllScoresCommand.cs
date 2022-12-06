@@ -7,9 +7,9 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("all", Description = "Pumps scores through the queue for processing")]
+    [Command("pump-all", Description = "Pumps scores through the queue for processing")]
     public class PumpAllScoresCommand : ProcessorCommandBase
     {
         [Option("--delay", Description = "Delay in milliseconds between reading chunks")]
