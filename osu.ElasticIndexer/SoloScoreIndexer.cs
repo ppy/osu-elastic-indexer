@@ -8,10 +8,11 @@ namespace osu.ElasticIndexer
 {
     public class SoloScoreIndexer
     {
-        private readonly Client client = new Client();
         private CancellationTokenSource? cts;
         private IndexMetadata? metadata;
         private string? previousSchema;
+
+        private readonly Client client = new Client();
         private readonly Redis redis = new Redis();
 
         public SoloScoreIndexer()

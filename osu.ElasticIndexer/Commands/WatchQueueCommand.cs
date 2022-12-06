@@ -24,19 +24,19 @@ namespace osu.ElasticIndexer.Commands
             if (Wait)
                 waitForServices();
 
-            boot();
-            new SoloScoreIndexer().Run(token, ForceVersion);
-            return 0;
-        }
-
-        private void boot()
-        {
             var schema = new Redis().GetSchemaVersion();
 
             if (string.IsNullOrEmpty(schema))
                 Console.WriteLine(ConsoleColor.Yellow, "No existing schema version set, is this intended?");
 
+            if (schema != AppSettings.Schema)
+                Console.WriteLine($"WARNING: Starting processing for schema version {AppSettings.Schema} which is not current (current schema is {schema})");
+
             Console.WriteLine(ConsoleColor.Green, $"Running queue with schema version {AppSettings.Schema}");
+
+            new SoloScoreIndexer().Run(token, ForceVersion);
+
+            return 0;
         }
 
         private void waitForServices()
