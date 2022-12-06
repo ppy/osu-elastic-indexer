@@ -9,7 +9,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("delete", Description = "Deletes closed indices.")]
-    public class DeleteIndexCommand : ProcessorCommandBase
+    public class DeleteIndexCommand
     {
         [Argument(0, "name", "The index to delete. All closed indices are closed if not specified.")]
         public string? Name { get; set; }

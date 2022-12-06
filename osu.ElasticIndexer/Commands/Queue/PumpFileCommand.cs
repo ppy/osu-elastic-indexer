@@ -9,7 +9,7 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands.Queue
 {
     [Command("pump-file", Description = "Pump contents of a file to the queue for testing.")]
-    public class PumpFileCommand : ProcessorCommandBase
+    public class PumpFileCommand
     {
         [Argument(0)]
         [Required]
@@ -20,10 +20,12 @@ namespace osu.ElasticIndexer.Commands.Queue
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();
 
+            var processor = new UnrunnableProcessor();
+
             var value = File.ReadAllText(Filename);
             var redis = new Redis();
 
-            redis.Connection.GetDatabase().ListLeftPush(Processor.QueueName, value);
+            redis.Connection.GetDatabase().ListLeftPush(processor.QueueName, value);
 
             return 0;
         }

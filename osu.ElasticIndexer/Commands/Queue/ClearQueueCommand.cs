@@ -7,12 +7,14 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands.Queue
 {
     [Command("clear", Description = "Clears the queue.")]
-    public class ClearQueueCommand : ProcessorCommandBase
+    public class ClearQueueCommand
     {
         public int OnExecute(CancellationToken token)
         {
-            Processor.ClearQueue();
-            Console.WriteLine($"Queue {Processor.QueueName} cleared.");
+            var processor = new UnrunnableProcessor();
+
+            processor.ClearQueue();
+            Console.WriteLine($"Queue {processor.QueueName} cleared.");
             return 0;
         }
     }
