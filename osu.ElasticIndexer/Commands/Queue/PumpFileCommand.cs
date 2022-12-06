@@ -17,9 +17,6 @@ namespace osu.ElasticIndexer.Commands.Queue
 
         public int OnExecute(CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(AppSettings.Schema))
-                throw new MissingSchemaException();
-
             var processor = new UnrunnableProcessor();
 
             var value = File.ReadAllText(Filename);

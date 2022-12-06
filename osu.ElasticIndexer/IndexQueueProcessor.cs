@@ -33,6 +33,9 @@ namespace osu.ElasticIndexer
             this.elasticClient = elasticClient;
             this.index = index;
             stop = stopCallback;
+
+            if (string.IsNullOrEmpty(AppSettings.Schema))
+                throw new MissingSchemaException();
         }
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)

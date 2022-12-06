@@ -27,9 +27,6 @@ namespace osu.ElasticIndexer.Commands.Queue
 
         public int OnExecute(CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(AppSettings.Schema))
-                throw new MissingSchemaException();
-
             processor = new UnrunnableProcessor();
 
             this.cancellationToken = cancellationToken;
