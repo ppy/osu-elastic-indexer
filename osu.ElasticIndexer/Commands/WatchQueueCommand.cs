@@ -13,9 +13,6 @@ namespace osu.ElasticIndexer.Commands
     [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
     public class WatchQueueCommand
     {
-        [Option("--force-version", Description = "Forces the schema version in Redis to be this processor's version.")]
-        public bool ForceVersion { get; set; }
-
         [Option("--wait", Description = "Waits for dependent services to start.")]
         public bool Wait { get; set; }
 
@@ -34,7 +31,7 @@ namespace osu.ElasticIndexer.Commands
 
             Console.WriteLine(ConsoleColor.Green, $"Running queue with schema version {AppSettings.Schema}");
 
-            new SoloScoreIndexer().Run(token, ForceVersion);
+            new SoloScoreIndexer().Run(token);
 
             return 0;
         }
