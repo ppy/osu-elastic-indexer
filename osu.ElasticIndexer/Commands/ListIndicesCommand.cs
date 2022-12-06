@@ -10,21 +10,21 @@ namespace osu.ElasticIndexer.Commands
     [Command("list", Description = "Lists indices")]
     public class ListIndicesCommand : ProcessorCommandBase
     {
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
         public int OnExecute()
         {
-            var indices = client.GetIndices(client.AliasName, ExpandWildcards.All);
+            var indices = elasticClient.GetIndices(elasticClient.AliasName, ExpandWildcards.All);
 
             if (indices.Count > 0)
             {
-                var response = client.ElasticClient.Cat.Indices(descriptor => descriptor.Index(indices.Keys.Select(k => k.Name).ToArray()));
+                var response = elasticClient.Cat.Indices(descriptor => descriptor.Index(indices.Keys.Select(k => k.Name).ToArray()));
 
                 foreach (var record in response.Records)
                 {
                     var indexState = indices[record.Index];
                     var schema = indexState.Mappings.Meta?["schema"];
-                    var aliased = indexState.Aliases.ContainsKey(client.AliasName);
+                    var aliased = indexState.Aliases.ContainsKey(elasticClient.AliasName);
 
                     Console.WriteLine($"{record.Index} schema:{schema} aliased:{aliased} {record.Status} docs {record.DocsCount} deleted {record.DocsDeleted} {record.PrimaryStoreSize}");
                 }

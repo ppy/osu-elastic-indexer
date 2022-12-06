@@ -14,12 +14,12 @@ namespace osu.ElasticIndexer.Commands
         [Argument(0, "name", "The index to delete. All closed indices are closed if not specified.")]
         public string? Name { get; set; }
 
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
         public int OnExecute(CancellationToken token)
         {
-            var index = string.IsNullOrEmpty(Name) ? $"{client.AliasName}_*" : Name;
-            var response = client.ElasticClient.Cat.Indices(x => x.Index(index));
+            var index = string.IsNullOrEmpty(Name) ? $"{elasticClient.AliasName}_*" : Name;
+            var response = elasticClient.Cat.Indices(x => x.Index(index));
             var closed = response.Records.Where(record => record.Status == "close");
 
             if (!closed.Any())
@@ -48,7 +48,7 @@ namespace osu.ElasticIndexer.Commands
             foreach (var record in closed)
             {
                 Console.WriteLine($"deleting {record.Index}...");
-                client.ElasticClient.Indices.Delete(record.Index);
+                elasticClient.Indices.Delete(record.Index);
             }
 
             Console.WriteLine("done.");

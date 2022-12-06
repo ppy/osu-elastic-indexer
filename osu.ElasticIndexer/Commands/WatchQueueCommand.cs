@@ -74,13 +74,13 @@ namespace osu.ElasticIndexer.Commands
 
         private void waitForElasticsearch()
         {
-            var client = new Client(false);
+            var client = new OsuElasticClient(false);
 
             while (true)
             {
                 try
                 {
-                    var response = client.ElasticClient.Cluster.Health();
+                    var response = client.Cluster.Health();
 
                     // Yellow or Green cluster statuses are fine.
                     if (response.IsValid && response.Status != Health.Red)
