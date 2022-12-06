@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("delete", Description = "Deletes closed indices.")]
     public class DeleteIndexCommand : ProcessorCommandBase

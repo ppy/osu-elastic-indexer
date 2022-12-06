@@ -4,19 +4,13 @@
 using Dapper;
 using McMaster.Extensions.CommandLineUtils;
 using osu.ElasticIndexer.Commands;
-using osu.ElasticIndexer.Commands.Queue;
 
 namespace osu.ElasticIndexer
 {
     [Command]
     [Subcommand(typeof(ActiveSchemasCommands))]
-    [Subcommand(typeof(ClearQueueCommand))]
-    [Subcommand(typeof(CloseIndexCommand))]
-    [Subcommand(typeof(DeleteIndexCommand))]
-    [Subcommand(typeof(ListIndicesCommand))]
-    [Subcommand(typeof(OpenIndexCommand))]
     [Subcommand(typeof(SchemaCommands))]
-    [Subcommand(typeof(UpdateAliasCommand))]
+    [Subcommand(typeof(IndexCommands))]
     [Subcommand(typeof(QueueCommands))]
     public class Program
     {

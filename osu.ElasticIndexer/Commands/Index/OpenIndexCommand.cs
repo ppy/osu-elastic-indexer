@@ -4,7 +4,7 @@
 using System.ComponentModel.DataAnnotations;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("open", Description = "Opens an index.")]
     public class OpenIndexCommand : ProcessorCommandBase
