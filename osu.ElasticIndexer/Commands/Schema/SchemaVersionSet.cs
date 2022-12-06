@@ -11,7 +11,7 @@ namespace osu.ElasticIndexer.Commands.Schema
     [Command("set", Description = "Sets the current index schema version to use.")]
     public class SchemaVersionSet
     {
-        [Argument(0)]
+        [Argument(0, "schema", "The schema version to set as current.")]
         [Required]
         public string Schema { get; set; } = string.Empty;
 

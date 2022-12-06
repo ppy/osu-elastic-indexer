@@ -11,7 +11,7 @@ namespace osu.ElasticIndexer.Commands.ActiveSchemas
     [Command("remove", Description = "Removes a schema version from the list of versions being processed.")]
     public class ActiveSchemasRemoveCommand
     {
-        [Argument(0)]
+        [Argument(0, "schema", "The schema version to remove from active.")]
         [Required]
         public string Schema { get; set; } = string.Empty;
 

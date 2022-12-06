@@ -16,8 +16,8 @@ namespace osu.ElasticIndexer.Commands.Index
         [Option("--close", Description = "Closes the previously aliased index when switching.")]
         public bool Close { get; set; }
 
+        [Argument(0, "schema", "The schema version to alias.")]
         [Required]
-        [Option("--schema", Description = "Required. The schema version.")]
         public string Schema { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken token)
