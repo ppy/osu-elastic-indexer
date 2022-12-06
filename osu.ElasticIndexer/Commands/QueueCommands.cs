@@ -6,7 +6,7 @@ using osu.ElasticIndexer.Commands.Queue;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("queue", Description = "Commands related to the indexing queue.")]
+    [Command("queue", Description = "Queue management commands.")]
     [Subcommand(typeof(ClearQueueCommand))]
     [Subcommand(typeof(WatchQueueCommand))]
     [Subcommand(typeof(PumpAllScoresCommand))]
