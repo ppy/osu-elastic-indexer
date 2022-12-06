@@ -91,7 +91,7 @@ namespace osu.ElasticIndexer.Commands.Queue
                 }
                 catch (UnexpectedElasticsearchClientException ex)
                 {
-                    // There is a period during elasticseasrch startup where active_shards_percent_as_number
+                    // There is a period during elasticsearch startup where active_shards_percent_as_number
                     // is returned as NaN but the parser expects a number.
                     if (!ex.Message.StartsWith("expected:'Number Token', actual:'\"NaN\"'", StringComparison.Ordinal))
                         throw;
