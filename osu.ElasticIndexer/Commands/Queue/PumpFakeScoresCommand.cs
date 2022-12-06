@@ -6,10 +6,10 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("pump-fake", Description = "Pumps fake scores through the queue")]
+    [Command("pump-fake", Description = "Pumps fake scores through the queue.")]
     public class PumpFakeScoresCommand : ProcessorCommandBase
     {
-        [Option("--delay", Description = "Delay in milliseconds between generating chunks")]
+        [Option("--delay", Description = "Delay in milliseconds between generating chunks.")]
         public int Delay { get; set; }
 
         public int OnExecute(CancellationToken cancellationToken)

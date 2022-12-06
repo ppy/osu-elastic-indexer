@@ -7,7 +7,7 @@ using osu.ElasticIndexer.Commands.Schema;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("schema", Description = "Gets the current index schema version to use")]
+    [Command("schema", Description = "Gets the current index schema version to use.")]
     [Subcommand(typeof(SchemaVersionClear))]
     [Subcommand(typeof(SchemaVersionSet))]
     public class SchemaCommands

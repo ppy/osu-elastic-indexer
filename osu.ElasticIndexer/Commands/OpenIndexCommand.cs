@@ -6,7 +6,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("open", Description = "Opens an index")]
+    [Command("open", Description = "Opens an index.")]
     public class OpenIndexCommand : ProcessorCommandBase
     {
         [Argument(0, "name", "The index to open.")]

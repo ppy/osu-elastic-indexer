@@ -7,7 +7,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("list", Description = "Lists indices")]
+    [Command("list", Description = "Lists indices.")]
     public class ListIndicesCommand : ProcessorCommandBase
     {
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();

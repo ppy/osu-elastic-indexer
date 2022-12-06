@@ -8,7 +8,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("close", Description = "Closes unused indices")]
+    [Command("close", Description = "Closes unused indices.")]
     public class CloseIndexCommand : ProcessorCommandBase
     {
         [Argument(0, "name", "The index to close. All unused indices are closed if not specified.")]

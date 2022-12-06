@@ -8,7 +8,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands
 {
-    [Command("alias", Description = "Updates alias to the latest index of a given version")]
+    [Command("alias", Description = "Updates alias to the latest index of a given version.")]
     public class UpdateAliasCommand
     {
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();
@@ -17,7 +17,7 @@ namespace osu.ElasticIndexer.Commands
         public bool Close { get; set; }
 
         [Required]
-        [Option("--schema", Description = "Required. The schema version")]
+        [Option("--schema", Description = "Required. The schema version.")]
         public string Schema { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken token)

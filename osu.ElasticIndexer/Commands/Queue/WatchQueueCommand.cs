@@ -10,7 +10,7 @@ using StackExchange.Redis;
 
 namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("watch", Description = "Watches queue and dispatches scores for indexing")]
+    [Command("watch", Description = "Watches queue and dispatches scores for indexing.")]
     public class WatchQueueCommand
     {
         [Option("--force-version", Description = "Forces the schema version in Redis to be this processor's version.")]

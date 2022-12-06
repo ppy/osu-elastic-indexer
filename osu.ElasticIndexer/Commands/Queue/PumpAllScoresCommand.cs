@@ -9,16 +9,16 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("pump-all", Description = "Pumps scores through the queue for processing")]
+    [Command("pump-all", Description = "Pumps scores through the queue for processing.")]
     public class PumpAllScoresCommand : ProcessorCommandBase
     {
-        [Option("--delay", Description = "Delay in milliseconds between reading chunks")]
+        [Option("--delay", Description = "Delay in milliseconds between reading chunks.")]
         public int Delay { get; set; }
 
-        [Option("--from", Description = "Score id to resume from")]
+        [Option("--from", Description = "Score id to resume from.")]
         public long? From { get; set; }
 
-        [Option("--switch", Description = "Update the configured schema in redis after completing")]
+        [Option("--switch", Description = "Update the configured schema in redis after completing.")]
         public bool Switch { get; set; }
 
         private CancellationToken cancellationToken;
