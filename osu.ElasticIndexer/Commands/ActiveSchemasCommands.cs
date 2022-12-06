@@ -3,13 +3,14 @@
 
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.ElasticIndexer.Commands.ActiveSchemas;
 
 namespace osu.ElasticIndexer.Commands
 {
     [Command("active-schemas", Description = "Lists known schema versions being processed.")]
     [Subcommand(typeof(ActiveSchemasAddCommand))]
     [Subcommand(typeof(ActiveSchemasRemoveCommand))]
-    public class ActiveSchemasCommand
+    public class ActiveSchemasCommands
     {
         public int OnExecute(CancellationToken token)
         {

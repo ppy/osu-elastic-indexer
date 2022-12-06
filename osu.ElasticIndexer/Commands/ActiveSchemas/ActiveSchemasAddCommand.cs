@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.ActiveSchemas
 {
     [Command("add", Description = "Add a schema version to the list of versions being processed.")]
     public class ActiveSchemasAddCommand

@@ -5,9 +5,9 @@ using System;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Schema
 {
-    [Command("clear", Description = "Clears the currently set schema version.")]
+    [Command("clear", Description = "Clears the currently set active schema version.")]
     public class SchemaVersionClear
     {
         public int OnExecute(CancellationToken token)
