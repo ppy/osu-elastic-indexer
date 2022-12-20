@@ -20,8 +20,8 @@ namespace osu.ElasticIndexer
             ConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
             Schema = Environment.GetEnvironmentVariable("SCHEMA") ?? string.Empty;
             Prefix = Environment.GetEnvironmentVariable("ES_INDEX_PREFIX") ?? string.Empty;
-            ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://elasticsearch:9200";
-            RedisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "redis";
+            ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://localhost:9200";
+            RedisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
         }
 
         public static int BufferSize { get; } = 5;
