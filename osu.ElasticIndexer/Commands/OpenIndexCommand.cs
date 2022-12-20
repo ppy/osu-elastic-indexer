@@ -13,11 +13,11 @@ namespace osu.ElasticIndexer.Commands
         [Required]
         public string Name { get; } = string.Empty;
 
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
         public int OnExecute()
         {
-            var response = client.ElasticClient.Indices.Open(Name);
+            var response = elasticClient.Indices.Open(Name);
             Console.WriteLine(response.ToString());
             return 0;
         }

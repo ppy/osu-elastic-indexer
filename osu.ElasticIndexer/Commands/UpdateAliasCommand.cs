@@ -11,7 +11,7 @@ namespace osu.ElasticIndexer.Commands
     [Command("alias", Description = "Updates alias to the latest index of a given version")]
     public class UpdateAliasCommand
     {
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
         [Option("--close", Description = "Closes the previously aliased index when switching.")]
         public bool Close { get; set; }
@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer.Commands
                 return 1;
             }
 
-            var indexStates = client.GetIndicesForVersion(client.AliasName, Schema);
+            var indexStates = elasticClient.GetIndicesForVersion(elasticClient.AliasName, Schema);
 
             if (indexStates.Count == 0)
             {
@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer.Commands
 
             // TODO: should check if completed?
             var indexName = indexStates.OrderByDescending(x => x.Key).First().Key.Name;
-            client.UpdateAlias(client.AliasName, indexName, Close);
+            elasticClient.UpdateAlias(elasticClient.AliasName, indexName, Close);
 
             return 0;
         }
