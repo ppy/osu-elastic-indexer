@@ -6,10 +6,10 @@ using System.IO;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("push-file", Description = "Push contents of a file to the queue for testing.")]
-    public class PushFileCommand : ProcessorCommandBase
+    [Command("pump-file", Description = "Pump contents of a file to the queue for testing.")]
+    public class PumpFileCommand
     {
         [Argument(0)]
         [Required]
@@ -17,13 +17,12 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(AppSettings.Schema))
-                throw new MissingSchemaException();
+            var processor = new UnrunnableProcessor();
 
             var value = File.ReadAllText(Filename);
             var redis = new Redis();
 
-            redis.Connection.GetDatabase().ListLeftPush(Processor.QueueName, value);
+            redis.Connection.GetDatabase().ListLeftPush(processor.QueueName, value);
 
             return 0;
         }

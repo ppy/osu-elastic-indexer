@@ -1,17 +1,14 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.ActiveSchemas
 {
-    [Command("active-schemas", Description = "Lists known schema versions being processed.")]
-    [Subcommand(typeof(ActiveSchemasAddCommand))]
-    [Subcommand(typeof(ActiveSchemasRemoveCommand))]
-    public class ActiveSchemasCommand
+    [Command("list", Description = "Lists known schema versions being processed.")]
+    public class ActiveSchemasListCommand
     {
-        public int OnExecute(CancellationToken token)
+        public int OnExecute(CommandLineApplication app)
         {
             var value = new Redis().GetActiveSchemas();
 

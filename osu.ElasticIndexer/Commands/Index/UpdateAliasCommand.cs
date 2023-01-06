@@ -6,9 +6,9 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
-    [Command("alias", Description = "Updates alias to the latest index of a given version")]
+    [Command("alias", Description = "Updates alias to the latest index of a given version.")]
     public class UpdateAliasCommand
     {
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();
@@ -16,8 +16,8 @@ namespace osu.ElasticIndexer.Commands
         [Option("--close", Description = "Closes the previously aliased index when switching.")]
         public bool Close { get; set; }
 
+        [Argument(0, "schema", "The schema version to alias.")]
         [Required]
-        [Option("--schema", Description = "Required. The schema version")]
         public string Schema { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken token)

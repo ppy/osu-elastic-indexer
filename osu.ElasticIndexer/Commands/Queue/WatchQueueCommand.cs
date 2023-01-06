@@ -5,12 +5,12 @@ using System;
 using System.Threading;
 using Elasticsearch.Net;
 using McMaster.Extensions.CommandLineUtils;
-using StackExchange.Redis;
 using MySqlConnector;
+using StackExchange.Redis;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
+    [Command("watch", Description = "Watches queue and dispatches scores for indexing.")]
     public class WatchQueueCommand
     {
         [Option("--force-version", Description = "Forces the schema version in Redis to be this processor's version.")]
@@ -91,7 +91,7 @@ namespace osu.ElasticIndexer.Commands
                 }
                 catch (UnexpectedElasticsearchClientException ex)
                 {
-                    // There is a period during elasticseasrch startup where active_shards_percent_as_number
+                    // There is a period during elasticsearch startup where active_shards_percent_as_number
                     // is returned as NaN but the parser expects a number.
                     if (!ex.Message.StartsWith("expected:'Number Token', actual:'\"NaN\"'", StringComparison.Ordinal))
                         throw;

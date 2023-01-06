@@ -1,19 +1,20 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("clear", Description = "Clears the currently set schema version.")]
-    public class SchemaVersionClear
+    [Command("clear", Description = "Clears the queue.")]
+    public class ClearQueueCommand
     {
         public int OnExecute(CancellationToken token)
         {
-            Console.WriteLine(ConsoleColor.Yellow, "Unsetting schema...");
-            new Redis().ClearSchemaVersion();
+            var processor = new UnrunnableProcessor();
+
+            processor.ClearQueue();
+            Console.WriteLine($"Queue {processor.QueueName} cleared.");
             return 0;
         }
     }

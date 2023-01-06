@@ -8,7 +8,7 @@ namespace osu.ElasticIndexer
     public class MissingSchemaException : Exception
     {
         public MissingSchemaException()
-            : base("A schema version is required.")
+            : base("A schema version is required for this command (set envvar SCHEMA to current version).")
         {
         }
     }

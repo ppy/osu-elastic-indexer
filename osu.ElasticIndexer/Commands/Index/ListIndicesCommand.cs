@@ -5,10 +5,10 @@ using System.Linq;
 using Elasticsearch.Net;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
-    [Command("list", Description = "Lists indices")]
-    public class ListIndicesCommand : ProcessorCommandBase
+    [Command("list", Description = "Lists indices.")]
+    public class ListIndicesCommand
     {
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 

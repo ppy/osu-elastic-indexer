@@ -7,26 +7,27 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("all", Description = "Pumps scores through the queue for processing")]
-    public class PumpAllScoresCommand : ProcessorCommandBase
+    [Command("pump-all", Description = "Pumps scores through the queue for processing.")]
+    public class PumpAllScoresCommand
     {
-        [Option("--delay", Description = "Delay in milliseconds between reading chunks")]
+        [Option("--delay", Description = "Delay in milliseconds between reading chunks.")]
         public int Delay { get; set; }
 
-        [Option("--from", Description = "Score id to resume from")]
+        [Option("--from", Description = "Score id to resume from.")]
         public long? From { get; set; }
 
-        [Option("--switch", Description = "Update the configured schema in redis after completing")]
+        [Option("--switch", Description = "Update the configured schema in redis after completing.")]
         public bool Switch { get; set; }
 
         private CancellationToken cancellationToken;
 
+        private UnrunnableProcessor processor = null!;
+
         public int OnExecute(CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(AppSettings.Schema))
-                throw new MissingSchemaException();
+            processor = new UnrunnableProcessor();
 
             this.cancellationToken = cancellationToken;
 
@@ -79,13 +80,13 @@ namespace osu.ElasticIndexer.Commands
 
                 Console.WriteLine($"Pushing {scoreItems.Count} scores");
 
-                while (Processor.GetQueueSize() > 1000000)
+                while (processor.GetQueueSize() > 1000000)
                 {
-                    System.Console.WriteLine($"Paused due to excessive queue length ({Processor.GetQueueSize()})");
+                    System.Console.WriteLine($"Paused due to excessive queue length ({processor.GetQueueSize()})");
                     Thread.Sleep(30000);
                 }
 
-                Processor.PushToQueue(scoreItems);
+                processor.PushToQueue(scoreItems);
 
                 Console.WriteLine($"Pushed {scores.LastOrDefault()}");
                 last = scores.LastOrDefault();

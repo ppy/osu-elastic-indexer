@@ -13,6 +13,8 @@ namespace osu.ElasticIndexer
         internal UnrunnableProcessor()
             : base(new QueueConfiguration { InputQueueName = queue_name })
         {
+            if (string.IsNullOrEmpty(AppSettings.Schema))
+                throw new MissingSchemaException();
         }
 
         protected override void ProcessResult(ScoreItem item)

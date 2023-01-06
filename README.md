@@ -54,7 +54,7 @@ Push items to `osu-queue:score-index-${schema}`
 
 ## Switching to a new schema
 
-Run `dotnet run schema --schema ${schema}` or set `osu-queue:score-index:${prefix}schema` directly in Redis
+Run `dotnet run schema set ${schema}` or set `osu-queue:score-index:${prefix}schema` directly in Redis
 
 ### Automatic index switching
 
@@ -84,6 +84,7 @@ Additional envs can be set:
 ## Environment Variables
 
 ### BATCH_SIZE
+
 Maximum number of items to handle/dequeue per batch. This affects the size of the `_bulk` request sent to Elasticsearch.
 
 Defaults to `10000`.
@@ -94,24 +95,36 @@ Maximum number of `BATCH_SIZE * BUFFER_SIZE` items allowed inflight during queue
 
 Defaults to `5` (default of `50000` items).
 
-### DB_CONNECTION_STRING
-Connection string for the database connection.
-Standard `MySqlConnector` connection string.
+### DB_HOST
+
+Host for MySQL.
+
+Defaults to `localhost`.
+
+### DB_USER
+
+Database username.
+
+Defaults to `root`.
 
 ### ES_INDEX_PREFIX
+
 Optional prefix for the index names in elasticsearch.
 
 ### ES_HOST
+
 Url to the Elasticsearch host.
 
-Defaults to `http://elasticsearch:9200`
+Defaults to `http://localhost:9200`
 
 ### REDIS_HOST
+
 Redis connection string; see [here](https://stackexchange.github.io/StackExchange.Redis/Configuration.html#configuration-options) for configuration options.
 
-Defaults to `redis`
+Defaults to `localhost`
 
 ### SCHEMA
+
 Schema version for the queue; see [Schema](#schema).
 
 # Commands
@@ -124,15 +137,15 @@ in cases where `dotnet run` is not available, the assembly should be used, e.g. 
 Running `queue` will automatically create an index if an open index matching the requested `schema` does not exist.
 If a matching open index exists, it will be reused.
 
-    SCHEMA=${schema} dotnet run queue
+    SCHEMA=${schema} dotnet run queue watch
 
 e.g.
 
-    SCHEMA=1 dotnet run queue
+    SCHEMA=1 dotnet run queue watch
 
 ## Getting the current schema version
 
-    dotnet run schema
+    dotnet run schema get
 
 ## Setting the schema version
 
@@ -148,48 +161,48 @@ This is used to unset the schema version for testing purposes.
 
 The index the alias points to can be changed manually:
 
-    dotnet run alias --schema 1
+    dotnet run schema alias ${schema}
 
-will update the index alias to the latest index with schema `1` tag.
+will update the index alias to the latest index with schema ${schema} tag.
 
 ## List indices
 
 To list all indices and their corresponding states (schema, aliased, open or closed)
 
-    dotnet run list
+    dotnet run index list
 
 ## Closing unused indices
 
 This will close all score indices except the active one, unloading them from Elasticsearch's memory pool.
 
-    dotnet run close
+    dotnet run index close
 
 A specific index can be closed by passing in index's name as an argument; e.g. the following will close `index_1`:
 
-    dotnet run close index_1
+    dotnet run index close index_1
 
 ## Cleaning up closed indices
 
 This will delete all closed indices and free up the storage space used by those indices.
 The command will only delete an index if it is in the `closed` state.
 
-    dotnet run delete
+    dotnet run index delete
 
 Passing arguments to the command will delete the matching index:
 
-    dotnet run delete index_1
+    dotnet run index delete index_1
 
 ## Adding fake items to the queue
 
 For testing purposes, we can add fake items to the queue:
 
-    SCHEMA=1 dotnet run fake
+    SCHEMA=1 dotnet run queue pump-fake
 
 It should be noted that these items will not exist or match the ones in the database.
 
 ## Queuing a specific score for indexing
 
-    SCHEMA=${schema} dotnet run index ${id}
+    SCHEMA=${schema} dotnet run queue pump-score ${id}
 
 will queue the score with `${id}` for indexing; the score will be added or deleted as necessary, according to the value of `SoloScore.ShouldIndex`.
 
@@ -197,7 +210,7 @@ See [Queuing items for processing from another client](#queuing-items-for-proces
 
 ## Adding existing database records to the queue
 
-    SCHEMA=1 dotnet run all
+    SCHEMA=1 dotnet run queue pump-all
 
 will read existing `solo_scores` in chunks and add them to the queue for indexing. Only scores with a corresponding `phpbb_users` entry will be queued.
 
@@ -209,7 +222,7 @@ Extra options:
 
 ## Listing known versions currently being processed
 
-    dotnet run active-schemas
+    dotnet run active-schemas list
 
 will list the versions known to have queue processors listening on the queue.
 

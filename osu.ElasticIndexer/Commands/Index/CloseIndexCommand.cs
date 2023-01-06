@@ -6,10 +6,10 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
-    [Command("close", Description = "Closes unused indices")]
-    public class CloseIndexCommand : ProcessorCommandBase
+    [Command("close", Description = "Closes unused indices.")]
+    public class CloseIndexCommand
     {
         [Argument(0, "name", "The index to close. All unused indices are closed if not specified.")]
         public string? Name { get; set; }
