@@ -6,19 +6,22 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.ActiveSchemas
 {
-    [Command("set", Description = "Sets the current index schema version to use")]
-    public class SchemaVersionSet
+    [Command("add", Description = "Add a schema version to the list of versions being processed.")]
+    public class ActiveSchemasAddCommand
     {
-        [Argument(0)]
+        [Argument(0, "schema", "The schema version to add as active.")]
         [Required]
         public string Schema { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken token)
         {
-            new Redis().SetSchemaVersion(Schema);
-            Console.WriteLine(ConsoleColor.Yellow, $"Schema version set to {Schema}");
+            var added = new Redis().AddActiveSchema(Schema);
+            var text = added ? "Added" : "Already exists";
+
+            Console.WriteLine(ConsoleColor.Green, $"{text}: {Schema}");
+
             return 0;
         }
     }

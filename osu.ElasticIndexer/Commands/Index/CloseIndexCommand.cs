@@ -6,19 +6,19 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
-    [Command("close", Description = "Closes unused indices")]
-    public class CloseIndexCommand : ProcessorCommandBase
+    [Command("close", Description = "Closes unused indices.")]
+    public class CloseIndexCommand
     {
         [Argument(0, "name", "The index to close. All unused indices are closed if not specified.")]
         public string? Name { get; set; }
 
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
         public int OnExecute(CancellationToken token)
         {
-            var indices = string.IsNullOrEmpty(Name) ? client.GetIndices(client.AliasName) : client.GetIndex(Name);
+            var indices = string.IsNullOrEmpty(Name) ? elasticClient.GetIndices(elasticClient.AliasName) : elasticClient.GetIndex(Name);
             var unaliasedIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
 
             if (!unaliasedIndices.Any())
@@ -47,7 +47,7 @@ namespace osu.ElasticIndexer.Commands
             foreach (var entry in unaliasedIndices)
             {
                 Console.WriteLine($"closing {entry.Key.Name}...");
-                client.ElasticClient.Indices.Close(entry.Key.Name);
+                elasticClient.Indices.Close(entry.Key.Name);
             }
 
             Console.WriteLine("done.");

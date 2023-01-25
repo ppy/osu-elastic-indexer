@@ -4,20 +4,20 @@
 using System.ComponentModel.DataAnnotations;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
-    [Command("open", Description = "Opens an index")]
-    public class OpenIndexCommand : ProcessorCommandBase
+    [Command("open", Description = "Opens an index.")]
+    public class OpenIndexCommand
     {
         [Argument(0, "name", "The index to open.")]
         [Required]
         public string Name { get; } = string.Empty;
 
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
         public int OnExecute()
         {
-            var response = client.ElasticClient.Indices.Open(Name);
+            var response = elasticClient.Indices.Open(Name);
             Console.WriteLine(response.ToString());
             return 0;
         }

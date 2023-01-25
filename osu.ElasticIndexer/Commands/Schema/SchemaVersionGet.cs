@@ -4,12 +4,10 @@
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Schema
 {
-    [Command("schema", Description = "Gets the current index schema version to use")]
-    [Subcommand(typeof(SchemaVersionClear))]
-    [Subcommand(typeof(SchemaVersionSet))]
-    public class SchemaVersionCommand
+    [Command("get", Description = "Get the currently set index schema version.")]
+    public class SchemaVersionGet
     {
         public int OnExecute(CancellationToken token)
         {

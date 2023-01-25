@@ -5,9 +5,9 @@ using System;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("queue", Description = "Watches queue and dispatches scores for indexing")]
+    [Command("watch", Description = "Watches queue and dispatches scores for indexing.")]
     public class WatchQueueCommand
     {
         public int OnExecute(CancellationToken token)

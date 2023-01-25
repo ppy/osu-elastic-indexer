@@ -12,7 +12,7 @@ namespace osu.ElasticIndexer
         private IndexMetadata? metadata;
         private string? previousSchema;
 
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
         private readonly Redis redis = new Redis();
 
         public SoloScoreIndexer()
@@ -25,14 +25,14 @@ namespace osu.ElasticIndexer
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
-                metadata = client.FindOrCreateIndex(client.AliasName);
+                metadata = elasticClient.FindOrCreateIndex(elasticClient.AliasName);
 
                 checkSchema();
 
                 redis.AddActiveSchema(AppSettings.Schema);
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
-                    new IndexQueueProcessor(metadata.Name, client, Stop).Run(cts.Token);
+                    new IndexQueueProcessor(metadata.Name, elasticClient, Stop).Run(cts.Token);
             }
         }
 
@@ -65,7 +65,7 @@ namespace osu.ElasticIndexer
             {
                 Console.WriteLine(ConsoleColor.Yellow, $"Schema switched to current: {schema}");
                 previousSchema = schema;
-                client.UpdateAlias(client.AliasName, metadata!.Name);
+                elasticClient.UpdateAlias(elasticClient.AliasName, metadata!.Name);
                 return;
             }
 

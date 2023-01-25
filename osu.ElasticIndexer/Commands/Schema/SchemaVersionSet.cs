@@ -6,22 +6,19 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Schema
 {
-    [Command("remove", Description = "Removes a schema version from the list of versions being processed.")]
-    public class ActiveSchemasRemoveCommand
+    [Command("set", Description = "Sets the current index schema version to use.")]
+    public class SchemaVersionSet
     {
-        [Argument(0)]
+        [Argument(0, "schema", "The schema version to set as current.")]
         [Required]
         public string Schema { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken token)
         {
-            var exists = new Redis().RemoveActiveSchema(Schema);
-            var text = exists ? "Removed" : "Did not exist";
-
-            Console.WriteLine(ConsoleColor.Green, $"{text}: {Schema}");
-
+            new Redis().SetSchemaVersion(Schema);
+            Console.WriteLine(ConsoleColor.Yellow, $"Schema version set to {Schema}");
             return 0;
         }
     }

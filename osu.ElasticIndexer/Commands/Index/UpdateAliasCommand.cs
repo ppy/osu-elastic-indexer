@@ -6,18 +6,18 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Index
 {
-    [Command("alias", Description = "Updates alias to the latest index of a given version")]
+    [Command("alias", Description = "Updates alias to the latest index of a given version.")]
     public class UpdateAliasCommand
     {
-        private readonly Client client = new Client();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
         [Option("--close", Description = "Closes the previously aliased index when switching.")]
         public bool Close { get; set; }
 
+        [Argument(0, "schema", "The schema version to alias.")]
         [Required]
-        [Option("--schema", Description = "Required. The schema version")]
         public string Schema { get; set; } = string.Empty;
 
         public int OnExecute(CancellationToken token)
@@ -28,7 +28,7 @@ namespace osu.ElasticIndexer.Commands
                 return 1;
             }
 
-            var indexStates = client.GetIndicesForVersion(client.AliasName, Schema);
+            var indexStates = elasticClient.GetIndicesForVersion(elasticClient.AliasName, Schema);
 
             if (indexStates.Count == 0)
             {
@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer.Commands
 
             // TODO: should check if completed?
             var indexName = indexStates.OrderByDescending(x => x.Key).First().Key.Name;
-            client.UpdateAlias(client.AliasName, indexName, Close);
+            elasticClient.UpdateAlias(elasticClient.AliasName, indexName, Close);
 
             return 0;
         }

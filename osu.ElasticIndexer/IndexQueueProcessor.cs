@@ -14,14 +14,14 @@ namespace osu.ElasticIndexer
     {
         private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
-        private readonly Client client;
+        private readonly OsuElasticClient elasticClient;
         private readonly string index;
 
         // QueueProcessor doesn't expose cancellation without overriding Run,
         // so we're making use of a supplied callback to stop processing.
         private readonly Action stop;
 
-        internal IndexQueueProcessor(string index, Client client, Action stopCallback)
+        internal IndexQueueProcessor(string index, OsuElasticClient elasticClient, Action stopCallback)
             : base(new QueueConfiguration
             {
                 InputQueueName = queue_name,
@@ -30,9 +30,12 @@ namespace osu.ElasticIndexer
                 MaxInFlightItems = AppSettings.BatchSize * AppSettings.BufferSize
             })
         {
-            this.client = client;
+            this.elasticClient = elasticClient;
             this.index = index;
             stop = stopCallback;
+
+            if (string.IsNullOrEmpty(AppSettings.Schema))
+                throw new MissingSchemaException();
         }
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
@@ -50,7 +53,7 @@ namespace osu.ElasticIndexer
                                      // type is needed for ids https://github.com/elastic/elasticsearch-net/issues/3500
                                      .DeleteMany<SoloScore>(buffer.Deletions);
 
-                var response = client.ElasticClient.Bulk(bulkDescriptor);
+                var response = elasticClient.Bulk(bulkDescriptor);
                 handleResponse(response, items);
             }
         }

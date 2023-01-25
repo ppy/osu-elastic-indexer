@@ -6,10 +6,10 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("index", Description = "Queue a score for indexing by id.")]
-    public class IndexCommand : ProcessorCommandBase
+    [Command("pump-score", Description = "Pump a single score through the queue for indexing by id.")]
+    public class PumpScoreCommand
     {
         [Argument(1)]
         [Required]
@@ -17,14 +17,13 @@ namespace osu.ElasticIndexer.Commands
 
         public int OnExecute(CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(AppSettings.Schema))
-                throw new MissingSchemaException();
+            var processor = new UnrunnableProcessor();
 
             var id = long.Parse(ScoreId);
             var scoreItem = new ScoreItem { ScoreId = id };
-            Processor.PushToQueue(scoreItem);
+            processor.PushToQueue(scoreItem);
 
-            Console.WriteLine(ConsoleColor.Green, $"Queued to {Processor.QueueName}: {scoreItem}");
+            Console.WriteLine(ConsoleColor.Green, $"Queued to {processor.QueueName}: {scoreItem}");
 
             return 0;
         }

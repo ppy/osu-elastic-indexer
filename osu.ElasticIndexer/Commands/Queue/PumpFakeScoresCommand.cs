@@ -4,16 +4,18 @@
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace osu.ElasticIndexer.Commands
+namespace osu.ElasticIndexer.Commands.Queue
 {
-    [Command("fake", Description = "Pumps fake scores through the queue")]
-    public class PumpFakeScoresCommand : ProcessorCommandBase
+    [Command("pump-fake", Description = "Pumps fake scores through the queue.")]
+    public class PumpFakeScoresCommand
     {
-        [Option("--delay", Description = "Delay in milliseconds between generating chunks")]
+        [Option("--delay", Description = "Delay in milliseconds between generating chunks.")]
         public int Delay { get; set; }
 
         public int OnExecute(CancellationToken cancellationToken)
         {
+            var processor = new UnrunnableProcessor();
+
             long counter = 0;
 
             while (!cancellationToken.IsCancellationRequested)
@@ -54,10 +56,10 @@ namespace osu.ElasticIndexer.Commands
                         preserve = true
                     };
 
-                Processor.PushToQueue(new ScoreItem { Score = score });
+                processor.PushToQueue(new ScoreItem { Score = score });
 
                 if (counter % 1000 == 0)
-                    Console.WriteLine($"pushed to {Processor.QueueName}, current id: {counter}");
+                    Console.WriteLine($"pushed to {processor.QueueName}, current id: {counter}");
 
                 if (Delay > 0)
                     Thread.Sleep(Delay);

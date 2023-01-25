@@ -11,18 +11,13 @@ using Nest;
 
 namespace osu.ElasticIndexer
 {
-    public class Client
+    public class OsuElasticClient : ElasticClient
     {
-        // shared client without a default index.
-        public readonly ElasticClient ElasticClient;
-
         public readonly string AliasName = $"{AppSettings.Prefix}solo_scores";
 
-        public Client(bool throwsExceptions = true)
+        public OsuElasticClient(bool throwsExceptions = true)
+            : base(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)).ThrowExceptions(throwsExceptions))
         {
-            ElasticClient = new ElasticClient(
-                new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)).ThrowExceptions(throwsExceptions)
-            );
         }
 
         /// <summary>
@@ -64,12 +59,12 @@ namespace osu.ElasticIndexer
 
         public IReadOnlyDictionary<IndexName, IndexState> GetIndex(string name)
         {
-            return ElasticClient.Indices.Get(name).Indices;
+            return Indices.Get(name).Indices;
         }
 
         public IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name, ExpandWildcards expandWildCards = ExpandWildcards.Open)
         {
-            return ElasticClient.Indices.Get($"{name}_*", descriptor => descriptor.ExpandWildcards(expandWildCards)).Indices;
+            return Indices.Get($"{name}_*", descriptor => descriptor.ExpandWildcards(expandWildCards)).Indices;
         }
 
         public List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
@@ -85,13 +80,13 @@ namespace osu.ElasticIndexer
             Console.WriteLine(ConsoleColor.Yellow, $"Updating `{alias}` alias to `{index}`...");
 
             var aliasDescriptor = new BulkAliasDescriptor();
-            var oldIndices = ElasticClient.GetIndicesPointingToAlias(alias);
+            var oldIndices = this.GetIndicesPointingToAlias(alias);
 
             foreach (var oldIndex in oldIndices)
                 aliasDescriptor.Remove(d => d.Alias(alias).Index(oldIndex));
 
             aliasDescriptor.Add(d => d.Alias(alias).Index(index));
-            ElasticClient.Indices.BulkAlias(aliasDescriptor);
+            Indices.BulkAlias(aliasDescriptor);
 
             // cleanup
             if (!close) return;
@@ -99,7 +94,7 @@ namespace osu.ElasticIndexer
             foreach (var toClose in oldIndices.Where(x => x != index))
             {
                 Console.WriteLine(ConsoleColor.Yellow, $"Closing {toClose}");
-                ElasticClient.Indices.Close(toClose);
+                Indices.Close(toClose);
             }
         }
 
@@ -111,14 +106,14 @@ namespace osu.ElasticIndexer
             Console.WriteLine(ConsoleColor.Cyan, $"Creating `{index}` for `{name}`.");
 
             var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
-            ElasticClient.LowLevel.Indices.Create<DynamicResponse>(
+            LowLevel.Indices.Create<DynamicResponse>(
                 index,
                 json,
                 new CreateIndexRequestParameters { WaitForActiveShards = "all" }
             );
             var metadata = new IndexMetadata(index, AppSettings.Schema);
 
-            metadata.Save(ElasticClient);
+            metadata.Save(this);
 
             return metadata;
         }
