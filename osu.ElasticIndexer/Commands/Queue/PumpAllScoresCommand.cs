@@ -62,40 +62,44 @@ namespace osu.ElasticIndexer.Commands.Queue
 
         private long? queueScores(long? from)
         {
-            var chunks = ElasticModel.Chunk<SoloScore>("preserve = 1", AppSettings.BatchSize, from);
-            SoloScore? last = null;
+            using (var mySqlConnection = processor.GetDatabaseConnection())
 
-            foreach (var scores in chunks)
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
+                var chunks = ElasticModel.Chunk<SoloScore>(mySqlConnection, "preserve = 1", AppSettings.BatchSize, from);
+                SoloScore? last = null;
 
-                List<ScoreItem> scoreItems = new List<ScoreItem>();
-
-                foreach (var score in scores)
+                foreach (var scores in chunks)
                 {
-                    score.country_code ??= "XX";
-                    scoreItems.Add(new ScoreItem { Score = score });
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+
+                    List<ScoreItem> scoreItems = new List<ScoreItem>();
+
+                    foreach (var score in scores)
+                    {
+                        score.country_code ??= "XX";
+                        scoreItems.Add(new ScoreItem { Score = score });
+                    }
+
+                    Console.WriteLine($"Pushing {scoreItems.Count} scores");
+
+                    while (processor.GetQueueSize() > 1000000)
+                    {
+                        Console.WriteLine($"Paused due to excessive queue length ({processor.GetQueueSize()})");
+                        Thread.Sleep(30000);
+                    }
+
+                    processor.PushToQueue(scoreItems);
+
+                    Console.WriteLine($"Pushed {scores.LastOrDefault()}");
+                    last = scores.LastOrDefault();
+
+                    if (Delay > 0)
+                        Thread.Sleep(Delay);
                 }
 
-                Console.WriteLine($"Pushing {scoreItems.Count} scores");
-
-                while (processor.GetQueueSize() > 1000000)
-                {
-                    System.Console.WriteLine($"Paused due to excessive queue length ({processor.GetQueueSize()})");
-                    Thread.Sleep(30000);
-                }
-
-                processor.PushToQueue(scoreItems);
-
-                Console.WriteLine($"Pushed {scores.LastOrDefault()}");
-                last = scores.LastOrDefault();
-
-                if (Delay > 0)
-                    Thread.Sleep(Delay);
+                return last?.id;
             }
-
-            return last?.id;
         }
     }
 }

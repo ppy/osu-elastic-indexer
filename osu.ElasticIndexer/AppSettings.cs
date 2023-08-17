@@ -17,7 +17,6 @@ namespace osu.ElasticIndexer
             if (!string.IsNullOrEmpty(bufferSize))
                 BufferSize = int.Parse(bufferSize);
 
-            ConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
             Schema = Environment.GetEnvironmentVariable("SCHEMA") ?? string.Empty;
             Prefix = Environment.GetEnvironmentVariable("ES_INDEX_PREFIX") ?? string.Empty;
             ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://localhost:9200";
@@ -30,8 +29,6 @@ namespace osu.ElasticIndexer
         public static TimeSpan BulkAllBackOffTimeDefault = TimeSpan.FromMinutes(1);
 
         public static int BatchSize { get; } = 10000;
-
-        public static string ConnectionString { get; }
 
         public static string ElasticsearchHost { get; }
 
