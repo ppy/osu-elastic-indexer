@@ -58,7 +58,7 @@ namespace osu.ElasticIndexer
         {
             if (!scoreIdsForLookup.Any()) return;
 
-            var scores = ElasticModel.Find<SoloScore>(scoreIdsForLookup);
+            var scores = ElasticModel.Find<SoloScore>(new UnrunnableProcessor().GetDatabaseConnection(), scoreIdsForLookup);
 
             foreach (var score in scores)
             {
