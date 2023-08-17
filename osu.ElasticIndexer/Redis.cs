@@ -29,8 +29,7 @@ namespace osu.ElasticIndexer
 
         public string GetSchemaVersion()
         {
-            var value = Connection.GetDatabase().StringGet(schemaKey);
-            return value.IsNullOrEmpty ? string.Empty : value.ToString();
+            return Connection.GetDatabase().StringGet(schemaKey).ToString() ?? string.Empty;
         }
 
         public bool RemoveActiveSchema(string value)
