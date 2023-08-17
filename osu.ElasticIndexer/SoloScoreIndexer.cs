@@ -21,7 +21,7 @@ namespace osu.ElasticIndexer
                 throw new MissingSchemaException();
         }
 
-        public void Run(CancellationToken token)
+        public void Run(CancellationToken token, bool setAsCurrent = false)
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
@@ -30,6 +30,9 @@ namespace osu.ElasticIndexer
                 checkSchema();
 
                 redis.AddActiveSchema(AppSettings.Schema);
+
+                if (setAsCurrent)
+                    redis.SetCurrentSchema(AppSettings.Schema);
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
                     new IndexQueueProcessor(metadata.Name, elasticClient, Stop).Run(cts.Token);
