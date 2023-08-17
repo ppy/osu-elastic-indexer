@@ -49,7 +49,7 @@ namespace osu.ElasticIndexer.Commands.Queue
 
             if (Switch)
             {
-                redis.SetSchemaVersion(AppSettings.Schema);
+                redis.SetCurrentSchema(AppSettings.Schema);
                 Console.WriteLine(ConsoleColor.Yellow, $"Schema version set to {AppSettings.Schema}, queueing scores > {lastId}");
                 queueScores(lastId);
 
