@@ -8,10 +8,11 @@ namespace osu.ElasticIndexer
 {
     public class SoloScoreIndexer
     {
-        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
         private CancellationTokenSource? cts;
         private IndexMetadata? metadata;
         private string? previousSchema;
+
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
         private readonly Redis redis = new Redis();
 
         public SoloScoreIndexer()
@@ -20,7 +21,7 @@ namespace osu.ElasticIndexer
                 throw new MissingSchemaException();
         }
 
-        public void Run(CancellationToken token, bool forceVersion = false)
+        public void Run(CancellationToken token, bool setAsCurrent = false)
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
@@ -30,8 +31,8 @@ namespace osu.ElasticIndexer
 
                 redis.AddActiveSchema(AppSettings.Schema);
 
-                if (forceVersion)
-                    redis.SetSchemaVersion(AppSettings.Schema);
+                if (setAsCurrent)
+                    redis.SetCurrentSchema(AppSettings.Schema);
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
                     new IndexQueueProcessor(metadata.Name, elasticClient, Stop).Run(cts.Token);

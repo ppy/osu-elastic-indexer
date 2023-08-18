@@ -17,7 +17,7 @@ namespace osu.ElasticIndexer.Commands.Schema
 
         public int OnExecute(CancellationToken token)
         {
-            new Redis().SetSchemaVersion(Schema);
+            new Redis().SetCurrentSchema(Schema);
             Console.WriteLine(ConsoleColor.Yellow, $"Schema version set to {Schema}");
             return 0;
         }

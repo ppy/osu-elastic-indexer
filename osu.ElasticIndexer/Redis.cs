@@ -37,7 +37,7 @@ namespace osu.ElasticIndexer
             return Connection.GetDatabase().SetRemove(activeSchemasKey, value);
         }
 
-        public void SetSchemaVersion(string value)
+        public void SetCurrentSchema(string value)
         {
             Connection.GetDatabase().StringSet(schemaKey, value);
         }
