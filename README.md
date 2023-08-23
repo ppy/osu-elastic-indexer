@@ -101,11 +101,31 @@ Host for MySQL.
 
 Defaults to `localhost`.
 
+### DB_NAME
+
+Database name.
+
+Defaults to `osu`.
+
 ### DB_USER
 
 Database username.
 
 Defaults to `root`.
+
+### DB_PASS
+
+Database password.
+
+### DD_AGENT_HOST
+
+Host to submit DataDog/StatsD metrics to.
+
+Defaults to `localhost`.
+
+### DD_ENTITY_ID
+
+Enables DataDog origin detection when running in a container. See [DataDog documentation](https://docs.datadoghq.com/developers/dogstatsd/?tab=kubernetes&code-lang=dotnet#origin-detection-over-udp).
 
 ### ES_INDEX_PREFIX
 
