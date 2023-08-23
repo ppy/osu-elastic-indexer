@@ -5,13 +5,10 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="dapper" Version="2.0.151" />
+    <PackageReference Include="Dapper" Version="2.0.151" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
-    <PackageReference Include="DogStatsD-CSharp-Client" Version="8.0.0" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.2" />
-    <PackageReference Include="MySqlConnector" Version="2.2.7" />
     <PackageReference Include="NEST" Version="7.17.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="ppy.osu.Game" Version="2023.815.0" />
     <PackageReference Include="ppy.osu.Game.Rulesets.Catch" Version="2023.815.0" />
     <PackageReference Include="ppy.osu.Game.Rulesets.Mania" Version="2023.815.0" />
