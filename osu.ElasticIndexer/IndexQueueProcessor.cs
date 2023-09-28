@@ -40,7 +40,10 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreItem> items)
         {
-            var buffer = new ProcessableItemsBuffer(items);
+            ProcessableItemsBuffer buffer;
+
+            using (var conn = GetDatabaseConnection())
+                buffer = new ProcessableItemsBuffer(conn, items);
 
             if (buffer.Additions.Any() || buffer.Deletions.Any())
             {

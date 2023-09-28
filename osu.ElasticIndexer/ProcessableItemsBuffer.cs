@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using MySqlConnector;
 
 namespace osu.ElasticIndexer
 {
@@ -26,7 +27,7 @@ namespace osu.ElasticIndexer
         /// </summary>
         private readonly HashSet<long> scoreIdsForLookup = new HashSet<long>();
 
-        public ProcessableItemsBuffer(IEnumerable<ScoreItem> items)
+        public ProcessableItemsBuffer(MySqlConnection connection, IEnumerable<ScoreItem> items)
         {
             // Figure out what to do with the queue item.
             foreach (var item in items)
@@ -49,30 +50,26 @@ namespace osu.ElasticIndexer
             }
 
             // Handle any scores that need a lookup from the database.
-            performDatabaseLookup();
-
-            Debug.Assert(scoreIdsForLookup.Count == 0);
-        }
-
-        private void performDatabaseLookup()
-        {
-            if (!scoreIdsForLookup.Any()) return;
-
-            var scores = ElasticModel.Find<SoloScore>(new UnrunnableProcessor().GetDatabaseConnection(), scoreIdsForLookup);
-
-            foreach (var score in scores)
+            if (scoreIdsForLookup.Any())
             {
-                if (score.ShouldIndex)
-                    Additions.Add(score);
-                else
-                    Deletions.Add(score.id);
+                var scores = ElasticModel.Find<SoloScore>(connection, scoreIdsForLookup);
 
-                scoreIdsForLookup.Remove(score.id);
+                foreach (var score in scores)
+                {
+                    if (score.ShouldIndex)
+                        Additions.Add(score);
+                    else
+                        Deletions.Add(score.id);
+
+                    scoreIdsForLookup.Remove(score.id);
+                }
+
+                // Remaining scores do not exist and should be deleted.
+                Deletions.AddRange(scoreIdsForLookup);
+                scoreIdsForLookup.Clear();
             }
 
-            // Remaining scores do not exist and should be deleted.
-            Deletions.AddRange(scoreIdsForLookup);
-            scoreIdsForLookup.Clear();
+            Debug.Assert(scoreIdsForLookup.Count == 0);
         }
     }
 }
