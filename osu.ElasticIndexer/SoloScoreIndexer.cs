@@ -49,32 +49,40 @@ namespace osu.ElasticIndexer
 
         private void checkSchema()
         {
-            var schema = redis.GetSchemaVersion();
-
-            // first run
-            if (previousSchema == null)
+            try
             {
-                // TODO: maybe include index check if it's out of date?
-                previousSchema = schema;
+                string schema = redis.GetSchemaVersion();
+
+                // first run
+                if (previousSchema == null)
+                {
+                    // TODO: maybe include index check if it's out of date?
+                    previousSchema = schema;
+                    return;
+                }
+
+                // no change
+                if (previousSchema == schema)
+                    return;
+
+                // schema has changed to the current one
+                if (previousSchema != schema && schema == AppSettings.Schema)
+                {
+                    Console.WriteLine(ConsoleColor.Yellow, $"Schema switched to current: {schema}");
+                    previousSchema = schema;
+                    elasticClient.UpdateAlias(elasticClient.AliasName, metadata!.Name);
+                    return;
+                }
+
+                Console.WriteLine(ConsoleColor.Yellow, $"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
+                redis.RemoveActiveSchema(AppSettings.Schema);
+                Stop();
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine($"Schema check failed ({e.ToString()})");
                 return;
             }
-
-            // no change
-            if (previousSchema == schema)
-                return;
-
-            // schema has changed to the current one
-            if (previousSchema != schema && schema == AppSettings.Schema)
-            {
-                Console.WriteLine(ConsoleColor.Yellow, $"Schema switched to current: {schema}");
-                previousSchema = schema;
-                elasticClient.UpdateAlias(elasticClient.AliasName, metadata!.Name);
-                return;
-            }
-
-            Console.WriteLine(ConsoleColor.Yellow, $"Previous schema {previousSchema}, got {schema}, need {AppSettings.Schema}, exiting...");
-            redis.RemoveActiveSchema(AppSettings.Schema);
-            Stop();
         }
     }
 }
