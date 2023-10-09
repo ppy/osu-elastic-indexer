@@ -80,8 +80,7 @@ namespace osu.ElasticIndexer
             }
             catch (Exception e)
             {
-                System.Console.WriteLine($"Schema check failed ({e.ToString()})");
-                return;
+                System.Console.WriteLine($"Schema check failed ({e})");
             }
         }
     }
