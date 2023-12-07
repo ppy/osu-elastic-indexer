@@ -13,7 +13,7 @@ namespace osu.ElasticIndexer
 {
     public class OsuElasticClient : ElasticClient
     {
-        public readonly string AliasName = $"{AppSettings.Prefix}solo_scores";
+        public readonly string AliasName = $"{AppSettings.Prefix}scores";
 
         public OsuElasticClient(bool throwsExceptions = true)
             : base(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
@@ -107,7 +107,7 @@ namespace osu.ElasticIndexer
 
             Console.WriteLine(ConsoleColor.Cyan, $"Creating `{index}` for `{name}`.");
 
-            var json = File.ReadAllText(Path.GetFullPath("schemas/solo_scores.json"));
+            var json = File.ReadAllText(Path.GetFullPath("schemas/scores.json"));
             LowLevel.Indices.Create<DynamicResponse>(
                 index,
                 json,

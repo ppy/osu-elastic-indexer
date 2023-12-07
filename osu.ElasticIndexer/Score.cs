@@ -18,14 +18,14 @@ namespace osu.ElasticIndexer
     [SuppressMessage("Style", "IDE1006")]
     [ElasticsearchType(IdProperty = nameof(id))]
     [ChunkOn(
-        Query = @"s.*, pp, country_acronym AS country_code, playmode, user_warnings FROM solo_scores s
-        LEFT JOIN solo_scores_performance ON score_id = s.id
+        Query = @"s.*, pp, country_acronym AS country_code, playmode, user_warnings FROM scores s
+        LEFT JOIN scores_performance ON score_id = s.id
         JOIN phpbb_users USING (user_id)
         JOIN osu_beatmaps USING (beatmap_id)",
         CursorColumn = "s.id",
-        Max = "MAX(id) FROM solo_scores"
+        Max = "MAX(id) FROM scores"
     )]
-    [Table("solo_scores")]
+    [Table("scores")]
     public class Score : ElasticModel
     {
         public override long CursorValue => id;
