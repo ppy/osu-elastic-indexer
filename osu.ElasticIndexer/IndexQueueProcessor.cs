@@ -76,7 +76,7 @@ namespace osu.ElasticIndexer
             }
 
             // Index was closed, possibly because it was switched. Flag for bailout.
-            if (response.ItemsWithErrors.Any(item => item.Error.Type == "index_closed_exception" || item.Error.Type == "cluster_block_exception"))
+            if (response.ItemsWithErrors.Any(item => item?.Error?.Type == "index_closed_exception" || item?.Error?.Type == "cluster_block_exception"))
             {
                 Console.WriteLine(ConsoleColor.Red, $"{index} was closed.");
                 stop();
