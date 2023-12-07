@@ -19,7 +19,7 @@ namespace osu.ElasticIndexer
     [ElasticsearchType(IdProperty = nameof(id))]
     [ChunkOn(
         Query = @"s.*, pp, country_acronym AS country_code, playmode, user_warnings FROM scores s
-        LEFT JOIN scores_performance ON score_id = s.id
+        LEFT JOIN score_performance ON score_id = s.id
         JOIN phpbb_users USING (user_id)
         JOIN osu_beatmaps USING (beatmap_id)",
         CursorColumn = "s.id",
