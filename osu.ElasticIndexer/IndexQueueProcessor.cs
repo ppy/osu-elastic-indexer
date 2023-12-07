@@ -97,7 +97,7 @@ namespace osu.ElasticIndexer
                 Console.WriteLine(ConsoleColor.Red, response.ToString());
                 Console.WriteLine(ConsoleColor.Red, response.OriginalException?.ToString());
                 // Items may or may not have been set; try to get any information out.
-                Console.WriteLine(ConsoleColor.Yellow, response.ItemsWithErrors.FirstOrDefault()?.Error.ToString());
+                Console.WriteLine(ConsoleColor.Yellow, response.ItemsWithErrors?.FirstOrDefault()?.Error?.ToString());
 
                 var exceptionTypeString = response.OriginalException?.GetType().ToString() ?? "null";
 
