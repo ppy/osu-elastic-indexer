@@ -5,6 +5,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Schema
 {
@@ -17,7 +18,7 @@ namespace osu.ElasticIndexer.Commands.Schema
 
         public int OnExecute(CancellationToken token)
         {
-            new Redis().SetCurrentSchema(Schema);
+            RedisAccess.GetConnection().SetCurrentSchema(Schema);
             Console.WriteLine(ConsoleColor.Yellow, $"Schema version set to {Schema}");
             return 0;
         }

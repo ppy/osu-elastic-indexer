@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.ActiveSchemas
 {
@@ -10,7 +11,7 @@ namespace osu.ElasticIndexer.Commands.ActiveSchemas
     {
         public int OnExecute(CommandLineApplication app)
         {
-            var value = new Redis().GetActiveSchemas();
+            var value = RedisAccess.GetConnection().GetActiveSchemas();
 
             Console.WriteLine(
                 value.Length == 0
