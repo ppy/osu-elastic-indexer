@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Queue
 {
@@ -31,8 +32,8 @@ namespace osu.ElasticIndexer.Commands.Queue
 
             this.cancellationToken = cancellationToken;
 
-            var redis = new Redis();
-            var currentSchema = redis.GetSchemaVersion();
+            var redis = RedisAccess.GetConnection();
+            var currentSchema = redis.GetCurrentSchema();
             Console.WriteLine(ConsoleColor.Green, $"Current schema version is: {currentSchema}");
             Console.WriteLine(ConsoleColor.Green, $"Pushing to queue with schema: {AppSettings.Schema}");
 

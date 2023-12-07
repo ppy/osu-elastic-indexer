@@ -4,6 +4,7 @@
 using System;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Queue
 {
@@ -15,7 +16,7 @@ namespace osu.ElasticIndexer.Commands.Queue
 
         public int OnExecute(CancellationToken token)
         {
-            var schema = new Redis().GetSchemaVersion();
+            var schema = RedisAccess.GetConnection().GetCurrentSchema();
 
             if (string.IsNullOrEmpty(schema))
                 Console.WriteLine(ConsoleColor.Yellow, "No existing schema version set, is this intended?");

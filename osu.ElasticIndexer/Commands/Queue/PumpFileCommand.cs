@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Queue
 {
@@ -20,9 +21,9 @@ namespace osu.ElasticIndexer.Commands.Queue
             var processor = new UnrunnableProcessor();
 
             var value = File.ReadAllText(Filename);
-            var redis = new Redis();
+            var redis = RedisAccess.GetConnection();
 
-            redis.Connection.GetDatabase().ListLeftPush(processor.QueueName, value);
+            redis.GetDatabase().ListLeftPush(processor.QueueName, value);
 
             return 0;
         }

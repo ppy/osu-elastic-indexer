@@ -4,6 +4,7 @@
 using System;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Schema
 {
@@ -13,7 +14,7 @@ namespace osu.ElasticIndexer.Commands.Schema
         public int OnExecute(CancellationToken token)
         {
             Console.WriteLine(ConsoleColor.Yellow, "Unsetting schema...");
-            new Redis().ClearSchemaVersion();
+            RedisAccess.GetConnection().ClearCurrentSchema();
             return 0;
         }
     }

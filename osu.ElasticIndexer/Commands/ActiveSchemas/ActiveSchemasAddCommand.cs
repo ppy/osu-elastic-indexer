@@ -5,6 +5,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.ActiveSchemas
 {
@@ -17,7 +18,7 @@ namespace osu.ElasticIndexer.Commands.ActiveSchemas
 
         public int OnExecute(CancellationToken token)
         {
-            var added = new Redis().AddActiveSchema(Schema);
+            var added = RedisAccess.GetConnection().AddActiveSchema(Schema);
             var text = added ? "Added" : "Already exists";
 
             Console.WriteLine(ConsoleColor.Green, $"{text}: {Schema}");

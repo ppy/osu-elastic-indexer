@@ -3,6 +3,7 @@
 
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Schema
 {
@@ -11,7 +12,7 @@ namespace osu.ElasticIndexer.Commands.Schema
     {
         public int OnExecute(CancellationToken token)
         {
-            var value = new Redis().GetSchemaVersion();
+            var value = RedisAccess.GetConnection().GetCurrentSchema();
             Console.WriteLine($"Current schema version is {value}");
             return 0;
         }

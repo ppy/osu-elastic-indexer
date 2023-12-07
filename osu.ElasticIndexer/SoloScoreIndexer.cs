@@ -3,6 +3,8 @@
 
 using System;
 using System.Threading;
+using osu.Server.QueueProcessor;
+using StackExchange.Redis;
 
 namespace osu.ElasticIndexer
 {
@@ -13,7 +15,7 @@ namespace osu.ElasticIndexer
         private string? previousSchema;
 
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();
-        private readonly Redis redis = new Redis();
+        private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
 
         public SoloScoreIndexer()
         {
@@ -51,7 +53,7 @@ namespace osu.ElasticIndexer
         {
             try
             {
-                string schema = redis.GetSchemaVersion();
+                string schema = redis.GetCurrentSchema();
 
                 // first run
                 if (previousSchema == null)
