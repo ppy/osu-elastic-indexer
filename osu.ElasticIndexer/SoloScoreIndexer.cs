@@ -55,15 +55,8 @@ namespace osu.ElasticIndexer
             {
                 string schema = redis.GetCurrentSchema();
 
-                // first run
-                if (previousSchema == null)
-                {
-                    // TODO: maybe include index check if it's out of date?
-                    previousSchema = schema;
-                    return;
-                }
+                previousSchema ??= schema;
 
-                // no change
                 if (previousSchema == schema)
                     return;
 
