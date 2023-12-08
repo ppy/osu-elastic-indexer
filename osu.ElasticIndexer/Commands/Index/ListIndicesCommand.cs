@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 using osu.Server.QueueProcessor;
 using StackExchange.Redis;
@@ -13,14 +14,14 @@ namespace osu.ElasticIndexer.Commands.Index
     [Command("list", Description = "Lists indices.")]
     public class ListIndicesCommand
     {
-        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
+        protected readonly OsuElasticClient ElasticClient = new OsuElasticClient();
 
-        private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
+        protected readonly ConnectionMultiplexer Redis = RedisAccess.GetConnection();
 
-        public virtual int OnExecute()
+        public virtual int OnExecute(CancellationToken token)
         {
-            string[] activeSchemas = redis.GetActiveSchemas();
-            string currentSchema = redis.GetCurrentSchema();
+            string[] activeSchemas = Redis.GetActiveSchemas();
+            string currentSchema = Redis.GetCurrentSchema();
 
             Console.WriteLine("# Redis tracking");
             Console.WriteLine();
@@ -29,8 +30,8 @@ namespace osu.ElasticIndexer.Commands.Index
             Console.WriteLine($"Current schema: {currentSchema}");
             Console.WriteLine();
 
-            var indices = elasticClient.Indices.Get(Indices.All).Indices;
-            var records = elasticClient.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
+            var indices = ElasticClient.Indices.Get(Indices.All).Indices;
+            var records = ElasticClient.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
 
             Console.WriteLine($"# Elasticsearch indices ({indices.Count})");
             Console.WriteLine();
@@ -67,7 +68,7 @@ namespace osu.ElasticIndexer.Commands.Index
                 return -1;
             }
 
-            if (!currentIndex.Aliases.ContainsKey(elasticClient.AliasName))
+            if (!currentIndex.Aliases.ContainsKey(ElasticClient.AliasName))
             {
                 Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not aliased correctly");
                 return -1;
