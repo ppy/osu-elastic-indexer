@@ -27,7 +27,7 @@ namespace osu.ElasticIndexer
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
-                metadata = elasticClient.FindOrCreateIndex(elasticClient.AliasName);
+                metadata = elasticClient.FindOrCreateIndex(AppSettings.Schema);
 
                 checkSchema();
 
@@ -61,7 +61,7 @@ namespace osu.ElasticIndexer
                     return;
 
                 // schema has changed to the current one
-                if (previousSchema != schema && schema == AppSettings.Schema)
+                if (previousSchema != schema && schema == $"{elasticClient.AliasName}_{AppSettings.Schema}")
                 {
                     Console.WriteLine(ConsoleColor.Yellow, $"Schema switched to current: {schema}");
                     previousSchema = schema;

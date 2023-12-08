@@ -20,7 +20,7 @@ namespace osu.ElasticIndexer.Commands.Index
             if (base.OnExecute(token) != 0)
                 return -1;
 
-            var indices = string.IsNullOrEmpty(Name) ? ElasticClient.GetIndices(ElasticClient.AliasName) : ElasticClient.GetIndex(Name);
+            var indices = string.IsNullOrEmpty(Name) ? ElasticClient.GetIndices($"{ElasticClient.AliasName}_*") : ElasticClient.GetIndex(Name);
             var closeableIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
 
             if (!closeableIndices.Any())

@@ -40,7 +40,7 @@ namespace osu.ElasticIndexer
                 return new IndexMetadata(indexName, indexState);
             }
 
-            return createIndex(index);
+            return createIndex(name);
         }
 
         public IReadOnlyDictionary<IndexName, IndexState> GetIndex(string name)
@@ -50,7 +50,7 @@ namespace osu.ElasticIndexer
 
         public IReadOnlyDictionary<IndexName, IndexState> GetIndices(string name, ExpandWildcards expandWildCards = ExpandWildcards.Open)
         {
-            return Indices.Get($"{name}_*", descriptor => descriptor.ExpandWildcards(expandWildCards)).Indices;
+            return Indices.Get(name, descriptor => descriptor.ExpandWildcards(expandWildCards)).Indices;
         }
 
         public KeyValuePair<IndexName, IndexState>? GetIndexForSchema(string schema)
@@ -88,19 +88,19 @@ namespace osu.ElasticIndexer
             }
         }
 
-        private IndexMetadata createIndex(string indexName)
+        private IndexMetadata createIndex(string schema)
         {
-            var index = $"{name}";
+            string name = $"{AliasName}_{schema}";
 
             Console.WriteLine(ConsoleColor.Cyan, $"Creating new index `{name}`.");
 
             var json = File.ReadAllText(Path.GetFullPath("schemas/scores.json"));
             LowLevel.Indices.Create<DynamicResponse>(
-                indexName,
+                name,
                 json,
                 new CreateIndexRequestParameters { WaitForActiveShards = "all" }
             );
-            var metadata = new IndexMetadata(indexName, AppSettings.Schema);
+            var metadata = new IndexMetadata(name, AppSettings.Schema);
 
             metadata.Save(this);
 
