@@ -16,7 +16,9 @@ namespace osu.ElasticIndexer
         public readonly string AliasName = $"{AppSettings.Prefix}solo_scores";
 
         public OsuElasticClient(bool throwsExceptions = true)
-            : base(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost)).ThrowExceptions(throwsExceptions))
+            : base(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
+                   .EnableApiVersioningHeader()
+                   .ThrowExceptions(throwsExceptions))
         {
         }
 
