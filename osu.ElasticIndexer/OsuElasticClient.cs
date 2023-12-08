@@ -40,7 +40,7 @@ namespace osu.ElasticIndexer
                 return new IndexMetadata(indexName, indexState);
             }
 
-            return createIndex(name);
+            return createIndex(index);
         }
 
         public IReadOnlyDictionary<IndexName, IndexState> GetIndex(string name)
@@ -90,7 +90,9 @@ namespace osu.ElasticIndexer
 
         private IndexMetadata createIndex(string indexName)
         {
-            Console.WriteLine(ConsoleColor.Cyan, $"Creating new index `{indexName}`.");
+            var index = $"{name}";
+
+            Console.WriteLine(ConsoleColor.Cyan, $"Creating new index `{name}`.");
 
             var json = File.ReadAllText(Path.GetFullPath("schemas/scores.json"));
             LowLevel.Indices.Create<DynamicResponse>(
