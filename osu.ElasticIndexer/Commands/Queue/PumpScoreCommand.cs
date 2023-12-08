@@ -20,7 +20,7 @@ namespace osu.ElasticIndexer.Commands.Queue
             var processor = new UnrunnableProcessor();
 
             var id = long.Parse(ScoreId);
-            var scoreItem = new ScoreItem { ScoreId = id };
+            var scoreItem = new ScoreQueueItem { ScoreId = id };
             processor.PushToQueue(scoreItem);
 
             Console.WriteLine(ConsoleColor.Green, $"Queued to {processor.QueueName}: {scoreItem}");

@@ -8,7 +8,9 @@ using System.Linq;
 using Dapper.Contrib.Extensions;
 using Nest;
 using Newtonsoft.Json;
-using osu.Game.Online.API.Requests.Responses;
+using Newtonsoft.Json.Converters;
+using osu.Game.Online.API;
+using osu.Game.Scoring;
 
 namespace osu.ElasticIndexer
 {
@@ -24,7 +26,7 @@ namespace osu.ElasticIndexer
         Max = "MAX(id) FROM solo_scores"
     )]
     [Table("solo_scores")]
-    public class SoloScore : ElasticModel
+    public class Score : ElasticModel
     {
         public override long CursorValue => id;
 
@@ -57,8 +59,7 @@ namespace osu.ElasticIndexer
         [Ignore]
         public string data
         {
-            get => JsonConvert.SerializeObject(scoreData);
-            set => scoreData = JsonConvert.DeserializeObject<SoloScoreInfo>(value)!;
+            set => scoreData = JsonConvert.DeserializeObject<ScoreData>(value)!;
         }
 
         [Computed]
@@ -121,8 +122,50 @@ namespace osu.ElasticIndexer
         [Boolean]
         public bool is_legacy => build_id == null;
 
-        public SoloScoreInfo scoreData = new SoloScoreInfo();
+        public ScoreData scoreData = new ScoreData();
 
         public override string ToString() => $"score_id: {id} user_id: {user_id} beatmap_id: {beatmap_id} ruleset_id: {ruleset_id}";
+
+        /// <summary>
+        /// Minimal implementation of SoloScoreInfo (aka the json serialised content of `scores`.`data`).
+        /// </summary>
+        [Serializable]
+        public class ScoreData
+        {
+            [JsonProperty("build_id")]
+            public int? BuildID { get; set; }
+
+            [JsonProperty("passed")]
+            public bool Passed { get; set; }
+
+            [JsonProperty("total_score")]
+            public long TotalScore { get; set; }
+
+            [JsonProperty("accuracy")]
+            public double Accuracy { get; set; }
+
+            [JsonProperty("max_combo")]
+            public int MaxCombo { get; set; }
+
+            [JsonConverter(typeof(StringEnumConverter))]
+            // ScoreRank is aligned to make 0 equal D. We still want to serialise this (even when DefaultValueHandling.Ignore is used).
+            [JsonProperty("rank", DefaultValueHandling = DefaultValueHandling.Include)]
+            public ScoreRank Rank { get; set; }
+
+            [JsonProperty("started_at")]
+            public DateTimeOffset? StartedAt { get; set; }
+
+            [JsonProperty("ended_at")]
+            public DateTimeOffset EndedAt { get; set; }
+
+            [JsonProperty("mods")]
+            public APIMod[] Mods { get; set; } = Array.Empty<APIMod>();
+
+            /// <summary>
+            /// Used to preserve the total score for legacy scores.
+            /// </summary>
+            [JsonProperty("legacy_total_score")]
+            public int? LegacyTotalScore { get; set; }
+        }
     }
 }

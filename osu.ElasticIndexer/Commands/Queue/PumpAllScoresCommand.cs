@@ -66,20 +66,20 @@ namespace osu.ElasticIndexer.Commands.Queue
             using (var mySqlConnection = processor.GetDatabaseConnection())
 
             {
-                var chunks = ElasticModel.Chunk<SoloScore>(mySqlConnection, "preserve = 1", AppSettings.BatchSize, from);
-                SoloScore? last = null;
+                var chunks = ElasticModel.Chunk<Score>(mySqlConnection, "preserve = 1", AppSettings.BatchSize, from);
+                Score? last = null;
 
                 foreach (var scores in chunks)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
 
-                    List<ScoreItem> scoreItems = new List<ScoreItem>();
+                    List<ScoreQueueItem> scoreItems = new List<ScoreQueueItem>();
 
                     foreach (var score in scores)
                     {
                         score.country_code ??= "XX";
-                        scoreItems.Add(new ScoreItem { Score = score });
+                        scoreItems.Add(new ScoreQueueItem { Score = score });
                     }
 
                     Console.WriteLine($"Pushing {scoreItems.Count} scores");

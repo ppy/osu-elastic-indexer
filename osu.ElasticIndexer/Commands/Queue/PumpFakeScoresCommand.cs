@@ -21,7 +21,7 @@ namespace osu.ElasticIndexer.Commands.Queue
             while (!cancellationToken.IsCancellationRequested)
             {
                 var score =
-                    new SoloScore
+                    new Score
                     {
                         // TODO: better random data
                         data = @"{
@@ -56,7 +56,7 @@ namespace osu.ElasticIndexer.Commands.Queue
                         preserve = true
                     };
 
-                processor.PushToQueue(new ScoreItem { Score = score });
+                processor.PushToQueue(new ScoreQueueItem { Score = score });
 
                 if (counter % 1000 == 0)
                     Console.WriteLine($"pushed to {processor.QueueName}, current id: {counter}");
