@@ -17,13 +17,12 @@ namespace osu.ElasticIndexer.Commands.Queue
 
             if (string.IsNullOrEmpty(schema))
             {
-                Console.WriteLine(ConsoleColor.Yellow, "No current schema set, will set new schema as current");
+                Console.WriteLine(ConsoleColor.Yellow, "WARNING: No current schema set, will set new schema as current");
                 Thread.Sleep(5000);
                 if (token.IsCancellationRequested)
                     return -1;
             }
-
-            if (schema != AppSettings.Schema)
+            else if (schema != AppSettings.Schema)
             {
                 Console.WriteLine($"WARNING: Starting processing for schema version {AppSettings.Schema} which is not current (current schema is {schema})");
                 Thread.Sleep(5000);

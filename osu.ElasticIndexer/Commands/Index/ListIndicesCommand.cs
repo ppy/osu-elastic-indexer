@@ -62,9 +62,7 @@ namespace osu.ElasticIndexer.Commands.Index
 
             if (!string.IsNullOrEmpty(currentSchema))
             {
-                var currentIndex = indices.Select(i => i.Value).FirstOrDefault(i => (string?)i.Mappings.Meta?["schema"] == currentSchema);
-
-                if (currentIndex == null)
+                if (!indices.TryGetValue(currentSchema, out var currentIndex))
                 {
                     Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not in present on elasticsearch");
                     return -1;

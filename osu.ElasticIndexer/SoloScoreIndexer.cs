@@ -31,10 +31,10 @@ namespace osu.ElasticIndexer
 
                 checkSchema();
 
-                redis.AddActiveSchema(AppSettings.Schema);
+                redis.AddActiveSchema(metadata.Name);
 
                 if (string.IsNullOrEmpty(redis.GetCurrentSchema()))
-                    redis.SetCurrentSchema(AppSettings.Schema);
+                    redis.SetCurrentSchema(metadata.Name);
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
                     new IndexQueueProcessor(metadata.Name, elasticClient, Stop).Run(cts.Token);

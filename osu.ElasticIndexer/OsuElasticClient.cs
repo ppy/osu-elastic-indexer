@@ -31,31 +31,15 @@ namespace osu.ElasticIndexer
         {
             Console.WriteLine();
 
-            var indices = GetIndicesForVersion(name, AppSettings.Schema);
+            var index = GetIndexForSchema(name);
 
-            // 3 cases are handled:
-            if (indices.Count > 0)
+            if (index != null)
             {
-                // 1. Index was already aliased; likely resuming from a completed job.
-                var (indexName, indexState) = indices.FirstOrDefault(entry => entry.Value.Aliases.ContainsKey(name));
-
-                if (indexName != null)
-                {
-                    Console.WriteLine(ConsoleColor.Cyan, $"Using aliased `{indexName}`.");
-
-                    return new IndexMetadata(indexName, indexState);
-                }
-
-                // 2. Index has not been aliased and has tracking information;
-                // likely resuming from an incomplete job or waiting to switch over.
-                // TODO: throw if there's more than one? or take lastest one.
-                (indexName, indexState) = indices.First();
-                Console.WriteLine(ConsoleColor.Cyan, $"Using non-aliased `{indexName}`.");
-
+                var (indexName, indexState) = index.Value;
+                Console.WriteLine(ConsoleColor.Cyan, $"Using existing index `{indexName}`.");
                 return new IndexMetadata(indexName, indexState);
             }
 
-            // 3. no existing index
             return createIndex(name);
         }
 
@@ -69,11 +53,15 @@ namespace osu.ElasticIndexer
             return Indices.Get($"{name}_*", descriptor => descriptor.ExpandWildcards(expandWildCards)).Indices;
         }
 
-        public List<KeyValuePair<IndexName, IndexState>> GetIndicesForVersion(string name, string schema)
+        public KeyValuePair<IndexName, IndexState>? GetIndexForSchema(string schema)
         {
-            return GetIndices(name)
-                   .Where(entry => (string?)entry.Value.Mappings.Meta?["schema"] == schema)
-                   .ToList();
+            KeyValuePair<IndexName, IndexState>? index = GetIndices($"{AliasName}_{schema}")
+                .SingleOrDefault();
+
+            if (string.IsNullOrEmpty(index?.Key?.Name))
+                return null;
+
+            return index;
         }
 
         public void UpdateAlias(string alias, string index, bool close = true)
@@ -100,20 +88,17 @@ namespace osu.ElasticIndexer
             }
         }
 
-        private IndexMetadata createIndex(string name)
+        private IndexMetadata createIndex(string indexName)
         {
-            var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
-            var index = $"{name}_{suffix}";
-
-            Console.WriteLine(ConsoleColor.Cyan, $"Creating `{index}` for `{name}`.");
+            Console.WriteLine(ConsoleColor.Cyan, $"Creating new index `{indexName}`.");
 
             var json = File.ReadAllText(Path.GetFullPath("schemas/scores.json"));
             LowLevel.Indices.Create<DynamicResponse>(
-                index,
+                indexName,
                 json,
                 new CreateIndexRequestParameters { WaitForActiveShards = "all" }
             );
-            var metadata = new IndexMetadata(index, AppSettings.Schema);
+            var metadata = new IndexMetadata(indexName, AppSettings.Schema);
 
             metadata.Save(this);
 

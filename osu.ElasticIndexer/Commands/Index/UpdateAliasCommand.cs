@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 using osu.Server.QueueProcessor;
@@ -30,16 +29,16 @@ namespace osu.ElasticIndexer.Commands.Index
                 return 1;
             }
 
-            var indexStates = ElasticClient.GetIndicesForVersion(ElasticClient.AliasName, Schema);
+            var index = ElasticClient.GetIndexForSchema(Schema);
 
-            if (indexStates.Count == 0)
+            if (index == null)
             {
                 Console.WriteLine("No matching indices found.");
                 return 1;
             }
 
             // TODO: should check if completed?
-            string? indexName = indexStates.MaxBy(x => x.Key).Key.Name;
+            string? indexName = index.Value.Key.Name;
 
             ElasticClient.UpdateAlias(ElasticClient.AliasName, indexName, Close);
 
