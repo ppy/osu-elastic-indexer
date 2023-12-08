@@ -27,7 +27,7 @@ namespace osu.ElasticIndexer
         /// </summary>
         /// <param name="name">name of the index alias.</param>
         /// <returns>Name of index found or created and any existing alias.</returns>
-        public IndexMetadata FindOrCreateIndex(string name)
+        public string FindOrCreateIndex(string name)
         {
             Console.WriteLine();
 
@@ -35,9 +35,9 @@ namespace osu.ElasticIndexer
 
             if (index != null)
             {
-                var (indexName, indexState) = index.Value;
+                string indexName = index.Value.Key.Name;
                 Console.WriteLine(ConsoleColor.Cyan, $"Using existing index `{indexName}`.");
-                return new IndexMetadata(indexName, indexState);
+                return indexName;
             }
 
             return createIndex(name);
@@ -88,7 +88,7 @@ namespace osu.ElasticIndexer
             }
         }
 
-        private IndexMetadata createIndex(string schema)
+        private string createIndex(string schema)
         {
             string name = $"{AliasName}_{schema}";
 
@@ -100,11 +100,10 @@ namespace osu.ElasticIndexer
                 json,
                 new CreateIndexRequestParameters { WaitForActiveShards = "all" }
             );
-            var metadata = new IndexMetadata(name, AppSettings.Schema);
 
-            metadata.Save(this);
+            Map<SoloScoreIndexer>(mappings => mappings.Index(name));
 
-            return metadata;
+            return name;
         }
     }
 }

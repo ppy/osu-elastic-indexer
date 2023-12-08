@@ -38,12 +38,9 @@ namespace osu.ElasticIndexer.Commands.Index
 
             foreach (var index in indices)
             {
-                var schema = index.Value.Mappings.Meta?["schema"];
-
                 var record = records.Single(r => r.Index == index.Key);
 
                 Console.WriteLine($"{record.Index} ({record.PrimaryStoreSize})\n"
-                                  + $"- schema version: {schema}\n"
                                   + $"- aliases: {string.Join(',', index.Value.Aliases.Select(a => a.Key))}\n"
                                   + $"- status: {record.Status}\n"
                                   + $"- docs: {record.DocsCount} ({record.DocsDeleted} deleted)\n");
