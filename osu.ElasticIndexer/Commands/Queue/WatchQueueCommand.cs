@@ -19,12 +19,25 @@ namespace osu.ElasticIndexer.Commands.Queue
             var schema = RedisAccess.GetConnection().GetCurrentSchema();
 
             if (string.IsNullOrEmpty(schema))
+            {
                 Console.WriteLine(ConsoleColor.Yellow, "No existing schema version set, is this intended?");
+                Thread.Sleep(5000);
+                if (token.IsCancellationRequested)
+                    return -1;
+            }
 
             if (schema != AppSettings.Schema)
+            {
                 Console.WriteLine($"WARNING: Starting processing for schema version {AppSettings.Schema} which is not current (current schema is {schema})");
+                Thread.Sleep(5000);
+                if (token.IsCancellationRequested)
+                    return -1;
+            }
 
             Console.WriteLine(ConsoleColor.Green, $"Running queue with schema version {AppSettings.Schema}");
+            Thread.Sleep(5000);
+            if (token.IsCancellationRequested)
+                return -1;
 
             new SoloScoreIndexer().Run(token, SetCurrent);
 
