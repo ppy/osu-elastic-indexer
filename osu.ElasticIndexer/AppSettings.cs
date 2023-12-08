@@ -21,6 +21,9 @@ namespace osu.ElasticIndexer
             Prefix = Environment.GetEnvironmentVariable("ES_INDEX_PREFIX") ?? string.Empty;
             ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://localhost:9200";
             RedisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
+
+            if (string.IsNullOrEmpty(Schema)) Console.WriteLine(ConsoleColor.Yellow, "WARNING: Running without SCHEMA envvar specification");
+            if (!string.IsNullOrEmpty(Prefix)) Console.WriteLine(ConsoleColor.Yellow, $"WARNING: Running with PREFIX envvar specification ({Prefix})");
         }
 
         public static int BufferSize { get; } = 5;
