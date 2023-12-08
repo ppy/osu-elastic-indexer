@@ -5,49 +5,64 @@ using System;
 using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("close", Description = "Closes unused indices.")]
-    public class CloseIndexCommand
+    public class CloseIndexCommand : ListIndicesCommand
     {
         [Argument(0, "name", "The index to close. All unused indices are closed if not specified.")]
         public string? Name { get; set; }
 
-        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
-
-        public int OnExecute(CancellationToken token)
+        public override int OnExecute(CancellationToken token)
         {
-            var indices = string.IsNullOrEmpty(Name) ? elasticClient.GetIndices(elasticClient.AliasName) : elasticClient.GetIndex(Name);
-            var unaliasedIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
+            if (base.OnExecute(token) != 0)
+                return -1;
 
-            if (!unaliasedIndices.Any())
+            var indices = string.IsNullOrEmpty(Name) ? ElasticClient.GetIndices(ElasticClient.AliasName) : ElasticClient.GetIndex(Name);
+            var closeableIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
+
+            if (!closeableIndices.Any())
             {
-                Console.WriteLine("No indices to close!");
+                Console.WriteLine(ConsoleColor.Yellow, "No indices to close!");
                 return 0;
             }
 
             Console.WriteLine("The following indices will be closed:");
 
-            foreach (var entry in unaliasedIndices)
-            {
+            foreach (var entry in closeableIndices)
                 Console.WriteLine(entry.Key.Name);
-            }
 
             Console.WriteLine();
 
             if (!Prompt.GetYesNo("Close these indices?", false, ConsoleColor.Yellow))
             {
-                Console.WriteLine("aborted.");
+                Console.WriteLine(ConsoleColor.Red, "aborted.");
                 return 1;
             }
 
             Console.WriteLine();
 
-            foreach (var entry in unaliasedIndices)
+            foreach (var entry in closeableIndices)
             {
-                Console.WriteLine($"closing {entry.Key.Name}...");
-                elasticClient.Indices.Close(entry.Key.Name);
+                if (entry.Key.Name == Redis.GetCurrentSchema())
+                {
+                    Console.WriteLine(ConsoleColor.Red, $"Index {entry.Key.Name} is set as current schema. Cannot close.");
+                    return -1;
+                }
+
+                System.Console.WriteLine($"Removing {entry.Key.Name} from active schemas..");
+                Redis.RemoveActiveSchema(entry.Key.Name);
+
+                Console.WriteLine($"Closing {entry.Key.Name}...");
+                var response = ElasticClient.Indices.Close(entry.Key.Name);
+
+                if (!response.IsValid)
+                {
+                    Console.WriteLine($"Error: {response.ServerError}");
+                    return -1;
+                }
             }
 
             Console.WriteLine("done.");
