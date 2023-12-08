@@ -10,7 +10,7 @@ using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer
 {
-    public class IndexQueueProcessor : QueueProcessor<ScoreItem>
+    public class IndexQueueProcessor : QueueProcessor<ScoreQueueItem>
     {
         private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
@@ -38,7 +38,7 @@ namespace osu.ElasticIndexer
                 throw new MissingSchemaException();
         }
 
-        protected override void ProcessResults(IEnumerable<ScoreItem> items)
+        protected override void ProcessResults(IEnumerable<ScoreQueueItem> items)
         {
             ProcessableItemsBuffer buffer;
 
@@ -54,14 +54,14 @@ namespace osu.ElasticIndexer
                                      .Index(index)
                                      .IndexMany(buffer.Additions)
                                      // type is needed for ids https://github.com/elastic/elasticsearch-net/issues/3500
-                                     .DeleteMany<SoloScore>(buffer.Deletions);
+                                     .DeleteMany<Score>(buffer.Deletions);
 
                 var response = elasticClient.Bulk(bulkDescriptor);
                 handleResponse(response, items);
             }
         }
 
-        private void handleResponse(BulkResponse response, IEnumerable<ScoreItem> items)
+        private void handleResponse(BulkResponse response, IEnumerable<ScoreQueueItem> items)
         {
             if (response.IsValid)
             {

@@ -6,7 +6,7 @@ using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer
 {
-    public class UnrunnableProcessor : QueueProcessor<ScoreItem>
+    public class UnrunnableProcessor : QueueProcessor<ScoreQueueItem>
     {
         private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
 
@@ -17,7 +17,7 @@ namespace osu.ElasticIndexer
                 throw new MissingSchemaException();
         }
 
-        protected override void ProcessResult(ScoreItem item)
+        protected override void ProcessResult(ScoreQueueItem item)
         {
             throw new NotImplementedException();
         }

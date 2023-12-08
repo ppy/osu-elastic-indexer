@@ -14,7 +14,7 @@ namespace osu.ElasticIndexer
         /// <summary>
         /// New scores which should be indexed.
         /// </summary>
-        public readonly List<SoloScore> Additions = new List<SoloScore>();
+        public readonly List<Score> Additions = new List<Score>();
 
         /// <summary>
         /// Score IDs which should be purged from the index is they are present.
@@ -27,7 +27,7 @@ namespace osu.ElasticIndexer
         /// </summary>
         private readonly HashSet<long> scoreIdsForLookup = new HashSet<long>();
 
-        public ProcessableItemsBuffer(MySqlConnection connection, IEnumerable<ScoreItem> items)
+        public ProcessableItemsBuffer(MySqlConnection connection, IEnumerable<ScoreQueueItem> items)
         {
             // Figure out what to do with the queue item.
             foreach (var item in items)
@@ -52,7 +52,7 @@ namespace osu.ElasticIndexer
             // Handle any scores that need a lookup from the database.
             if (scoreIdsForLookup.Any())
             {
-                var scores = ElasticModel.Find<SoloScore>(connection, scoreIdsForLookup);
+                var scores = ElasticModel.Find<Score>(connection, scoreIdsForLookup);
 
                 foreach (var score in scores)
                 {
