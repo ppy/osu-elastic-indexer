@@ -9,16 +9,19 @@ using McMaster.Extensions.CommandLineUtils;
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("delete", Description = "Deletes closed indices.")]
-    public class DeleteIndexCommand
+    public class DeleteIndexCommand : ListIndicesCommand
     {
-        [Argument(0, "name", "The index to delete. All closed indices are closed if not specified.")]
+        [Argument(0, "name", "The index to delete. All closed indices are deleted if not specified.")]
         public string? Name { get; set; }
 
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
-        public int OnExecute(CancellationToken token)
+        public override int OnExecute(CancellationToken token)
         {
-            var index = string.IsNullOrEmpty(Name) ? $"{elasticClient.AliasName}_*" : Name;
+            if (base.OnExecute(token) != 0)
+                return -1;
+
+            string? index = string.IsNullOrEmpty(Name) ? $"{elasticClient.AliasName}_*" : Name;
             var response = elasticClient.Cat.Indices(x => x.Index(index));
             var closed = response.Records.Where(record => record.Status == "close");
 
