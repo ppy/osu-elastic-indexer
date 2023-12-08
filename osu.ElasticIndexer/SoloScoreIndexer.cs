@@ -23,7 +23,7 @@ namespace osu.ElasticIndexer
                 throw new MissingSchemaException();
         }
 
-        public void Run(CancellationToken token, bool setAsCurrent = false)
+        public void Run(CancellationToken token)
         {
             using (cts = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
@@ -33,7 +33,7 @@ namespace osu.ElasticIndexer
 
                 redis.AddActiveSchema(AppSettings.Schema);
 
-                if (setAsCurrent)
+                if (string.IsNullOrEmpty(redis.GetCurrentSchema()))
                     redis.SetCurrentSchema(AppSettings.Schema);
 
                 using (new Timer(_ => checkSchema(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5)))
