@@ -1,11 +1,12 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Linq;
-using Elasticsearch.Net;
 using McMaster.Extensions.CommandLineUtils;
 using osu.Server.QueueProcessor;
 using StackExchange.Redis;
+using Indices = Nest.Indices;
 
 namespace osu.ElasticIndexer.Commands.Index
 {
@@ -16,12 +17,10 @@ namespace osu.ElasticIndexer.Commands.Index
 
         private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
 
-        public int OnExecute()
+        public virtual int OnExecute()
         {
             string[] activeSchemas = redis.GetActiveSchemas();
             string currentSchema = redis.GetCurrentSchema();
-
-            var indices = elasticClient.GetIndices(elasticClient.AliasName, ExpandWildcards.All);
 
             Console.WriteLine("# Redis tracking");
             Console.WriteLine();
@@ -30,28 +29,49 @@ namespace osu.ElasticIndexer.Commands.Index
             Console.WriteLine($"Current schema: {currentSchema}");
             Console.WriteLine();
 
-            Console.WriteLine("# Elasticsearch indices");
+            var indices = elasticClient.Indices.Get(Indices.All).Indices;
+            var records = elasticClient.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
+
+            Console.WriteLine($"# Elasticsearch indices ({indices.Count})");
             Console.WriteLine();
 
-            if (indices.Count > 0)
+            foreach (var index in indices)
             {
-                var response = elasticClient.Cat.Indices(descriptor => descriptor.Index(indices.Keys.Select(k => k.Name).ToArray()));
+                var schema = index.Value.Mappings.Meta?["schema"];
 
-                foreach (var record in response.Records)
-                {
-                    var indexState = indices[record.Index];
-                    var schema = indexState.Mappings.Meta?["schema"];
-                    var aliased = indexState.Aliases.ContainsKey(elasticClient.AliasName);
+                var record = records.Single(r => r.Index == index.Key);
 
-                    Console.WriteLine($"{record.Index} ({record.PrimaryStoreSize})\n"
-                                      + $"- schema version: {schema}\n"
-                                      + $"- aliased: {aliased}\n"
-                                      + $"- status: {record.Status}\n"
-                                      + $"- docs: {record.DocsCount} ({record.DocsDeleted} deleted)\n");
-                }
+                Console.WriteLine($"{record.Index} ({record.PrimaryStoreSize})\n"
+                                  + $"- schema version: {schema}\n"
+                                  + $"- aliases: {string.Join(',', index.Value.Aliases)}\n"
+                                  + $"- status: {record.Status}\n"
+                                  + $"- docs: {record.DocsCount} ({record.DocsDeleted} deleted)\n");
             }
 
-            Console.WriteLine();
+            if (string.IsNullOrEmpty(currentSchema))
+                Console.WriteLine(ConsoleColor.Yellow, "WARNING: No current schema");
+            if (activeSchemas.Length == 0)
+                Console.WriteLine(ConsoleColor.Yellow, "WARNING: No active schemas");
+
+            if (!activeSchemas.Contains(currentSchema))
+            {
+                Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not in active schema list");
+                return -1;
+            }
+
+            var currentIndex = indices.Select(i => i.Value).FirstOrDefault(i => (string?)i.Mappings.Meta?["schema"] == currentSchema);
+
+            if (currentIndex == null)
+            {
+                Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not in present on elasticsearch");
+                return -1;
+            }
+
+            if (!currentIndex.Aliases.ContainsKey(elasticClient.AliasName))
+            {
+                Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not aliased correctly");
+                return -1;
+            }
 
             return 0;
         }
