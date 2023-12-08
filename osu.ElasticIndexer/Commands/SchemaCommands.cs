@@ -8,7 +8,6 @@ namespace osu.ElasticIndexer.Commands
 {
     [Command("schema", Description = "Current schema version management commands.")]
     [Subcommand(typeof(SchemaVersionClear))]
-    [Subcommand(typeof(SchemaVersionGet))]
     [Subcommand(typeof(SchemaVersionSet))]
     public class SchemaCommands
     {

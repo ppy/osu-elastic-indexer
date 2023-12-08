@@ -9,7 +9,6 @@ namespace osu.ElasticIndexer.Commands
     [Command("active-schemas", Description = "Active (queue being processed) schema management commands.")]
     [Subcommand(typeof(ActiveSchemasAddCommand))]
     [Subcommand(typeof(ActiveSchemasRemoveCommand))]
-    [Subcommand(typeof(ActiveSchemasListCommand))]
     public class ActiveSchemasCommands
     {
         public int OnExecute(CommandLineApplication app)
