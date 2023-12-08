@@ -37,7 +37,7 @@ namespace osu.ElasticIndexer.Commands.Index
             }
 
             // TODO: should check if completed?
-            var indexName = indexStates.OrderByDescending(x => x.Key).First().Key.Name;
+            var indexName = indexStates.MaxBy(x => x.Key).Key.Name;
             elasticClient.UpdateAlias(elasticClient.AliasName, indexName, Close);
 
             return 0;
