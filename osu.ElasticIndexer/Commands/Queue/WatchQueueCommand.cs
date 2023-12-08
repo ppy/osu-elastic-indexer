@@ -13,14 +13,15 @@ namespace osu.ElasticIndexer.Commands.Queue
     {
         public int OnExecute(CancellationToken token)
         {
-            var schema = RedisAccess.GetConnection().GetCurrentSchema();
+            string currentIndex = RedisAccess.GetConnection().GetCurrentSchema();
+            string proposedIndex = $"{new OsuElasticClient().AliasName}_{AppSettings.Schema}";
 
-            if (string.IsNullOrEmpty(schema))
+            if (string.IsNullOrEmpty(currentIndex))
                 Console.WriteLine(ConsoleColor.Yellow, "WARNING: No current schema set, will set new schema as current");
-            else if (schema != AppSettings.Schema)
-                Console.WriteLine($"WARNING: Starting processing for schema version {AppSettings.Schema} which is not current (current schema is {schema})");
+            else if (currentIndex != proposedIndex)
+                Console.WriteLine($"WARNING: Starting processing for schema version {proposedIndex} which is not current (current schema is {currentIndex})");
 
-            Console.WriteLine(ConsoleColor.Green, $"Running queue with schema version {AppSettings.Schema}");
+            Console.WriteLine(ConsoleColor.Green, $"Running queue with schema version {proposedIndex}");
             Thread.Sleep(5000);
             if (token.IsCancellationRequested)
                 return -1;
