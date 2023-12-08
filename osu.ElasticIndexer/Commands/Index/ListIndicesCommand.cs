@@ -44,7 +44,7 @@ namespace osu.ElasticIndexer.Commands.Index
 
                 Console.WriteLine($"{record.Index} ({record.PrimaryStoreSize})\n"
                                   + $"- schema version: {schema}\n"
-                                  + $"- aliases: {string.Join(',', index.Value.Aliases)}\n"
+                                  + $"- aliases: {string.Join(',', index.Value.Aliases.Select(a => a.Key))}\n"
                                   + $"- status: {record.Status}\n"
                                   + $"- docs: {record.DocsCount} ({record.DocsDeleted} deleted)\n");
             }
