@@ -60,18 +60,21 @@ namespace osu.ElasticIndexer.Commands.Index
                 return -1;
             }
 
-            var currentIndex = indices.Select(i => i.Value).FirstOrDefault(i => (string?)i.Mappings.Meta?["schema"] == currentSchema);
-
-            if (currentIndex == null)
+            if (!string.IsNullOrEmpty(currentSchema))
             {
-                Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not in present on elasticsearch");
-                return -1;
-            }
+                var currentIndex = indices.Select(i => i.Value).FirstOrDefault(i => (string?)i.Mappings.Meta?["schema"] == currentSchema);
 
-            if (!currentIndex.Aliases.ContainsKey(ElasticClient.AliasName))
-            {
-                Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not aliased correctly");
-                return -1;
+                if (currentIndex == null)
+                {
+                    Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not in present on elasticsearch");
+                    return -1;
+                }
+
+                if (!currentIndex.Aliases.ContainsKey(ElasticClient.AliasName))
+                {
+                    Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not aliased correctly");
+                    return -1;
+                }
             }
 
             return 0;
