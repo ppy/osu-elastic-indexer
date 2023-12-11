@@ -73,8 +73,8 @@
       "number_of_shards": "2",
       "number_of_replicas": "0",
       "sort": {
-        "field": ["is_legacy", "total_score", "id"],
-        "order": ["asc", "desc", "asc"]
+        "field": ["is_legacy", "ruleset_id", "beatmap_id", "total_score", "id"],
+        "order": ["asc", "asc", "asc", "desc", "asc"]
       }
     }
   }
