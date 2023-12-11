@@ -3,7 +3,6 @@
 
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
-using Nest;
 using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Index;
@@ -13,11 +12,13 @@ public class NukeAllIndicesCommand : ListIndicesCommand
 {
     public override int OnExecute(CancellationToken token)
     {
+        string prefix = $"{ElasticClient.AliasName}_*";
+
         // Don't exit on error as we're likely trying to fix an error.
         base.OnExecute(token);
 
         Console.WriteLine();
-        Console.WriteLine("PREPARING TO NUKE ALL ELASTICSEARCH INDICES WITH FIRE!");
+        Console.WriteLine($"PREPARING TO NUKE ALL ELASTICSEARCH INDICES WITH PREFIX {prefix} WITH FIRE!");
         Console.WriteLine();
 
         Thread.Sleep(10000);
@@ -33,12 +34,12 @@ public class NukeAllIndicesCommand : ListIndicesCommand
 
         System.Console.WriteLine("Removing all indices..");
 
-        var records = ElasticClient.Cat.Indices(x => x.Index(Indices.All)).Records;
+        var indices = ElasticClient.GetIndices(prefix);
 
-        foreach (var record in records)
+        foreach (var index in indices)
         {
-            System.Console.WriteLine($"Deleting {record.Index}..");
-            ElasticClient.Indices.Delete(record.Index);
+            System.Console.WriteLine($"Deleting {index.Key}..");
+            ElasticClient.Indices.Delete(index.Key);
         }
 
         return 0;
