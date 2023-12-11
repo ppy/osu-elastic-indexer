@@ -30,7 +30,7 @@ namespace osu.ElasticIndexer.Commands.Index
             Console.WriteLine($"Current schema: {currentSchema}");
             Console.WriteLine();
 
-            var indices = ElasticClient.Indices.Get(Indices.All).Indices;
+            var indices = ElasticClient.GetIndices($"{ElasticClient.AliasName}_*");
             var records = ElasticClient.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
 
             Console.WriteLine($"# Elasticsearch indices ({indices.Count})");
