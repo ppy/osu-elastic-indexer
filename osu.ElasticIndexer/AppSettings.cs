@@ -40,5 +40,7 @@ namespace osu.ElasticIndexer
         public static string RedisHost { get; }
 
         public static string Schema { get; }
+
+        public static string AliasName { get; } = $"{AppSettings.Prefix}scores";
     }
 }

@@ -14,7 +14,7 @@ namespace osu.ElasticIndexer.Commands.Queue
         public int OnExecute(CancellationToken token)
         {
             string currentIndex = RedisAccess.GetConnection().GetCurrentSchema();
-            string proposedIndex = $"{new OsuElasticClient().AliasName}_{AppSettings.Schema}";
+            string proposedIndex = $"{AppSettings.AliasName}_{AppSettings.Schema}";
 
             if (string.IsNullOrEmpty(currentIndex))
                 Console.WriteLine(ConsoleColor.Yellow, "WARNING: No current schema set, will set new schema as current");
