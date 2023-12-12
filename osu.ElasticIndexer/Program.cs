@@ -8,8 +8,6 @@ using osu.ElasticIndexer.Commands;
 namespace osu.ElasticIndexer
 {
     [Command]
-    [Subcommand(typeof(ActiveSchemasCommands))]
-    [Subcommand(typeof(SchemaCommands))]
     [Subcommand(typeof(IndexCommands))]
     [Subcommand(typeof(QueueCommands))]
     public class Program

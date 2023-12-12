@@ -5,14 +5,13 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
 
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("alias", Description = "Updates alias to the latest index of a given version.")]
-    public class UpdateAliasCommand
+    public class UpdateAliasCommand : ListIndicesCommand
     {
-        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
-
         [Option("--close", Description = "Closes the previously aliased index when switching.")]
         public bool Close { get; set; }
 
@@ -20,15 +19,18 @@ namespace osu.ElasticIndexer.Commands.Index
         [Required]
         public string Schema { get; set; } = string.Empty;
 
-        public int OnExecute(CancellationToken token)
+        public override int OnExecute(CancellationToken token)
         {
+            if (base.OnExecute(token) != 0)
+                return -1;
+
             if (string.IsNullOrWhiteSpace(Schema))
             {
                 Console.WriteLine("A schema version is required.");
                 return 1;
             }
 
-            var indexStates = elasticClient.GetIndicesForVersion(elasticClient.AliasName, Schema);
+            var indexStates = ElasticClient.GetIndicesForVersion(ElasticClient.AliasName, Schema);
 
             if (indexStates.Count == 0)
             {
@@ -37,9 +39,11 @@ namespace osu.ElasticIndexer.Commands.Index
             }
 
             // TODO: should check if completed?
-            var indexName = indexStates.OrderByDescending(x => x.Key).First().Key.Name;
-            elasticClient.UpdateAlias(elasticClient.AliasName, indexName, Close);
+            string? indexName = indexStates.MaxBy(x => x.Key).Key.Name;
 
+            ElasticClient.UpdateAlias(ElasticClient.AliasName, indexName, Close);
+
+            Redis.SetCurrentSchema(indexName);
             return 0;
         }
     }
