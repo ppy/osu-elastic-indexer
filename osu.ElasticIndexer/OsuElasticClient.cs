@@ -13,8 +13,6 @@ namespace osu.ElasticIndexer
 {
     public class OsuElasticClient : ElasticClient
     {
-        public readonly string AliasName = $"{AppSettings.Prefix}scores";
-
         public OsuElasticClient(bool throwsExceptions = true)
             : base(new ConnectionSettings(new Uri(AppSettings.ElasticsearchHost))
                    .EnableApiVersioningHeader()
@@ -55,7 +53,7 @@ namespace osu.ElasticIndexer
 
         public KeyValuePair<IndexName, IndexState>? GetIndexForSchema(string schema)
         {
-            KeyValuePair<IndexName, IndexState>? index = GetIndices($"{AliasName}_{schema}")
+            KeyValuePair<IndexName, IndexState>? index = GetIndices($"{AppSettings.AliasName}_{schema}")
                 .SingleOrDefault();
 
             if (string.IsNullOrEmpty(index?.Key?.Name))
@@ -90,7 +88,7 @@ namespace osu.ElasticIndexer
 
         private string createIndex(string schema)
         {
-            string name = $"{AliasName}_{schema}";
+            string name = $"{AppSettings.AliasName}_{schema}";
 
             Console.WriteLine(ConsoleColor.Cyan, $"Creating new index `{name}`.");
 

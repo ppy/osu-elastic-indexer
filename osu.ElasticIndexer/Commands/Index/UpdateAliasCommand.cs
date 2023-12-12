@@ -40,7 +40,7 @@ namespace osu.ElasticIndexer.Commands.Index
             // TODO: should check if completed?
             string? indexName = index.Value.Key.Name;
 
-            ElasticClient.UpdateAlias(ElasticClient.AliasName, indexName, Close);
+            ElasticClient.UpdateAlias(AppSettings.AliasName, indexName, Close);
 
             Redis.SetCurrentSchema(indexName);
             return 0;

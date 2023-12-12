@@ -61,11 +61,11 @@ namespace osu.ElasticIndexer
                     return;
 
                 // schema has changed to the current one
-                if (previousSchema != schema && schema == $"{elasticClient.AliasName}_{AppSettings.Schema}")
+                if (previousSchema != schema && schema == $"{AppSettings.AliasName}_{AppSettings.Schema}")
                 {
                     Console.WriteLine(ConsoleColor.Yellow, $"Schema switched to current: {schema}");
                     previousSchema = schema;
-                    elasticClient.UpdateAlias(elasticClient.AliasName, indexName);
+                    elasticClient.UpdateAlias(AppSettings.AliasName, indexName);
                     return;
                 }
 

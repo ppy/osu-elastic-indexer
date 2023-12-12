@@ -12,7 +12,7 @@ public class NukeAllIndicesCommand : ListIndicesCommand
 {
     public override int OnExecute(CancellationToken token)
     {
-        string prefix = $"{ElasticClient.AliasName}_*";
+        string prefix = $"{AppSettings.AliasName}_*";
 
         // Don't exit on error as we're likely trying to fix an error.
         base.OnExecute(token);

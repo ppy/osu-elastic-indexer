@@ -30,7 +30,7 @@ namespace osu.ElasticIndexer.Commands.Index
             Console.WriteLine($"Current schema: {currentSchema}");
             Console.WriteLine();
 
-            var indices = ElasticClient.GetIndices($"{ElasticClient.AliasName}_*");
+            var indices = ElasticClient.GetIndices($"{AppSettings.AliasName}_*");
             var records = ElasticClient.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
 
             Console.WriteLine($"# Elasticsearch indices ({indices.Count})");
@@ -65,7 +65,7 @@ namespace osu.ElasticIndexer.Commands.Index
                     return -1;
                 }
 
-                if (!currentIndex.Aliases.ContainsKey(ElasticClient.AliasName))
+                if (!currentIndex.Aliases.ContainsKey(AppSettings.AliasName))
                 {
                     Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not aliased correctly");
                     return -1;
