@@ -12,8 +12,6 @@ namespace osu.ElasticIndexer
 {
     public class IndexQueueProcessor : QueueProcessor<ScoreQueueItem>
     {
-        private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
-
         private readonly OsuElasticClient elasticClient;
         private readonly string index;
 
@@ -24,7 +22,7 @@ namespace osu.ElasticIndexer
         internal IndexQueueProcessor(string index, OsuElasticClient elasticClient, Action stopCallback)
             : base(new QueueConfiguration
             {
-                InputQueueName = queue_name,
+                InputQueueName = $"{AppSettings.AliasName}_{AppSettings.Schema}",
                 BatchSize = AppSettings.BatchSize,
                 ErrorThreshold = AppSettings.BatchSize * 2, // needs to be larger than BatchSize to handle ES busy errors.
                 MaxInFlightItems = AppSettings.BatchSize * AppSettings.BufferSize

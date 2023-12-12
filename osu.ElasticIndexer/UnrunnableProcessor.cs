@@ -8,10 +8,8 @@ namespace osu.ElasticIndexer
 {
     public class UnrunnableProcessor : QueueProcessor<ScoreQueueItem>
     {
-        private static readonly string queue_name = $"score-index-{AppSettings.Schema}";
-
         internal UnrunnableProcessor()
-            : base(new QueueConfiguration { InputQueueName = queue_name })
+            : base(new QueueConfiguration { InputQueueName = $"{AppSettings.AliasName}_{AppSettings.Schema}" })
         {
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();
