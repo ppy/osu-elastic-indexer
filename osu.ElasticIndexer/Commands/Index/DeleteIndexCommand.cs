@@ -21,7 +21,7 @@ namespace osu.ElasticIndexer.Commands.Index
             if (base.OnExecute(token) != 0)
                 return -1;
 
-            string? index = string.IsNullOrEmpty(Name) ? $"{elasticClient.AliasName}_*" : Name;
+            string? index = string.IsNullOrEmpty(Name) ? $"{AppSettings.AliasName}_*" : Name;
             var response = elasticClient.Cat.Indices(x => x.Index(index));
             var closed = response.Records.Where(record => record.Status == "close");
 

@@ -20,7 +20,7 @@ namespace osu.ElasticIndexer
             Schema = Environment.GetEnvironmentVariable("SCHEMA") ?? string.Empty;
             Prefix = Environment.GetEnvironmentVariable("ES_INDEX_PREFIX") ?? string.Empty;
             ElasticsearchHost = Environment.GetEnvironmentVariable("ES_HOST") ?? "http://localhost:9200";
-            RedisHost = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
+            AliasName = $"{Prefix}scores";
 
             if (string.IsNullOrEmpty(Schema)) Console.WriteLine(ConsoleColor.Yellow, "WARNING: Running without SCHEMA envvar specification");
             if (!string.IsNullOrEmpty(Prefix)) Console.WriteLine(ConsoleColor.Yellow, $"WARNING: Running with PREFIX envvar specification ({Prefix})");
@@ -37,8 +37,8 @@ namespace osu.ElasticIndexer
 
         public static string Prefix { get; }
 
-        public static string RedisHost { get; }
-
         public static string Schema { get; }
+
+        public static string AliasName { get; }
     }
 }

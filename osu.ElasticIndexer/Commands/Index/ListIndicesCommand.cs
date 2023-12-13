@@ -30,7 +30,7 @@ namespace osu.ElasticIndexer.Commands.Index
             Console.WriteLine($"Current schema: {currentSchema}");
             Console.WriteLine();
 
-            var indices = ElasticClient.GetIndices($"{ElasticClient.AliasName}_*");
+            var indices = ElasticClient.GetIndices($"{AppSettings.AliasName}_*");
             var records = ElasticClient.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
 
             Console.WriteLine($"# Elasticsearch indices ({indices.Count})");
@@ -38,12 +38,9 @@ namespace osu.ElasticIndexer.Commands.Index
 
             foreach (var index in indices)
             {
-                var schema = index.Value.Mappings.Meta?["schema"];
-
                 var record = records.Single(r => r.Index == index.Key);
 
                 Console.WriteLine($"{record.Index} ({record.PrimaryStoreSize})\n"
-                                  + $"- schema version: {schema}\n"
                                   + $"- aliases: {string.Join(',', index.Value.Aliases.Select(a => a.Key))}\n"
                                   + $"- status: {record.Status}\n"
                                   + $"- docs: {record.DocsCount} ({record.DocsDeleted} deleted)\n");
@@ -62,15 +59,13 @@ namespace osu.ElasticIndexer.Commands.Index
 
             if (!string.IsNullOrEmpty(currentSchema))
             {
-                var currentIndex = indices.Select(i => i.Value).FirstOrDefault(i => (string?)i.Mappings.Meta?["schema"] == currentSchema);
-
-                if (currentIndex == null)
+                if (!indices.TryGetValue(currentSchema, out var currentIndex))
                 {
                     Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not in present on elasticsearch");
                     return -1;
                 }
 
-                if (!currentIndex.Aliases.ContainsKey(ElasticClient.AliasName))
+                if (!currentIndex.Aliases.ContainsKey(AppSettings.AliasName))
                 {
                     Console.WriteLine(ConsoleColor.Red, "ERROR: Current schema is not aliased correctly");
                     return -1;

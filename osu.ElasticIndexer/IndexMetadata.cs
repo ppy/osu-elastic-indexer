@@ -7,27 +7,16 @@ namespace osu.ElasticIndexer
 {
     public class IndexMetadata
     {
-        public readonly string Schema;
-
         public readonly string Name;
 
-        public IndexMetadata(string indexName, string schema)
-        {
-            Name = indexName;
-            Schema = schema;
-        }
-
-        public IndexMetadata(IndexName indexName, IndexState indexState)
+        public IndexMetadata(IndexName indexName)
         {
             Name = indexName.Name;
-            Schema = (string)indexState.Mappings.Meta["schema"];
         }
 
         public void Save(ElasticClient elasticClient)
         {
-            elasticClient.Map<SoloScoreIndexer>(mappings => mappings.Meta(
-                m => m.Add("schema", Schema)
-            ).Index(Name));
+            elasticClient.Map<SoloScoreIndexer>(mappings => mappings.Index(Name));
         }
     }
 }
