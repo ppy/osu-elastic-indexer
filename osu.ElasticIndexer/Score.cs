@@ -49,12 +49,6 @@ namespace osu.ElasticIndexer
         [Keyword]
         public int ruleset_id { get; set; }
 
-        [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset created_at { get; set; }
-
-        [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset updated_at { get; set; }
-
         [JsonIgnore]
         [Ignore]
         public string data
@@ -63,17 +57,9 @@ namespace osu.ElasticIndexer
         }
 
         [Computed]
-        [Keyword]
-        public int? build_id => scoreData.BuildID;
-
-        [Computed]
         [Boolean]
         [JsonIgnore]
         public bool convert => ruleset_id != playmode;
-
-        [Computed]
-        [Boolean]
-        public bool passed => scoreData.Passed;
 
         [Ignore]
         public int playmode { get; set; }
@@ -107,14 +93,6 @@ namespace osu.ElasticIndexer
         public int user_warnings { get; set; }
 
         [Computed]
-        [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? started_at => scoreData.StartedAt;
-
-        [Computed]
-        [Date(Format = "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss")]
-        public DateTimeOffset? ended_at => scoreData.EndedAt;
-
-        [Computed]
         [Keyword]
         public List<string> mods => scoreData.Mods.Select(mod => mod.Acronym).ToList();
 
@@ -124,7 +102,7 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Boolean]
-        public bool is_legacy => build_id == null;
+        public bool is_legacy => scoreData.BuildID == null;
 
         public ScoreData scoreData = new ScoreData();
 

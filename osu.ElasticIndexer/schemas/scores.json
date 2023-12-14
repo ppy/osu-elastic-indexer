@@ -11,22 +11,11 @@
       "beatmap_id": {
         "type": "keyword"
       },
-      "build_id": {
-        "type": "keyword"
-      },
       "convert": {
         "type": "boolean"
       },
       "country_code": {
         "type": "keyword"
-      },
-      "created_at": {
-        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
-        "type": "date"
-      },
-      "ended_at": {
-        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
-        "type": "date"
       },
       "id": {
         "type": "long"
@@ -34,14 +23,8 @@
       "is_legacy": {
         "type": "boolean"
       },
-      "max_combo": {
-        "type": "integer"
-      },
       "mods": {
         "type": "keyword"
-      },
-      "passed": {
-        "type": "boolean"
       },
       "pp": {
         "type": "float"
@@ -52,19 +35,11 @@
       "ruleset_id": {
         "type": "keyword"
       },
-      "started_at": {
-        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
-        "type": "date"
-      },
       "total_score": {
         "type": "integer"
       },
       "legacy_total_score": {
         "type": "integer"
-      },
-      "updated_at": {
-        "format": "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss",
-        "type": "date"
       },
       "user_id": {
         "type": "keyword"
