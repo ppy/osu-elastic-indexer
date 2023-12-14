@@ -85,7 +85,11 @@ namespace osu.ElasticIndexer
 
         [Computed]
         [Number(NumberType.Integer)]
-        public int total_score => scoreData.LegacyTotalScore ?? (int)scoreData.TotalScore; // scoreData.TotalScore should never exceed int.MaxValue at the point of storage.
+        public int total_score => (int)scoreData.TotalScore; // scoreData.TotalScore should never exceed int.MaxValue at the point of storage.
+
+        [Computed]
+        [Number(NumberType.Integer)]
+        public int legacy_total_score => scoreData.LegacyTotalScore ?? 0;
 
         [Computed]
         [Number(NumberType.Float)]
