@@ -26,7 +26,7 @@ namespace osu.ElasticIndexer.Commands.Queue
             if (token.IsCancellationRequested)
                 return -1;
 
-            new SoloScoreIndexer().Run(token);
+            new ScoreIndexer().Run(token);
 
             return 0;
         }

@@ -8,7 +8,7 @@ using StackExchange.Redis;
 
 namespace osu.ElasticIndexer
 {
-    public class SoloScoreIndexer
+    public class ScoreIndexer
     {
         private CancellationTokenSource? cts;
         private string indexName = string.Empty;
@@ -17,7 +17,7 @@ namespace osu.ElasticIndexer
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();
         private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
 
-        public SoloScoreIndexer()
+        public ScoreIndexer()
         {
             if (string.IsNullOrEmpty(AppSettings.Schema))
                 throw new MissingSchemaException();

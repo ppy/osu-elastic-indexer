@@ -16,7 +16,7 @@ namespace osu.ElasticIndexer
 
         public void Save(ElasticClient elasticClient)
         {
-            elasticClient.Map<SoloScoreIndexer>(mappings => mappings.Index(Name));
+            elasticClient.Map<ScoreIndexer>(mappings => mappings.Index(Name));
         }
     }
 }

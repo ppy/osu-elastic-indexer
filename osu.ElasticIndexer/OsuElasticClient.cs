@@ -99,7 +99,7 @@ namespace osu.ElasticIndexer
                 new CreateIndexRequestParameters { WaitForActiveShards = "all" }
             );
 
-            Map<SoloScoreIndexer>(mappings => mappings.Index(name));
+            Map<ScoreIndexer>(mappings => mappings.Index(name));
 
             return name;
         }
