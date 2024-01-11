@@ -8,9 +8,7 @@ using System.Linq;
 using Dapper.Contrib.Extensions;
 using Nest;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using osu.Game.Online.API;
-using osu.Game.Scoring;
 
 namespace osu.ElasticIndexer
 {
@@ -18,8 +16,7 @@ namespace osu.ElasticIndexer
     [SuppressMessage("Style", "IDE1006")]
     [ElasticsearchType(IdProperty = nameof(id))]
     [ChunkOn(
-        Query = @"s.*, pp, country_acronym AS country_code, playmode, user_warnings FROM scores s
-        LEFT JOIN score_performance ON score_id = s.id
+        Query = @"s.*, country_acronym AS country_code, playmode, user_warnings FROM scores s
         JOIN phpbb_users USING (user_id)
         JOIN osu_beatmaps USING (beatmap_id)",
         CursorColumn = "s.id",
@@ -47,14 +44,14 @@ namespace osu.ElasticIndexer
         public uint user_id { get; set; }
 
         [Keyword]
-        public int ruleset_id { get; set; }
-
         [JsonIgnore]
         [Ignore]
         public string data
         {
-            set => scoreData = JsonConvert.DeserializeObject<ScoreData>(value)!;
+            set => mods = JsonConvert.DeserializeObject<ScoreData>(value)!.Mods.Select(m => m.Acronym).ToList();
         }
+
+        public ushort ruleset_id { get; set; }
 
         [Computed]
         [Boolean]
@@ -69,42 +66,34 @@ namespace osu.ElasticIndexer
 
         public bool preserve { get; set; }
 
-        [Computed]
         [Number(NumberType.Integer)]
-        public int total_score => (int)scoreData.TotalScore; // scoreData.TotalScore should never exceed int.MaxValue at the point of storage.
+        public int total_score { get; set; } // total score should never exceed int.MaxValue at the point of storage.
 
-        [Computed]
         [Number(NumberType.Integer)]
-        public int legacy_total_score => scoreData.LegacyTotalScore ?? 0;
+        public int legacy_total_score { get; set; }
 
-        [Computed]
         [Number(NumberType.Float)]
-        public double accuracy => scoreData.Accuracy;
+        public double accuracy { get; set; }
 
-        [Computed]
         [Number(NumberType.Integer)]
-        public int max_combo => scoreData.MaxCombo;
+        public int max_combo { get; set; }
 
-        [Computed]
         [Keyword]
-        public string rank => scoreData.Rank.ToString();
+        public string rank { get; set; } = string.Empty;
 
         [Ignore]
         public int user_warnings { get; set; }
 
-        [Computed]
         [Keyword]
-        public List<string> mods => scoreData.Mods.Select(mod => mod.Acronym).ToList();
+        public List<string> mods { get; set; } = null!;
 
-        [Computed]
         [Keyword]
         public string? country_code { get; set; }
 
-        [Computed]
         [Boolean]
-        public bool is_legacy => scoreData.BuildID == null;
+        public bool is_legacy => legacy_score_id != null;
 
-        public ScoreData scoreData = new ScoreData();
+        public ulong? legacy_score_id { get; set; }
 
         public override string ToString() => $"score_id: {id} user_id: {user_id} beatmap_id: {beatmap_id} ruleset_id: {ruleset_id}";
 
@@ -114,40 +103,8 @@ namespace osu.ElasticIndexer
         [Serializable]
         public class ScoreData
         {
-            [JsonProperty("build_id")]
-            public int? BuildID { get; set; }
-
-            [JsonProperty("passed")]
-            public bool Passed { get; set; }
-
-            [JsonProperty("total_score")]
-            public long TotalScore { get; set; }
-
-            [JsonProperty("accuracy")]
-            public double Accuracy { get; set; }
-
-            [JsonProperty("max_combo")]
-            public int MaxCombo { get; set; }
-
-            [JsonConverter(typeof(StringEnumConverter))]
-            // ScoreRank is aligned to make 0 equal D. We still want to serialise this (even when DefaultValueHandling.Ignore is used).
-            [JsonProperty("rank", DefaultValueHandling = DefaultValueHandling.Include)]
-            public ScoreRank Rank { get; set; }
-
-            [JsonProperty("started_at")]
-            public DateTimeOffset? StartedAt { get; set; }
-
-            [JsonProperty("ended_at")]
-            public DateTimeOffset EndedAt { get; set; }
-
             [JsonProperty("mods")]
             public APIMod[] Mods { get; set; } = Array.Empty<APIMod>();
-
-            /// <summary>
-            /// Used to preserve the total score for legacy scores.
-            /// </summary>
-            [JsonProperty("legacy_total_score")]
-            public int? LegacyTotalScore { get; set; }
         }
     }
 }
