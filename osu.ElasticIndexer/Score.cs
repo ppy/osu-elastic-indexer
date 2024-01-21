@@ -93,6 +93,8 @@ namespace osu.ElasticIndexer
         [Boolean]
         public bool is_legacy => legacy_score_id != null;
 
+        [Ignore]
+        [JsonIgnore]
         public ulong? legacy_score_id { get; set; }
 
         public override string ToString() => $"score_id: {id} user_id: {user_id} beatmap_id: {beatmap_id} ruleset_id: {ruleset_id}";
