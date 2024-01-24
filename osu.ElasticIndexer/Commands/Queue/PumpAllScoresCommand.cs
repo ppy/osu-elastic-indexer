@@ -79,7 +79,7 @@ namespace osu.ElasticIndexer.Commands.Queue
                     foreach (var score in scores)
                     {
                         score.country_code ??= "XX";
-                        scoreItems.Add(new ScoreQueueItem { Score = score });
+                        scoreItems.Add(new ScoreQueueItem { ScoreId = score.id });
                     }
 
                     Console.WriteLine($"Pushing {scoreItems.Count} scores");

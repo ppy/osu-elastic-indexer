@@ -10,7 +10,6 @@ namespace osu.ElasticIndexer.Commands
     [Subcommand(typeof(ClearQueueCommand))]
     [Subcommand(typeof(WatchQueueCommand))]
     [Subcommand(typeof(PumpAllScoresCommand))]
-    [Subcommand(typeof(PumpFakeScoresCommand))]
     [Subcommand(typeof(PumpFileCommand))]
     [Subcommand(typeof(PumpScoreCommand))]
     public class QueueCommands
