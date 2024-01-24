@@ -3,10 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using MySqlConnector;
-using StatsdClient;
 
 namespace osu.ElasticIndexer
 {
@@ -22,61 +20,23 @@ namespace osu.ElasticIndexer
         /// </summary>
         public readonly List<long> Deletions = new List<long>();
 
-        /// <summary>
-        /// A set of all score IDs which have arrived but are not yet determined to be an addition or deletion.
-        /// These should be processed into either <see cref="Additions"/> or <see cref="Deletions"/>.
-        /// </summary>
-        private readonly HashSet<long> scoreIdsForLookup = new HashSet<long>();
-
         public ProcessableItemsBuffer(MySqlConnection connection, IEnumerable<ScoreQueueItem> items)
         {
-            // Figure out what to do with the queue item.
+            Dictionary<long, Score> scores = ElasticModel.Find<Score>(connection, items.Select(i => i.ScoreId)).ToDictionary(s => s.id, s => s);
+
             foreach (var item in items)
             {
-                if (item.ScoreId != null)
+                if (scores.TryGetValue(item.ScoreId, out var score))
                 {
-                    scoreIdsForLookup.Add(item.ScoreId.Value);
-                }
-                else if (item.Score != null)
-                {
-                    if (item.Score.ShouldIndex)
-                        Additions.Add(item.Score);
-                    else
-                        Deletions.Add(item.Score.id);
+                    item.Tags = (item.Tags ?? Array.Empty<string>()).Concat(new[] { "action:add", $"type:{(score.is_legacy ? "legacy" : "normal")}", $"ruleset:{score.ruleset_id}" }).ToArray();
+                    Additions.Add(score);
                 }
                 else
                 {
-                    Console.WriteLine(ConsoleColor.Red, "queue item missing both data and action");
+                    item.Tags = (item.Tags ?? Array.Empty<string>()).Append("action:remove").ToArray();
+                    Deletions.Add(item.ScoreId);
                 }
             }
-
-            // Handle any scores that need a lookup from the database.
-            if (scoreIdsForLookup.Any())
-            {
-                var scores = ElasticModel.Find<Score>(connection, scoreIdsForLookup);
-
-                foreach (var score in scores)
-                {
-                    if (score.ShouldIndex)
-                    {
-                        DogStatsd.Increment("indexed", 1, 1, new[] { "action:add", $"type:{(score.is_legacy ? "legacy" : "normal")}", $"ruleset:{score.ruleset_id}" });
-                        Additions.Add(score);
-                    }
-                    else
-                    {
-                        DogStatsd.Increment("indexed", 1, 1, new[] { "action:remove", $"type:{(score.is_legacy ? "legacy" : "normal")}", $"ruleset:{score.ruleset_id}" });
-                        Deletions.Add(score.id);
-                    }
-
-                    scoreIdsForLookup.Remove(score.id);
-                }
-
-                // Remaining scores do not exist and should be deleted.
-                Deletions.AddRange(scoreIdsForLookup);
-                scoreIdsForLookup.Clear();
-            }
-
-            Debug.Assert(scoreIdsForLookup.Count == 0);
         }
     }
 }
