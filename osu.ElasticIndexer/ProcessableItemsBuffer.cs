@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using MySqlConnector;
+using StatsdClient;
 
 namespace osu.ElasticIndexer
 {
@@ -57,9 +58,15 @@ namespace osu.ElasticIndexer
                 foreach (var score in scores)
                 {
                     if (score.ShouldIndex)
+                    {
+                        DogStatsd.Increment("indexed", 1, 1, new[] { "action:add", $"type:{(score.is_legacy ? "legacy" : "normal")}", $"ruleset:{score.ruleset_id}" });
                         Additions.Add(score);
+                    }
                     else
+                    {
+                        DogStatsd.Increment("indexed", 1, 1, new[] { "action:remove", $"type:{(score.is_legacy ? "legacy" : "normal")}", $"ruleset:{score.ruleset_id}" });
                         Deletions.Add(score.id);
+                    }
 
                     scoreIdsForLookup.Remove(score.id);
                 }
