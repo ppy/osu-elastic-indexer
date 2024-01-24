@@ -38,21 +38,38 @@ namespace osu.ElasticIndexer
 
         protected override void ProcessResults(IEnumerable<ScoreQueueItem> items)
         {
-            ProcessableItemsBuffer buffer;
+            List<Score> additions = new List<Score>();
+            List<long> deletions = new List<long>();
 
             using (var conn = GetDatabaseConnection())
-                buffer = new ProcessableItemsBuffer(conn, items);
+            {
+                Dictionary<long, Score> scores = ElasticModel.Find<Score>(conn, items.Select(i => i.ScoreId)).ToDictionary(s => s.id, s => s);
 
-            if (buffer.Additions.Any() || buffer.Deletions.Any())
+                foreach (var item in items)
+                {
+                    if (scores.TryGetValue(item.ScoreId, out var score) && score.ShouldIndex)
+                    {
+                        item.Tags = (item.Tags ?? Array.Empty<string>()).Concat(new[] { "action:add", $"type:{(score.is_legacy ? "legacy" : "normal")}", $"ruleset:{score.ruleset_id}" }).ToArray();
+                        additions.Add(score);
+                    }
+                    else
+                    {
+                        item.Tags = (item.Tags ?? Array.Empty<string>()).Append("action:remove").ToArray();
+                        deletions.Add(item.ScoreId);
+                    }
+                }
+            }
+
+            if (additions.Any() || deletions.Any())
             {
                 var bulkDescriptor = new BulkDescriptor()
                                      // Disabling exceptions streamlines error handling; all the relevant info will be in the response.
                                      // With exceptions, some of the source data gets lost when it's put into the exception message.
                                      .RequestConfiguration(r => r.ThrowExceptions(false))
                                      .Index(index)
-                                     .IndexMany(buffer.Additions)
+                                     .IndexMany(additions)
                                      // type is needed for ids https://github.com/elastic/elasticsearch-net/issues/3500
-                                     .DeleteMany<Score>(buffer.Deletions);
+                                     .DeleteMany<Score>(deletions);
 
                 var response = elasticClient.Bulk(bulkDescriptor);
                 handleResponse(response, items);
