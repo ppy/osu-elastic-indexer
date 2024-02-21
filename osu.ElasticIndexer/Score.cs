@@ -30,7 +30,7 @@ namespace osu.ElasticIndexer
         [Computed]
         [Ignore]
         [JsonIgnore]
-        public bool ShouldIndex => preserve && user_warnings == 0;
+        public bool ShouldIndex => preserve && ranked && user_warnings == 0;
 
         // Properties ordered in the order they appear in the table.
 
@@ -65,6 +65,8 @@ namespace osu.ElasticIndexer
         public double? pp { get; set; }
 
         public bool preserve { get; set; }
+
+        public bool ranked { get; set; }
 
         [Number(NumberType.Integer)]
         public int total_score { get; set; } // total score should never exceed int.MaxValue at the point of storage.
