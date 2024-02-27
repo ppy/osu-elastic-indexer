@@ -64,9 +64,11 @@ namespace osu.ElasticIndexer
         [Number(NumberType.Float)]
         public double? pp { get; set; }
 
-        public bool preserve { get; set; }
+        [Ignore]
+        public bool preserve { get; set; } // used as precondition to decide whether to index.
 
-        public bool ranked { get; set; }
+        [Ignore]
+        public bool ranked { get; set; } // used as precondition to decide whether to index.
 
         [Number(NumberType.Integer)]
         public int total_score { get; set; } // total score should never exceed int.MaxValue at the point of storage.
