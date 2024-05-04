@@ -22,6 +22,9 @@ namespace osu.ElasticIndexer.Commands.Queue
         [Option("--switch", Description = "Update the configured schema in redis after completing.")]
         public bool Switch { get; set; }
 
+        [Option("--include-unranked", Description = "Pump scores with ranked flag set to false to trigger deletion")]
+        public bool IncludeUnranked { get; set; }
+
         private CancellationToken cancellationToken;
 
         private UnrunnableProcessor processor = null!;
@@ -66,7 +69,7 @@ namespace osu.ElasticIndexer.Commands.Queue
             using (var mySqlConnection = processor.GetDatabaseConnection())
 
             {
-                var chunks = ElasticModel.Chunk<Score>(mySqlConnection, "preserve = 1 AND ranked = 1", AppSettings.BatchSize, from);
+                var chunks = ElasticModel.Chunk<Score>(mySqlConnection, "preserve = 1 " + (IncludeUnranked ? string.Empty : "AND ranked = 1"), AppSettings.BatchSize, from);
                 Score? last = null;
 
                 foreach (var scores in chunks)
