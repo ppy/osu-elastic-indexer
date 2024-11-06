@@ -20,7 +20,7 @@ namespace osu.ElasticIndexer.Commands.Index
 
         public virtual int OnExecute(CancellationToken token)
         {
-            string[] activeSchemas = Redis.GetActiveSchemas();
+            string?[] activeSchemas = Redis.GetActiveSchemas();
             string currentSchema = Redis.GetCurrentSchema();
 
             Console.WriteLine("# Redis tracking");

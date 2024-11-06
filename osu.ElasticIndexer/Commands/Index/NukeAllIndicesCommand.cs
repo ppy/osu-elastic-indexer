@@ -29,8 +29,12 @@ public class NukeAllIndicesCommand : ListIndicesCommand
         Redis.ClearCurrentSchema();
 
         System.Console.WriteLine("Removing all active schemas..");
-        foreach (string schema in Redis.GetActiveSchemas())
-            Redis.RemoveActiveSchema(schema);
+
+        foreach (string? schema in Redis.GetActiveSchemas())
+        {
+            if (schema != null)
+                Redis.RemoveActiveSchema(schema);
+        }
 
         System.Console.WriteLine("Removing all indices..");
 
