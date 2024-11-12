@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 WORKDIR /app
 
 # Copy csproj and restore as distinct layers
@@ -17,5 +17,4 @@ WORKDIR /app
 COPY --from=build-env /app/out .
 COPY docker docker
 
-# see https://github.com/dotnet/runtime/issues/66707 for issue handling signals on arm64
-ENTRYPOINT ["/app/docker/wait_term.sh", "osu.ElasticIndexer.dll"]
+ENTRYPOINT ["dotnet", "osu.ElasticIndexer.dll"]
