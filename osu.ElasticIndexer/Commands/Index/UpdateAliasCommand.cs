@@ -20,9 +20,6 @@ namespace osu.ElasticIndexer.Commands.Index
 
         public override int OnExecute(CancellationToken token)
         {
-            if (base.OnExecute(token) != 0)
-                return -1;
-
             if (string.IsNullOrWhiteSpace(Schema))
             {
                 Console.WriteLine("A schema version is required.");
@@ -43,6 +40,10 @@ namespace osu.ElasticIndexer.Commands.Index
             ElasticClient.UpdateAlias(AppSettings.AliasName, indexName, Close);
 
             Redis.SetCurrentSchema(indexName);
+
+            if (base.OnExecute(token) != 0)
+                return -1;
+
             return 0;
         }
     }
