@@ -12,16 +12,20 @@ using Indices = Nest.Indices;
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("list", Description = "Lists indices.")]
-    public class ListIndicesCommand
+    public sealed class ListIndicesCommand
     {
-        protected readonly OsuElasticClient ElasticClient = new OsuElasticClient();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
+        private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
 
-        protected readonly ConnectionMultiplexer Redis = RedisAccess.GetConnection();
-
-        public virtual int OnExecute(CancellationToken token)
+        public int OnExecute(CancellationToken token)
         {
-            string?[] activeSchemas = Redis.GetActiveSchemas();
-            string currentSchema = Redis.GetCurrentSchema();
+            return ListSchemas(redis, elasticClient);
+        }
+
+        public static int ListSchemas(ConnectionMultiplexer redis, OsuElasticClient elastic)
+        {
+            string?[] activeSchemas = redis.GetActiveSchemas();
+            string currentSchema = redis.GetCurrentSchema();
 
             Console.WriteLine("# Redis tracking");
             Console.WriteLine();
@@ -30,8 +34,8 @@ namespace osu.ElasticIndexer.Commands.Index
             Console.WriteLine($"Current schema: {currentSchema}");
             Console.WriteLine();
 
-            var indices = ElasticClient.GetIndices($"{AppSettings.AliasName}_*");
-            var records = ElasticClient.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
+            var indices = elastic.GetIndices($"{AppSettings.AliasName}_*");
+            var records = elastic.Cat.Indices(descriptor => descriptor.Index(Indices.All)).Records;
 
             Console.WriteLine($"# Elasticsearch indices ({indices.Count})");
             Console.WriteLine();

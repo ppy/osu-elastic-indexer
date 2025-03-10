@@ -5,11 +5,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 using osu.Server.QueueProcessor;
+using StackExchange.Redis;
 
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("alias", Description = "Updates alias to the latest index of a given version.")]
-    public class UpdateAliasCommand : ListIndicesCommand
+    public class UpdateAliasCommand
     {
         [Option("--close", Description = "Closes the previously aliased index when switching.")]
         public bool Close { get; set; }
@@ -18,7 +19,10 @@ namespace osu.ElasticIndexer.Commands.Index
         [Required]
         public string Schema { get; set; } = string.Empty;
 
-        public override int OnExecute(CancellationToken token)
+        private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
+
+        public int OnExecute(CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(Schema))
             {
@@ -26,7 +30,7 @@ namespace osu.ElasticIndexer.Commands.Index
                 return 1;
             }
 
-            var index = ElasticClient.GetIndexForSchema(Schema);
+            var index = elasticClient.GetIndexForSchema(Schema);
 
             if (index == null)
             {
@@ -37,14 +41,11 @@ namespace osu.ElasticIndexer.Commands.Index
             // TODO: should check if completed?
             string? indexName = index.Value.Key.Name;
 
-            ElasticClient.UpdateAlias(AppSettings.AliasName, indexName, Close);
+            elasticClient.UpdateAlias(AppSettings.AliasName, indexName, Close);
 
-            Redis.SetCurrentSchema(indexName);
+            redis.SetCurrentSchema(indexName);
 
-            if (base.OnExecute(token) != 0)
-                return -1;
-
-            return 0;
+            return ListIndicesCommand.ListSchemas(redis, elasticClient);
         }
     }
 }

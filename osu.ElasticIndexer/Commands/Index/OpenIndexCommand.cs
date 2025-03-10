@@ -5,23 +5,24 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 using osu.Server.QueueProcessor;
+using StackExchange.Redis;
 
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("open", Description = "Opens an index.")]
-    public class OpenIndexCommand : ListIndicesCommand
+    public class OpenIndexCommand
     {
         [Argument(0, "name", "The index to open.")]
         [Required]
         public string Name { get; } = string.Empty;
 
-        public override int OnExecute(CancellationToken token)
-        {
-            if (base.OnExecute(token) != 0)
-                return -1;
+        private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
+        public int OnExecute(CancellationToken token)
+        {
             Console.WriteLine($"Opening {Name}..");
-            var response = new OsuElasticClient().Indices.Open(Name);
+            var response = elasticClient.Indices.Open(Name);
 
             if (!response.IsValid)
             {
@@ -31,7 +32,8 @@ namespace osu.ElasticIndexer.Commands.Index
 
             Console.WriteLine($"Adding {Name} to active schemas..");
             RedisAccess.GetConnection().AddActiveSchema(Name);
-            return 0;
+
+            return ListIndicesCommand.ListSchemas(redis, elasticClient);
         }
     }
 }

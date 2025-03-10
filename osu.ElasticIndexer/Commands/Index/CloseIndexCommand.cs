@@ -6,21 +6,22 @@ using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
 using osu.Server.QueueProcessor;
+using StackExchange.Redis;
 
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("close", Description = "Closes unused indices.")]
-    public class CloseIndexCommand : ListIndicesCommand
+    public class CloseIndexCommand
     {
         [Argument(0, "name", "The index to close. All unused indices are closed if not specified.")]
         public string? Name { get; set; }
 
-        public override int OnExecute(CancellationToken token)
-        {
-            if (base.OnExecute(token) != 0)
-                return -1;
+        private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
+        private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
-            var indices = string.IsNullOrEmpty(Name) ? ElasticClient.GetIndices($"{AppSettings.AliasName}_*") : ElasticClient.GetIndex(Name);
+        public int OnExecute(CancellationToken token)
+        {
+            var indices = string.IsNullOrEmpty(Name) ? elasticClient.GetIndices($"{AppSettings.AliasName}_*") : elasticClient.GetIndex(Name);
 
             var closeableIndices = indices.Where(entry => entry.Value.Aliases.Count == 0);
 
@@ -47,17 +48,17 @@ namespace osu.ElasticIndexer.Commands.Index
 
             foreach (var entry in closeableIndices)
             {
-                if (entry.Key.Name == Redis.GetCurrentSchema())
+                if (entry.Key.Name == redis.GetCurrentSchema())
                 {
                     Console.WriteLine(ConsoleColor.Red, $"Index {entry.Key.Name} is set as current schema. Cannot close.");
                     return -1;
                 }
 
                 System.Console.WriteLine($"Removing {entry.Key.Name} from active schemas..");
-                Redis.RemoveActiveSchema(entry.Key.Name);
+                redis.RemoveActiveSchema(entry.Key.Name);
 
                 Console.WriteLine($"Closing {entry.Key.Name}...");
-                var response = ElasticClient.Indices.Close(entry.Key.Name);
+                var response = elasticClient.Indices.Close(entry.Key.Name);
 
                 if (!response.IsValid)
                 {
@@ -68,7 +69,7 @@ namespace osu.ElasticIndexer.Commands.Index
 
             Console.WriteLine("done.");
 
-            return 0;
+            return ListIndicesCommand.ListSchemas(redis, elasticClient);
         }
     }
 }

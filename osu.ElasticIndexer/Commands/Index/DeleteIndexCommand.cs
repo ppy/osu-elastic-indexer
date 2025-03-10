@@ -5,22 +5,22 @@ using System;
 using System.Linq;
 using System.Threading;
 using McMaster.Extensions.CommandLineUtils;
+using osu.Server.QueueProcessor;
+using StackExchange.Redis;
 
 namespace osu.ElasticIndexer.Commands.Index
 {
     [Command("delete", Description = "Deletes closed indices.")]
-    public class DeleteIndexCommand : ListIndicesCommand
+    public class DeleteIndexCommand
     {
         [Argument(0, "name", "The index to delete. All closed indices are deleted if not specified.")]
         public string? Name { get; set; }
 
+        private readonly ConnectionMultiplexer redis = RedisAccess.GetConnection();
         private readonly OsuElasticClient elasticClient = new OsuElasticClient();
 
-        public override int OnExecute(CancellationToken token)
+        public int OnExecute(CancellationToken token)
         {
-            if (base.OnExecute(token) != 0)
-                return -1;
-
             string? index = string.IsNullOrEmpty(Name) ? $"{AppSettings.AliasName}_*" : Name;
             var response = elasticClient.Cat.Indices(x => x.Index(index));
             var closed = response.Records.Where(record => record.Status == "close");
@@ -56,7 +56,7 @@ namespace osu.ElasticIndexer.Commands.Index
 
             Console.WriteLine("done.");
 
-            return 0;
+            return ListIndicesCommand.ListSchemas(redis, elasticClient);
         }
     }
 }
