@@ -39,7 +39,7 @@
         "type": "integer"
       },
       "legacy_total_score": {
-        "type": "integer"
+        "type": "long"
       },
       "user_id": {
         "type": "keyword"
