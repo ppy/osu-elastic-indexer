@@ -9,6 +9,7 @@ namespace osu.ElasticIndexer.Commands
     [Command("index", Description = "Index management commands.")]
     [Subcommand(typeof(ListIndicesCommand))]
     [Subcommand(typeof(NukeAllIndicesCommand))]
+    [Subcommand(typeof(RemoveSchemaCommand))]
     [Subcommand(typeof(CloseIndexCommand))]
     [Subcommand(typeof(DeleteIndexCommand))]
     [Subcommand(typeof(OpenIndexCommand))]
